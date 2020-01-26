@@ -6,14 +6,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.database.Cursor;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
-import androidx.annotation.NonNull;
-import android.net.Network;
-import android.net.NetworkInfo;
-import android.net.NetworkCapabilities;
-import android.net.ConnectivityManager;
 import android.util.Base64;
+import android.webkit.CookieManager;
+import androidx.annotation.NonNull;
 
 import com.RNFetchBlob.Response.RNFetchBlobDefaultResp;
 import com.RNFetchBlob.Response.RNFetchBlobFileResp;
@@ -183,14 +184,24 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
                 if(options.addAndroidDownloads.hasKey("mime")) {
                     req.setMimeType(options.addAndroidDownloads.getString("mime"));
                 }
-                // set headers
-                ReadableMapKeySetIterator it = headers.keySetIterator();
                 if(options.addAndroidDownloads.hasKey("mediaScannable") && options.addAndroidDownloads.hasKey("mediaScannable")) {
                     req.allowScanningByMediaScanner();
                 }
+                // set headers
+                ReadableMapKeySetIterator it = headers.keySetIterator();
                 while (it.hasNextKey()) {
                     String key = it.nextKey();
                     req.addRequestHeader(key, headers.getString(key));
+                }
+                // Attempt to add cookie, if it exists
+                URL urlObj = null;
+                try {
+                    urlObj = new URL(url);
+                    String baseUrl = urlObj.getProtocol() + "://" + urlObj.getHost();
+                    String cookie = CookieManager.getInstance().getCookie(baseUrl);
+                    req.addRequestHeader("Cookie", cookie);
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
                 }
                 Context appCtx = RNFetchBlob.RCTContext.getApplicationContext();
                 DownloadManager dm = (DownloadManager) appCtx.getSystemService(Context.DOWNLOAD_SERVICE);
@@ -565,7 +576,7 @@ public class RNFetchBlobReq extends BroadcastReceiver implements Runnable {
                         // This usually mean the data is contains invalid unicode characters but still valid data,
                         // it's binary data, so send it as a normal string
                         catch(CharacterCodingException ignored) {
-                            
+
                             if(responseFormat == ResponseFormat.UTF8) {
                                 String utf8 = new String(b);
                                 callback.invoke(null, RNFetchBlobConst.RNFB_RESPONSE_UTF8, utf8);
