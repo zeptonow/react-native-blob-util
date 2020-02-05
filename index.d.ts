@@ -457,21 +457,21 @@ export interface IOSApi {
      * @param  {string} path Path of the file to be open.
      * @param  {string} scheme URI scheme that needs to support, optional
      */
-    presentOptionsMenu(path: string, scheme: string): void;
+    presentOptionsMenu(path: string, scheme?: string): void;
 
     /**
      * Displays a menu for opening the document using [UIDocumentInteractionController](https://developer.apple.com/reference/uikit/uidocumentinteractioncontroller).[presentOpenInMenu](https://developer.apple.com/documentation/uikit/uidocumentinteractioncontroller/1616807-presentopeninmenu)
      * @param  {string} path Path of the file to be open.
      * @param  {string} scheme URI scheme that needs to support, optional
      */
-    presentOpenInMenu(path: string, scheme: string): void;
+    presentOpenInMenu(path: string, scheme?: string): void;
 
     /**
      * Displays a full-screen preview of the target document using [UIDocumentInteractionController](https://developer.apple.com/reference/uikit/uidocumentinteractioncontroller).[presentPreview](https://developer.apple.com/documentation/uikit/uidocumentinteractioncontroller/1616828-presentpreview)
      * @param  {string} path Path of the file to be open.
      * @param  {string} scheme URI scheme that needs to support, optional
      */
-    presentPreview(path: string, scheme: string): void;
+    presentPreview(path: string, scheme?: string): void;
 }
 
 export interface AndroidDownloadOption {
