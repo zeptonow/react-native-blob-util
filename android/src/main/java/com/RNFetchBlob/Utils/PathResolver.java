@@ -47,7 +47,7 @@ public class PathResolver {
                         return path;
                     }
                     
-                    String docId = null;
+                    Long docId = null;
                     //Since Android 10, uri can start with msf scheme like "msf:12345"
                     if (id != null && id.startsWith("msf:")) {
                         final String[] split = id.split(":");
