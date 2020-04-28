@@ -565,9 +565,14 @@ RNFetchBlob.config({
 ```
 
 ## React Native developers to access android device path for app bundle
+
+```js
  NativeModules.RNFetchBlob.getAppDir((error, path) => {
+
    //here path is your apps directory in mobile device
+
    RNFetchBlob
+
     .config({
         addAndroidDownloads : {
             useDownloadManager : true, // <-- this is the only thing required
@@ -585,7 +590,7 @@ RNFetchBlob.config({
       resp.path()
     })
  })
-
+```
  In case error appears or app crash just go to
   AndroidMaifest.xml file and add
      <uses-permission android:name="android.permission.DOWNLOAD_WITHOUT_NOTIFICATION" />
