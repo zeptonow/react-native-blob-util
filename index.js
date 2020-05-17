@@ -223,7 +223,7 @@ function fetch(...args:any):Promise {
 
   // # 241 normalize null or undefined headers, in case nil or null string
   // pass to native context
-  headers = Object.keys(headers).reduce((result, key) => {
+  headers = headers && Object.keys(headers).reduce((result, key) => {
     result[key] = headers[key] || ''
     return result
   }, {});
