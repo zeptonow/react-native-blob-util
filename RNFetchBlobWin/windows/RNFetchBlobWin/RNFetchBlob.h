@@ -11,7 +11,7 @@ public:
 	winrt::fire_and_forget createFile(
 		std::string path,
 		std::string content,
-		std::string encode,
+		std::string encoding,
 		winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept;
 
 	REACT_METHOD(createFileASCII);
@@ -144,5 +144,9 @@ private:
 	void splitPath(const std::string& fullPath,
 		winrt::hstring& directoryPath,
 		winrt::hstring& fileName) noexcept;
+
+	void splitPath(const winrt::hstring& fullPath,
+		winrt::hstring& directoryPath,
+		winrt::hstring& folderName) noexcept;
 
 };
