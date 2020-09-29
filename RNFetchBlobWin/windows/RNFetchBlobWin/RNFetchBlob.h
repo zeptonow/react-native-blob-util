@@ -47,7 +47,7 @@ public:
 
 	// mkdir
 	REACT_METHOD(mkdir);
-	winrt::fire_and_forget mkdir(
+	void mkdir(
 		std::string path,
 		winrt::Microsoft::ReactNative::ReactPromise<bool> promise) noexcept;
 
@@ -93,23 +93,16 @@ public:
 
 	// exists
 	REACT_METHOD(exists);
-	winrt::fire_and_forget exists(
+	void exists(
 		std::string path,
-		winrt::Microsoft::ReactNative::ReactPromise<bool> promise) noexcept;
-
-
-	// isDir
-	REACT_METHOD(isDir);
-	winrt::fire_and_forget isDir(
-		std::string path,
-		winrt::Microsoft::ReactNative::ReactPromise<bool> promise) noexcept;
+		std::function<void(bool, bool)> callback) noexcept;
 
 
 	// unlink
 	REACT_METHOD(unlink);
 	winrt::fire_and_forget unlink(
 		std::string path,
-		winrt::Microsoft::ReactNative::ReactPromise<void> promise) noexcept;
+		std::function<void(std::string, bool)> callback) noexcept;
 
 
 	// lstat
@@ -136,7 +129,7 @@ public:
 	// df
 	REACT_METHOD(df);
 	winrt::fire_and_forget df(
-		winrt::Microsoft::ReactNative::ReactPromise<winrt::Microsoft::ReactNative::JSValueObject> promise) noexcept;
+		std::function<void(std::string, winrt::Microsoft::ReactNative::JSValueObject&)> callback) noexcept;
 
 
 // Helper methods

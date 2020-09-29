@@ -53,6 +53,7 @@ try
 	catch (...)
 	{
 		promise.Reject("EEXIST: File already exists."); // TODO: Include filepath
+		//promise.Reject()
 		co_return;
 	}
 	promise.Resolve(path);
@@ -108,11 +109,29 @@ winrt::fire_and_forget RNFetchBlob::writeFileArray(
 
 
 // mkdir
-winrt::fire_and_forget RNFetchBlob::mkdir(
+void RNFetchBlob::mkdir(
 	std::string path,
 	winrt::Microsoft::ReactNative::ReactPromise<bool> promise) noexcept
+try
 {
-	co_return;
+	std::filesystem::path dirPath(path);
+	dirPath.make_preferred();
+
+	// Consistent with Apple's createDirectoryAtPath method and result, but not with Android's
+	if (std::filesystem::create_directories(dirPath) == false)
+	{
+		promise.Reject(winrt::Microsoft::ReactNative::ReactError{ "ENOENT", "ENOENT: no such file or directory, open " + path });
+	}
+	else
+	{
+		promise.Resolve(true);
+	}
+}
+catch (const hresult_error& ex)
+{
+	// "Unexpected error while making directory."
+	promise.Reject(winrt::to_string(ex.message()).c_str());
+	promise.Reject(winrt::Microsoft::ReactNative::ReactError{ "EUNSPECIFIED", "Error creating folder " + path + ", error: " + winrt::to_string(ex.message().c_str()) });
 }
 
 
@@ -166,29 +185,44 @@ winrt::fire_and_forget RNFetchBlob::cp(
 
 
 // exists
-winrt::fire_and_forget RNFetchBlob::exists(
+void RNFetchBlob::exists(
 	std::string path,
-	winrt::Microsoft::ReactNative::ReactPromise<bool> promise) noexcept
+	std::function<void(bool, bool)> callback) noexcept
 {
-	co_return;
-}
-
-
-// isDir
-winrt::fire_and_forget RNFetchBlob::isDir(
-	std::string path,
-	winrt::Microsoft::ReactNative::ReactPromise<bool> promise) noexcept
-{
-	co_return;
+	std::filesystem::path fsPath(path);
+	bool doesExist{ std::filesystem::exists(fsPath) };
+	bool isDirectory{ doesExist ? std::filesystem::is_directory(fsPath) : false};
+	
+	callback(doesExist, isDirectory);
 }
 
 
 // unlink
 winrt::fire_and_forget RNFetchBlob::unlink(
 	std::string path,
-	winrt::Microsoft::ReactNative::ReactPromise<void> promise) noexcept
+	std::function<void(std::string, bool)> callback) noexcept
+try
 {
-	co_return;
+	if (std::filesystem::is_directory(path))
+	{
+		std::filesystem::path path(path);
+		path.make_preferred();
+		StorageFolder folder{ co_await StorageFolder::GetFolderFromPathAsync(winrt::to_hstring(path.c_str())) };
+		co_await folder.DeleteAsync();
+	}
+	else
+	{
+		winrt::hstring directoryPath, fileName;
+		splitPath(path, directoryPath, fileName);
+		StorageFolder folder{ co_await StorageFolder::GetFolderFromPathAsync(directoryPath) };
+		auto target{ co_await folder.GetItemAsync(fileName) };
+		co_await target.DeleteAsync();
+	}
+	callback(nullptr, true);
+}
+catch (const hresult_error& ex)
+{
+	callback(winrt::to_string(ex.message()), false);
 }
 
 
@@ -219,9 +253,21 @@ winrt::fire_and_forget RNFetchBlob::asset(
 
 // df
 winrt::fire_and_forget RNFetchBlob::df(
-	winrt::Microsoft::ReactNative::ReactPromise<winrt::Microsoft::ReactNative::JSValueObject> promise) noexcept
+	std::function<void(std::string, winrt::Microsoft::ReactNative::JSValueObject&)> callback) noexcept
+try
 {
-	co_return;
+	auto localFolder{ Windows::Storage::ApplicationData::Current().LocalFolder() };
+	auto properties{ co_await localFolder.Properties().RetrievePropertiesAsync({L"System.FreeSpace", L"System.Capacity"}) };
+
+	winrt::Microsoft::ReactNative::JSValueObject result;
+	result["freeSpace"] = unbox_value<uint64_t>(properties.Lookup(L"System.FreeSpace"));
+	result["totalSpace"] = unbox_value<uint64_t>(properties.Lookup(L"System.Capacity"));
+	callback(nullptr, result);
+}
+catch (...)
+{
+	winrt::Microsoft::ReactNative::JSValueObject emptyObject;
+	callback("Failed to get storage usage.", emptyObject);
 }
 
 void RNFetchBlob::splitPath(const std::string& fullPath, winrt::hstring& directoryPath, winrt::hstring& fileName) noexcept
@@ -231,13 +277,4 @@ void RNFetchBlob::splitPath(const std::string& fullPath, winrt::hstring& directo
 
 	directoryPath = path.has_parent_path() ? winrt::to_hstring(path.parent_path().c_str()) : L"";
 	fileName = path.has_filename() ? winrt::to_hstring(path.filename().c_str()) : L"";
-}
-
-void RNFetchBlob::splitPath(const winrt::hstring& fullPath, winrt::hstring& directoryPath, winrt::hstring& folderName) noexcept
-{
-	std::filesystem::path path(winrt::to_string(fullPath));
-	path.make_preferred();
-
-	directoryPath = path.has_parent_path() ? winrt::to_hstring(path.parent_path().c_str()) : L"";
-	folderName = path.has_filename() ? winrt::to_hstring(path.filename().c_str()) : L"";
 }
