@@ -116,6 +116,7 @@
       <DependentUpon>App.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="RNFetchBlob.h" />
+    <ClInclude Include="RNFetchBlobConst.h" />
   </ItemGroup>
   <ItemGroup>
     <ApplicationDefinition Include="App.xaml">

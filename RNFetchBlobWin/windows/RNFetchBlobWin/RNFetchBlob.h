@@ -72,7 +72,7 @@ public:
 	REACT_METHOD(ls);
 	winrt::fire_and_forget ls(
 		std::string path,
-		winrt::Microsoft::ReactNative::ReactPromise<winrt::Microsoft::ReactNative::JSValueArray> promise) noexcept;
+		winrt::Microsoft::ReactNative::ReactPromise<std::vector<std::string>> promise) noexcept;
 
 
 	// mv
@@ -80,7 +80,7 @@ public:
 	winrt::fire_and_forget mv(
 		std::string src, // from
 		std::string dest, // to
-		winrt::Microsoft::ReactNative::ReactPromise<bool> promise) noexcept;
+		std::function<void(std::string)> callback) noexcept;
 
 
 	// cp
@@ -134,12 +134,14 @@ public:
 
 // Helper methods
 private:
+	constexpr static int64_t UNIX_EPOCH_IN_WINRT_SECONDS = 11644473600;
+
 	void splitPath(const std::string& fullPath,
 		winrt::hstring& directoryPath,
 		winrt::hstring& fileName) noexcept;
 
-	void splitPath(const winrt::hstring& fullPath,
-		winrt::hstring& directoryPath,
-		winrt::hstring& folderName) noexcept;
+	//void splitPath(const winrt::hstring& fullPath,
+	//	winrt::hstring& directoryPath,
+	//	winrt::hstring& folderName) noexcept;
 
 };

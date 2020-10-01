@@ -129,8 +129,6 @@ try
 }
 catch (const hresult_error& ex)
 {
-	// "Unexpected error while making directory."
-	promise.Reject(winrt::to_string(ex.message()).c_str());
 	promise.Reject(winrt::Microsoft::ReactNative::ReactError{ "EUNSPECIFIED", "Error creating folder " + path + ", error: " + winrt::to_string(ex.message().c_str()) });
 }
 
@@ -158,9 +156,33 @@ winrt::fire_and_forget RNFetchBlob::hash(
 // ls
 winrt::fire_and_forget RNFetchBlob::ls(
 	std::string path,
-	winrt::Microsoft::ReactNative::ReactPromise<winrt::Microsoft::ReactNative::JSValueArray> promise) noexcept
+	winrt::Microsoft::ReactNative::ReactPromise<std::vector<std::string>> promise) noexcept
+try
 {
-	co_return;
+	winrt::hstring directoryPath, fileName;
+	splitPath(path, directoryPath, fileName);
+	
+	StorageFolder targetDirectory{ co_await StorageFolder::GetFolderFromPathAsync(directoryPath) };
+
+	std::vector<std::string> results;
+	auto items{ co_await targetDirectory.GetItemsAsync() };
+	for (auto item : items)
+	{
+		results.push_back(to_string(item.Name()));
+	}
+	promise.Resolve(results);
+}
+catch (const hresult_error& ex)
+{
+	hresult result{ ex.code() };
+	if (result == 0x80070002) // FileNotFoundException
+	{
+		promise.Reject(winrt::Microsoft::ReactNative::ReactError{ "ENOTDIR", "Not a directory '" + path + "'" });
+	}
+	else
+	{
+		promise.Reject(winrt::Microsoft::ReactNative::ReactError{ "EUNSPECIFIED", winrt::to_string(ex.message()).c_str() });
+	}
 }
 
 
@@ -168,9 +190,35 @@ winrt::fire_and_forget RNFetchBlob::ls(
 winrt::fire_and_forget RNFetchBlob::mv(
 	std::string src, // from
 	std::string dest, // to
-	winrt::Microsoft::ReactNative::ReactPromise<bool> promise) noexcept
+	std::function<void(std::string)> callback) noexcept
 {
-	co_return;
+	try
+	{
+		winrt::hstring srcDirectoryPath, srcFileName;
+		splitPath(src, srcDirectoryPath, srcFileName);
+
+		winrt::hstring destDirectoryPath, destFileName;
+		splitPath(dest, destDirectoryPath, destFileName);
+
+		StorageFolder srcFolder{ co_await StorageFolder::GetFolderFromPathAsync(srcDirectoryPath) };
+		StorageFolder destFolder{ co_await StorageFolder::GetFolderFromPathAsync(destDirectoryPath) };
+		StorageFile file{ co_await srcFolder.GetFileAsync(srcFileName) };
+
+		co_await file.MoveAsync(destFolder, destFileName, NameCollisionOption::ReplaceExisting);
+		callback("");
+	}
+	catch (const hresult_error& ex)
+	{
+		hresult result{ ex.code() };
+		if (result == 0x80070002) // FileNotFoundException
+		{
+			callback("Source file not found.");
+		}
+		else
+		{
+			callback(winrt::to_string(ex.message()).c_str());
+		}
+	}
 }
 
 
@@ -179,8 +227,26 @@ winrt::fire_and_forget RNFetchBlob::cp(
 	std::string src, // from
 	std::string dest, // to
 	winrt::Microsoft::ReactNative::ReactPromise<bool> promise) noexcept
+try
 {
-	co_return;
+	winrt::hstring srcDirectoryPath, srcFileName;
+	splitPath(src, srcDirectoryPath, srcFileName);
+
+	winrt::hstring destDirectoryPath, destFileName;
+	splitPath(dest, destDirectoryPath, destFileName);
+
+	StorageFolder srcFolder{ co_await StorageFolder::GetFolderFromPathAsync(srcDirectoryPath) };
+	StorageFolder destFolder{ co_await StorageFolder::GetFolderFromPathAsync(destDirectoryPath) };
+	StorageFile file{ co_await srcFolder.GetFileAsync(srcFileName) };
+
+	co_await file.CopyAsync(destFolder, destFileName, NameCollisionOption::ReplaceExisting);
+
+	promise.Resolve(true);
+}
+catch (const hresult_error& ex)
+{
+	// "Failed to copy file."
+	promise.Reject(winrt::to_string(ex.message()).c_str());
 }
 
 
@@ -218,7 +284,7 @@ try
 		auto target{ co_await folder.GetItemAsync(fileName) };
 		co_await target.DeleteAsync();
 	}
-	callback(nullptr, true);
+	callback("", true);
 }
 catch (const hresult_error& ex)
 {
@@ -262,7 +328,7 @@ try
 	winrt::Microsoft::ReactNative::JSValueObject result;
 	result["freeSpace"] = unbox_value<uint64_t>(properties.Lookup(L"System.FreeSpace"));
 	result["totalSpace"] = unbox_value<uint64_t>(properties.Lookup(L"System.Capacity"));
-	callback(nullptr, result);
+	callback("", result);
 }
 catch (...)
 {
