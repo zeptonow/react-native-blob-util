@@ -1,11 +1,22 @@
 #pragma once
 #include "NativeModules.h"
+#include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Security.Cryptography.h>
+#include <winrt/Windows.Security.Cryptography.Core.h>
+
+namespace Cryptography = winrt::Windows::Security::Cryptography;
+namespace CryptographyCore = winrt::Windows::Security::Cryptography::Core;
 
 REACT_MODULE(RNFetchBlob, L"RNFetchBlob");
 struct RNFetchBlob
 {
 
 public:
+
+	REACT_CONSTANT_PROVIDER(ConstantsViaConstantsProvider);
+	void RNFetchBlob::ConstantsViaConstantsProvider(
+		winrt::Microsoft::ReactNative::ReactConstantProvider& constants) noexcept;
+
 	// createFile
 	REACT_METHOD(createFile);
 	winrt::fire_and_forget createFile(
@@ -57,7 +68,7 @@ public:
 	winrt::fire_and_forget readFile(
 		std::string path,
 		std::string encoding,
-		winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept;
+		winrt::Microsoft::ReactNative::ReactPromise<std::wstring> promise) noexcept;
 
 
 	// hash
@@ -66,7 +77,6 @@ public:
 		std::string path,
 		std::string algorithm,
 		winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept;
-
 	
 	// ls
 	REACT_METHOD(ls);
@@ -88,7 +98,7 @@ public:
 	winrt::fire_and_forget cp(
 		std::string src, // from
 		std::string dest, // to
-		winrt::Microsoft::ReactNative::ReactPromise<bool> promise) noexcept;
+		std::function<void(std::string)> callback) noexcept;
 
 
 	// exists
@@ -109,21 +119,21 @@ public:
 	REACT_METHOD(lstat);
 	winrt::fire_and_forget lstat(
 		std::string path,
-		winrt::Microsoft::ReactNative::ReactPromise<winrt::Microsoft::ReactNative::JSValueObject> promise) noexcept;
+		winrt::Microsoft::ReactNative::ReactPromise<winrt::Microsoft::ReactNative::JSValueArray> promise) noexcept;
 
 
 	// stat
 	REACT_METHOD(stat);
 	winrt::fire_and_forget stat(
 		std::string path,
-		winrt::Microsoft::ReactNative::ReactPromise<winrt::Microsoft::ReactNative::JSValueObject> promise) noexcept;
+		std::function<void(std::string, winrt::Microsoft::ReactNative::JSValueObject&)> callback) noexcept;
 
 
-	// asset
-	REACT_METHOD(asset);
-	winrt::fire_and_forget asset(
-		std::string filename,
-		winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept;
+	// asset - appears to be Android only
+	//REACT_METHOD(asset);
+	//winrt::fire_and_forget asset(
+	//	std::string filename,
+	//	winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept;
 
 
 	// df
@@ -135,6 +145,14 @@ public:
 // Helper methods
 private:
 	constexpr static int64_t UNIX_EPOCH_IN_WINRT_SECONDS = 11644473600;
+
+	const std::map<std::string, std::function<CryptographyCore::HashAlgorithmProvider()>> availableHashes{
+		{"md5", []() { return CryptographyCore::HashAlgorithmProvider::OpenAlgorithm(CryptographyCore::HashAlgorithmNames::Md5()); } },
+		{"sha1", []() { return CryptographyCore::HashAlgorithmProvider::OpenAlgorithm(CryptographyCore::HashAlgorithmNames::Sha1()); } },
+		{"sha256", []() { return CryptographyCore::HashAlgorithmProvider::OpenAlgorithm(CryptographyCore::HashAlgorithmNames::Sha256()); } },
+		{"sha384", []() { return CryptographyCore::HashAlgorithmProvider::OpenAlgorithm(CryptographyCore::HashAlgorithmNames::Sha384()); } },
+		{"sha512", []() { return CryptographyCore::HashAlgorithmProvider::OpenAlgorithm(CryptographyCore::HashAlgorithmNames::Sha512()); } }
+	};
 
 	void splitPath(const std::string& fullPath,
 		winrt::hstring& directoryPath,

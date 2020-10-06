@@ -19,6 +19,46 @@ using namespace winrt::Windows::Security::Cryptography;
 using namespace winrt::Windows::Security::Cryptography::Core;
 
 
+//
+// RNFS implementations
+//
+void RNFetchBlob::ConstantsViaConstantsProvider(winrt::Microsoft::ReactNative::ReactConstantProvider& constants) noexcept
+{
+	// RNFS.MainBundlePath
+	//constants.Add(L"RNFSMainBundlePath", to_string(Package::Current().InstalledLocation().Path()));
+
+	// RNFS.CachesDirectoryPath
+	//constants.Add(L"RNFSCachesDirectoryPath", to_string(ApplicationData::Current().LocalCacheFolder().Path()));
+
+	// RNFS.ExternalCachesDirectoryPath - NULL in iOS (No equivalent in Windows)
+
+	// RNFS.DocumentDirectoryPath
+	//constants.Add(L"RNFSDocumentDirectoryPath", to_string(ApplicationData::Current().LocalFolder().Path()));
+
+	// RNFS.DownloadDirectoryPath - IMPLEMENT for convenience? (absent in iOS and deprecated in Android)
+	//constants.Add(L"RNFSDownloadDirectoryPath", UserDataPaths::GetDefault().Downloads());
+
+	// RNFS.ExternalDirectoryPath - NULL in iOS (Pending use case in Windows and deprecated in Android)
+	//constants.Add(L"RNFSExternalDirectoryPath", UserDataPaths::GetDefault().Documents());
+
+	// RNFS.ExternalStorageDirectoryPath - NULL in iOS (Pending use case in Windows and deprecated in Android)
+
+	// RNFS.TemporaryDirectoryPath
+	//constants.Add(L"RNFSTemporaryDirectoryPath", to_string(ApplicationData::Current().TemporaryFolder().Path()));
+
+	// RNFS.LibraryDirectoryPath - NULL in Android (No equivalent in Windows)
+
+	// RNFS.PicturesDirectoryPath - IMPLEMENT for convenience? (absent in iOS though and deprecated in Android)
+	//constants.Add(L"RNFSPicturesDirectoryPath", UserDataPaths::GetDefault().Pictures());
+
+	// RNFS.FileProtectionKeys - NULL in Android (No equivalent in Windows)
+
+	// TODO: Check to see if these can be accessed after package created
+	// Needed for synchronization across Windows devices
+	///constants.Add(L"RNFSRoamingDirectoryPath", to_string(ApplicationData::Current().RoamingFolder().Path()));
+
+}
+
 // createFile
 winrt::fire_and_forget RNFetchBlob::createFile(
 	std::string path,
@@ -75,8 +115,45 @@ winrt::fire_and_forget RNFetchBlob::createFileASCII(
 	std::string path,
 	winrt::Microsoft::ReactNative::JSValueArray dataArray,
 	winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept
+try
 {
-	co_return;
+	std::vector<byte> data;
+	data.reserve(dataArray.size());
+	for (auto& var : dataArray)
+	{
+		data.push_back(var.AsInt8());
+	}
+
+	Streams::IBuffer buffer{ CryptographicBuffer::CreateFromByteArray(data) };
+
+	winrt::hstring directoryPath, fileName;
+	splitPath(path, directoryPath, fileName);
+
+	StorageFolder folder{ co_await StorageFolder::GetFolderFromPathAsync(directoryPath) };
+	try
+	{
+		StorageFile file{ co_await folder.CreateFileAsync(fileName, CreationCollisionOption::FailIfExists) };
+		Streams::IRandomAccessStream stream{ co_await file.OpenAsync(FileAccessMode::ReadWrite) };
+		co_await stream.WriteAsync(buffer);
+	}
+	catch (...)
+	{
+		promise.Reject("EEXIST: File already exists."); // TODO: Include filepath
+		co_return;
+	}
+	promise.Resolve(path);
+}
+catch (const hresult_error& ex)
+{
+	hresult result{ ex.code() };
+	if (result == 0x80070002) // FileNotFoundException
+	{
+		promise.Reject("ENOENT: File does not exist and could not be created"); // TODO: Include filepath
+	}
+	else
+	{
+		promise.Reject("EUNSPECIFIED: Failed to write to file.");
+	}
 }
 
 
@@ -108,7 +185,7 @@ winrt::fire_and_forget RNFetchBlob::writeFileArray(
 
 
 
-// mkdir
+// mkdir - Implemented, not tested
 void RNFetchBlob::mkdir(
 	std::string path,
 	winrt::Microsoft::ReactNative::ReactPromise<bool> promise) noexcept
@@ -137,23 +214,108 @@ catch (const hresult_error& ex)
 winrt::fire_and_forget RNFetchBlob::readFile(
 	std::string path,
 	std::string encoding,
-	winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept
+	winrt::Microsoft::ReactNative::ReactPromise<std::wstring> promise) noexcept
+try
 {
-	co_return;
+	winrt::hstring directoryPath, fileName;
+	splitPath(path, directoryPath, fileName);
+
+	StorageFolder folder{ co_await StorageFolder::GetFolderFromPathAsync(directoryPath) };
+	StorageFile file{ co_await folder.GetFileAsync(fileName) };
+
+	Streams::IBuffer buffer{ co_await FileIO::ReadBufferAsync(file) };
+	if (encoding.compare("base64") == 0)
+	{
+		std::wstring base64Content{ Cryptography::CryptographicBuffer::EncodeToBase64String(buffer) };
+		promise.Resolve(base64Content);
+	}
+	else
+	{
+		std::wstring utf8Content{ Cryptography::CryptographicBuffer::ConvertBinaryToString(BinaryStringEncoding::Utf8, buffer) };
+		if (encoding.compare("ascii") == 0)
+		{
+			std::string asciiContent{ winrt::to_string(utf8Content) };
+			std::wstring asciiResult{ winrt::to_hstring(asciiContent) };
+			promise.Resolve(asciiResult);
+			co_return;
+		}
+		promise.Resolve(utf8Content);
+	}
+}
+catch (const hresult_error& ex)
+{
+	hresult result{ ex.code() };
+	if (result == 0x80070002) // FileNotFoundException
+	{
+		promise.Reject(winrt::Microsoft::ReactNative::ReactError{ "ENOENT", "ENOENT: no such file or directory, open " + path });
+	}
+	else if (result == 0x80070005) // UnauthorizedAccessException
+	{
+		promise.Reject(winrt::Microsoft::ReactNative::ReactError{ "EISDIR", "EISDIR: illegal operation on a directory, read" });
+	}
+	else
+	{
+		// "Failed to read file."
+		promise.Reject(winrt::to_string(ex.message()).c_str());
+	}
 }
 
 
-// hash
+// hash - Implemented, not tested
 winrt::fire_and_forget RNFetchBlob::hash(
 	std::string path,
 	std::string algorithm,
 	winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept
+try
 {
-	co_return;
+	// Note: SHA224 is not part of winrt 
+	if (algorithm.compare("sha224") == 0)
+	{
+		promise.Reject(winrt::Microsoft::ReactNative::ReactError{ "Error", "WinRT does not offer sha224 encryption." });
+		co_return;
+	}
+
+	winrt::hstring directoryPath, fileName;
+	splitPath(path, directoryPath, fileName);
+
+	StorageFolder folder{ co_await StorageFolder::GetFolderFromPathAsync(directoryPath) };
+	StorageFile file{ co_await folder.GetFileAsync(fileName) };
+
+	auto search { availableHashes.find(algorithm) };
+	if (search == availableHashes.end())
+	{
+		promise.Reject(winrt::Microsoft::ReactNative::ReactError{ "Error", "Invalid hash algorithm " + algorithm });
+		co_return;
+	}
+
+	CryptographyCore::HashAlgorithmProvider provider{ search->second() };
+	Streams::IBuffer buffer{ co_await FileIO::ReadBufferAsync(file) };
+
+	auto hashedBuffer{ provider.HashData(buffer) };
+	auto result{ winrt::to_string(Cryptography::CryptographicBuffer::ConvertBinaryToString(BinaryStringEncoding::Utf8, buffer)) };
+
+	promise.Resolve(result);
+}
+catch (const hresult_error& ex)
+{
+	hresult result{ ex.code() };
+	if (result == 0x80070002) // FileNotFoundException
+	{
+		promise.Reject(winrt::Microsoft::ReactNative::ReactError{ "ENOENT", "ENOENT: no such file or directory, open " + path });
+	}
+	else if (result == 0x80070005) // UnauthorizedAccessException
+	{
+		promise.Reject(winrt::Microsoft::ReactNative::ReactError{ "EISDIR", "EISDIR: illegal operation on a directory, read" });
+	}
+	else
+	{
+		// "Failed to get checksum from file."
+		promise.Reject(winrt::to_string(ex.message()).c_str());
+	}
 }
 
 
-// ls
+// ls - Implemented, not tested
 winrt::fire_and_forget RNFetchBlob::ls(
 	std::string path,
 	winrt::Microsoft::ReactNative::ReactPromise<std::vector<std::string>> promise) noexcept
@@ -186,7 +348,7 @@ catch (const hresult_error& ex)
 }
 
 
-// mv
+// mv - Implemented, not tested
 winrt::fire_and_forget RNFetchBlob::mv(
 	std::string src, // from
 	std::string dest, // to
@@ -222,11 +384,11 @@ winrt::fire_and_forget RNFetchBlob::mv(
 }
 
 
-// cp
+// cp - Implemented, not tested
 winrt::fire_and_forget RNFetchBlob::cp(
 	std::string src, // from
 	std::string dest, // to
-	winrt::Microsoft::ReactNative::ReactPromise<bool> promise) noexcept
+	std::function<void(std::string)> callback) noexcept
 try
 {
 	winrt::hstring srcDirectoryPath, srcFileName;
@@ -239,18 +401,22 @@ try
 	StorageFolder destFolder{ co_await StorageFolder::GetFolderFromPathAsync(destDirectoryPath) };
 	StorageFile file{ co_await srcFolder.GetFileAsync(srcFileName) };
 
-	co_await file.CopyAsync(destFolder, destFileName, NameCollisionOption::ReplaceExisting);
+	co_await file.CopyAsync(destFolder, destFileName, NameCollisionOption::FailIfExists);
 
-	promise.Resolve(true);
+	callback("");
 }
 catch (const hresult_error& ex)
 {
-	// "Failed to copy file."
-	promise.Reject(winrt::to_string(ex.message()).c_str());
+	hresult result{ ex.code() };
+	if (result == 0x80070002) // FileNotFoundException
+	{
+		callback("Source file not found.");
+	}
+	callback(winrt::to_string(ex.message()).c_str());
 }
 
 
-// exists
+// exists - Implemented, not tested
 void RNFetchBlob::exists(
 	std::string path,
 	std::function<void(bool, bool)> callback) noexcept
@@ -263,7 +429,7 @@ void RNFetchBlob::exists(
 }
 
 
-// unlink
+// unlink - Implemented, not tested
 winrt::fire_and_forget RNFetchBlob::unlink(
 	std::string path,
 	std::function<void(std::string, bool)> callback) noexcept
@@ -271,9 +437,9 @@ try
 {
 	if (std::filesystem::is_directory(path))
 	{
-		std::filesystem::path path(path);
-		path.make_preferred();
-		StorageFolder folder{ co_await StorageFolder::GetFolderFromPathAsync(winrt::to_hstring(path.c_str())) };
+		std::filesystem::path unlinkPath(path);
+		unlinkPath.make_preferred();
+		StorageFolder folder{ co_await StorageFolder::GetFolderFromPathAsync(winrt::to_hstring(unlinkPath.c_str())) };
 		co_await folder.DeleteAsync();
 	}
 	else
@@ -292,32 +458,107 @@ catch (const hresult_error& ex)
 }
 
 
-// lstat
+// lstat - Implemented, not tested
 winrt::fire_and_forget RNFetchBlob::lstat(
 	std::string path,
-	winrt::Microsoft::ReactNative::ReactPromise<winrt::Microsoft::ReactNative::JSValueObject> promise) noexcept
+	winrt::Microsoft::ReactNative::ReactPromise<winrt::Microsoft::ReactNative::JSValueArray> promise) noexcept
+	try
 {
-	co_return;
+	std::filesystem::path directory(path);
+	directory.make_preferred();
+	StorageFolder targetDirectory{ co_await StorageFolder::GetFolderFromPathAsync(directory.c_str()) };
+
+	winrt::Microsoft::ReactNative::JSValueArray resultsArray;
+
+	auto items{ co_await targetDirectory.GetItemsAsync() };
+	for (auto item : items)
+	{
+		auto properties{ co_await item.GetBasicPropertiesAsync() };
+
+		winrt::Microsoft::ReactNative::JSValueObject itemInfo;
+
+		itemInfo["filename"] = to_string(item.Name());
+		itemInfo["path"] = to_string(item.Path());
+		itemInfo["size"] = properties.Size();
+		itemInfo["type"] = item.IsOfType(StorageItemTypes::Folder) ? "directory" : "file";
+		itemInfo["lastModified"] = properties.DateModified().time_since_epoch() / std::chrono::seconds(1) - UNIX_EPOCH_IN_WINRT_SECONDS;
+
+		resultsArray.push_back(std::move(itemInfo));
+	}
+
+	promise.Resolve(resultsArray);
+}
+catch (const hresult_error& ex)
+{
+	// "Failed to read directory."
+	promise.Reject(winrt::to_string(ex.message()).c_str());
 }
 
 
-// stat
+// stat - Implemented, not tested
 winrt::fire_and_forget RNFetchBlob::stat(
 	std::string path,
-	winrt::Microsoft::ReactNative::ReactPromise<winrt::Microsoft::ReactNative::JSValueObject> promise) noexcept
+	std::function<void(std::string, winrt::Microsoft::ReactNative::JSValueObject&)> callback) noexcept
+	try
 {
-	co_return;
+	std::filesystem::path givenPath(path);
+	givenPath.make_preferred();
+
+	std::string resultPath{ winrt::to_string(givenPath.c_str()) };
+	auto potentialPath{ winrt::to_hstring(resultPath) };
+	bool isFile{ false };
+	uint64_t mtime{ 0 };
+	uint64_t size{ 0 };
+
+	// Try to open as folder
+	try
+	{
+		StorageFolder folder{ co_await StorageFolder::GetFolderFromPathAsync(potentialPath) };
+		auto properties{ co_await folder.GetBasicPropertiesAsync() };
+		mtime = properties.DateModified().time_since_epoch() / std::chrono::seconds(1) - UNIX_EPOCH_IN_WINRT_SECONDS;
+		size = properties.Size();
+	}
+	catch (...)
+	{
+		isFile = true;
+		auto lastCharIndex{ path.length() - 1 };
+		if (resultPath[lastCharIndex] == '\\')
+		{
+			givenPath = std::filesystem::path(resultPath.substr(0, lastCharIndex));
+		}
+	}
+
+	// Try to open as file
+	if (isFile)
+	{
+		auto directoryPath{ givenPath.has_parent_path() ? winrt::to_hstring(givenPath.parent_path().c_str()) : L"" };
+		auto fileName{ givenPath.has_filename() ? winrt::to_hstring(givenPath.filename().c_str()) : L"" };
+
+		StorageFolder folder{ co_await StorageFolder::GetFolderFromPathAsync(directoryPath) };
+		auto properties{ (co_await folder.GetFileAsync(fileName)).Properties() };
+		auto propertyMap{ co_await properties.RetrievePropertiesAsync({ L"System.DateCreated", L"System.DateModified", L"System.Size" }) };
+		mtime = winrt::unbox_value<DateTime>(propertyMap.Lookup(L"System.DateModified")).time_since_epoch() / std::chrono::seconds(1) - UNIX_EPOCH_IN_WINRT_SECONDS;
+		size = winrt::unbox_value<uint64_t>(propertyMap.Lookup(L"System.Size"));
+	}
+
+	winrt::Microsoft::ReactNative::JSValueObject fileInfo;
+	fileInfo["size"] = size;
+	fileInfo["filename"] = givenPath.filename().string();
+	fileInfo["path"] = givenPath.string();
+	fileInfo["lastModified"] = mtime;
+	fileInfo["type"] = isFile ? "file" : "directory";
+
+	callback("", fileInfo);
+}
+catch (const hresult_error& ex)
+{
+	winrt::Microsoft::ReactNative::JSValueObject emptyObject;
+	callback(winrt::to_string(ex.message()).c_str(), emptyObject);
 }
 
-// asset
-winrt::fire_and_forget RNFetchBlob::asset(
-	std::string filename,
-	winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept
-{
-	co_return;
-}
 
-// df
+
+// df - Implemented, not tested
 winrt::fire_and_forget RNFetchBlob::df(
 	std::function<void(std::string, winrt::Microsoft::ReactNative::JSValueObject&)> callback) noexcept
 try
