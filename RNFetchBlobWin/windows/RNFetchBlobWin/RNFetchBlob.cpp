@@ -62,7 +62,7 @@ void RNFetchBlob::ConstantsViaConstantsProvider(winrt::Microsoft::ReactNative::R
 // createFile
 winrt::fire_and_forget RNFetchBlob::createFile(
 	std::string path,
-	std::string content,
+	std::wstring content,
 	std::string encoding,
 	winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept
 try
@@ -75,10 +75,10 @@ try
 
 	bool isUTF8{ encoding.compare("utf8") == 0 };
 
-	winrt::hstring contentToInsert{ winrt::to_hstring(content) };
+	//winrt::hstring contentToInsert{ content };
 	Streams::IBuffer buffer{ isUTF8 ?
-		CryptographicBuffer::ConvertStringToBinary(contentToInsert, BinaryStringEncoding::Utf8) :
-		CryptographicBuffer::DecodeFromBase64String(contentToInsert) };
+		CryptographicBuffer::ConvertStringToBinary(content, BinaryStringEncoding::Utf8) :
+		CryptographicBuffer::DecodeFromBase64String(content) };
 
 	winrt::hstring directoryPath, fileName;
 	splitPath(path, directoryPath, fileName);
@@ -93,7 +93,6 @@ try
 	catch (...)
 	{
 		promise.Reject("EEXIST: File already exists."); // TODO: Include filepath
-		//promise.Reject()
 		co_return;
 	}
 	promise.Resolve(path);
@@ -161,19 +160,101 @@ catch (const hresult_error& ex)
 winrt::fire_and_forget RNFetchBlob::writeFile(
 	std::string path,
 	std::string encoding,
+	std::wstring data,
 	bool append,
 	winrt::Microsoft::ReactNative::ReactPromise<int> promise) noexcept
+try
 {
-	co_return;
+	Streams::IBuffer buffer;
+	if (encoding.compare("utf8") == 0)
+	{
+		buffer = Cryptography::CryptographicBuffer::ConvertStringToBinary(data, BinaryStringEncoding::Utf8);
+	}
+	else if (encoding.compare("base64") == 0)
+	{
+		buffer = Cryptography::CryptographicBuffer::DecodeFromBase64String(data);
+	}
+	else if (encoding.compare("uri") == 0)
+	{
+		winrt::hstring srcDirectoryPath, srcFileName;
+		splitPath(path, srcDirectoryPath, srcFileName);
+		StorageFolder srcFolder{ co_await StorageFolder::GetFolderFromPathAsync(srcDirectoryPath) };
+		StorageFile srcFile{ co_await StorageFile::GetFileFromPathAsync(srcDirectoryPath) };
+		buffer = co_await FileIO::ReadBufferAsync(srcFile);
+	}
+	else
+	{
+		promise.Reject("Invalid encoding");
+	}
+
+	winrt::hstring destDirectoryPath, destFileName;
+	splitPath(path, destDirectoryPath, destFileName);
+	StorageFolder destFolder{ co_await StorageFolder::GetFolderFromPathAsync(destDirectoryPath) };
+	StorageFile destFile{ nullptr };
+	if (append)
+	{
+		destFile = co_await destFolder.CreateFileAsync(destFileName, CreationCollisionOption::OpenIfExists);
+	}
+	else
+	{
+		destFile = co_await destFolder.CreateFileAsync(destFileName, CreationCollisionOption::ReplaceExisting);
+	}
+	Streams::IRandomAccessStream stream{ co_await destFile.OpenAsync(FileAccessMode::ReadWrite) };
+
+	if (append)
+	{
+		stream.Seek(UINT64_MAX);
+	}
+	co_await stream.WriteAsync(buffer);
+	promise.Resolve(buffer.Length());
+}
+catch (...)
+{
+	promise.Reject("Failed to write");
 }
 
 winrt::fire_and_forget RNFetchBlob::writeFileArray(
 	std::string path,
 	winrt::Microsoft::ReactNative::JSValueArray dataArray,
 	bool append,
-	winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept
+	winrt::Microsoft::ReactNative::ReactPromise<int> promise) noexcept
+try
 {
+	std::vector<byte> data;
+	data.reserve(dataArray.size());
+	for (auto& var : dataArray)
+	{
+		data.push_back(var.AsInt8());
+	}
+
+	Streams::IBuffer buffer{ CryptographicBuffer::CreateFromByteArray(data) };
+
+	winrt::hstring destDirectoryPath, destFileName;
+	splitPath(path, destDirectoryPath, destFileName);
+	StorageFolder destFolder{ co_await StorageFolder::GetFolderFromPathAsync(destDirectoryPath) };
+	StorageFile destFile{ nullptr };
+	if (append)
+	{
+		destFile = co_await destFolder.CreateFileAsync(destFileName, CreationCollisionOption::OpenIfExists);
+	}
+	else
+	{
+		destFile = co_await destFolder.CreateFileAsync(destFileName, CreationCollisionOption::ReplaceExisting);
+	}
+	Streams::IRandomAccessStream stream{ co_await destFile.OpenAsync(FileAccessMode::ReadWrite) };
+
+	if (append)
+	{
+		stream.Seek(UINT64_MAX);
+	}
+	co_await stream.WriteAsync(buffer);
+	promise.Resolve(buffer.Length());
+
 	co_return;
+}
+catch (...)
+{
+	promise.Reject("Failed to write");
 }
 
 

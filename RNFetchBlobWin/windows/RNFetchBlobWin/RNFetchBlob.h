@@ -21,7 +21,7 @@ public:
 	REACT_METHOD(createFile);
 	winrt::fire_and_forget createFile(
 		std::string path,
-		std::string content,
+		std::wstring content,
 		std::string encoding,
 		winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept;
 
@@ -37,6 +37,7 @@ public:
 	winrt::fire_and_forget writeFile(
 		std::string path,
 		std::string encoding,
+		std::wstring data,
 		bool append,
 		winrt::Microsoft::ReactNative::ReactPromise<int> promise) noexcept;
 
@@ -45,7 +46,7 @@ public:
 		std::string path,
 		winrt::Microsoft::ReactNative::JSValueArray dataArray,
 		bool append,
-		winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept;
+		winrt::Microsoft::ReactNative::ReactPromise<int> promise) noexcept;
 
 
 	// writeStream
