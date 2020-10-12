@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "RNFetchBlob.h"
-
 #include <windows.h>
 #include <winrt/Windows.Security.Cryptography.h>
 #include <winrt/Windows.Security.Cryptography.Core.h>
@@ -226,7 +225,6 @@ try
 	{
 		data.push_back(var.AsInt8());
 	}
-
 	Streams::IBuffer buffer{ CryptographicBuffer::CreateFromByteArray(data) };
 
 	winrt::hstring destDirectoryPath, destFileName;
@@ -259,11 +257,77 @@ catch (...)
 
 
 // writeStream
+winrt::fire_and_forget RNFetchBlob::writeStream(
+	std::string path,
+	std::string encoding,
+	bool append,
+	std::function<void(std::string, std::string, std::string)> callback) noexcept
+try
+{
+	winrt::hstring directoryPath, fileName;
+	splitPath(path, directoryPath, fileName);
+	StorageFolder folder{ co_await StorageFolder::GetFolderFromPathAsync(directoryPath) };
+	StorageFile file{ co_await folder.GetFileAsync(fileName) };
+
+	Streams::IRandomAccessStream stream{ co_await file.OpenAsync(FileAccessMode::ReadWrite) };
+	if (append)
+	{
+		stream.Seek(UINT64_MAX);
+	}
+	EncodingOptions encodingOption;
+	if (encoding.compare("utf8"))
+	{
+		encodingOption = EncodingOptions::UTF8;
+	}
+	else if (encoding.compare("base64"))
+	{
+		encodingOption = EncodingOptions::BASE64;
+	}
+	else if (encoding.compare("ascii"))
+	{
+		encodingOption = EncodingOptions::ASCII;
+	}
+	else
+	{
+		co_return;
+	}
+
+	// Define the length, in bytes, of the buffer.
+	uint32_t length = 128;
+	// Generate random data and copy it to a buffer.
+	IBuffer buffer = Cryptography::CryptographicBuffer::GenerateRandom(length);
+	// Encode the buffer to a hexadecimal string (for display).
+	std::string stringId = winrt::to_string(Cryptography::CryptographicBuffer::EncodeToHexString(buffer));
+
+	RNFetchBlobStream streamInstance{ stream, append, encodingOption };
 
 
+
+}
+catch (const hresult_error& ex)
+{
+	callback("EUNSPECIFIED", "Failed to create write stream at path `" + path + "`; " + winrt::to_string(ex.message().c_str()), "");
+}
+
+
+// writeChunk
+void RNFetchBlob::writeChunk(
+	std::string streamId,
+	std::string data,
+	std::function<void(std::string)> callback) noexcept
+{
+}
 
 // readStream
+void RNFetchBlob::readStream(
+	std::string path,
+	std::string encoding,
+	int bufferSize,
+	int tick,
+	const std::string streamId) noexcept
+{
 
+}
 
 
 // mkdir - Implemented, not tested
@@ -638,7 +702,6 @@ catch (const hresult_error& ex)
 }
 
 
-
 // df - Implemented, not tested
 winrt::fire_and_forget RNFetchBlob::df(
 	std::function<void(std::string, winrt::Microsoft::ReactNative::JSValueObject&)> callback) noexcept
@@ -658,11 +721,131 @@ catch (...)
 	callback("Failed to get storage usage.", emptyObject);
 }
 
+
+winrt::fire_and_forget RNFetchBlob::slice(
+	std::string src,
+	std::string dest,
+	uint32_t start,
+	uint32_t end,
+	winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept
+try
+{
+	winrt::hstring srcDirectoryPath, srcFileName, destDirectoryPath, destFileName;
+	splitPath(src, srcDirectoryPath, srcFileName);
+	splitPath(src, destDirectoryPath, destFileName);
+
+	StorageFolder srcFolder{ co_await StorageFolder::GetFolderFromPathAsync(srcDirectoryPath) };
+	StorageFolder destFolder{ co_await StorageFolder::GetFolderFromPathAsync(destDirectoryPath) };
+
+	StorageFile srcFile{ co_await srcFolder.GetFileAsync(srcFileName) };
+	StorageFile destFile{ co_await destFolder.CreateFileAsync(destFileName, CreationCollisionOption::OpenIfExists) };
+
+	uint32_t length{ end - start };
+	Streams::IBuffer buffer;
+	Streams::IRandomAccessStream stream{ co_await srcFile.OpenAsync(FileAccessMode::Read) };
+	stream.Seek(start);
+	stream.ReadAsync(buffer, length, Streams::InputStreamOptions::None);
+	co_await FileIO::WriteBufferAsync(destFile, buffer);
+
+	promise.Resolve(dest);
+}
+catch (...)
+{
+	promise.Reject("Unable to slice file");
+}
+
+
+void RNFetchBlob::fetchBlob(
+	winrt::Microsoft::ReactNative::JSValueObject options,
+	std::string taskId,
+	std::string method,
+	std::string url,
+	winrt::Microsoft::ReactNative::JSValueObject headers,
+	std::string body,
+	std::function<void(std::string)> callback) noexcept
+{
+
+}
+
+void RNFetchBlob::fetchBlobForm(
+	winrt::Microsoft::ReactNative::JSValueObject options,
+	std::string taskId,
+	std::string method,
+	std::string url,
+	winrt::Microsoft::ReactNative::JSValueObject headers,
+	winrt::Microsoft::ReactNative::JSValueArray body,
+	std::function<void(std::string)> callback) noexcept
+{
+	
+}
+
+void RNFetchBlob::enableProgressReport(
+	std::string taskId,
+	int interval,
+	int count) noexcept
+{
+}
+
+// enableUploadProgressReport
+void RNFetchBlob::enableUploadProgressReport(
+	std::string taskId,
+	int interval,
+	int count) noexcept
+{
+}
+
+// cancelRequest
+void RNFetchBlob::cancelRequest(
+	std::string taskId,
+	std::function<void(std::string)> callback) noexcept
+{
+}
+
+void RNFetchBlob::removeSession(
+	winrt::Microsoft::ReactNative::JSValueObject paths,
+	std::function<void(std::string)> callback) noexcept
+{
+
+}
+
+void RNFetchBlob::closeStream(
+	std::string streamId,
+	std::function<void(std::string)> callback) noexcept
+{
+
+}
+
+
 void RNFetchBlob::splitPath(const std::string& fullPath, winrt::hstring& directoryPath, winrt::hstring& fileName) noexcept
 {
-	std::filesystem::path path(fullPath);
+	std::filesystem::path path{ fullPath };
 	path.make_preferred();
 
 	directoryPath = path.has_parent_path() ? winrt::to_hstring(path.parent_path().c_str()) : L"";
 	fileName = path.has_filename() ? winrt::to_hstring(path.filename().c_str()) : L"";
 }
+
+
+
+RNFetchBlobStream::RNFetchBlobStream(Streams::IRandomAccessStream & _streamInstance, bool _append, EncodingOptions _encoding) noexcept
+	: streamInstance{ std::move(_streamInstance) }
+	, append{ _append }
+	, encoding{ _encoding }
+{
+}
+
+
+void RNFetchBlobStreamMap::Add(StreamId streamId, RNFetchBlobStream streamContainer) noexcept
+{
+	m_streamMap.try_emplace(streamId, streamContainer);
+}
+RNFetchBlobStream& RNFetchBlobStreamMap::Get(StreamId streamId) noexcept
+{
+	auto iter{ m_streamMap.find(streamId) };
+	return iter->second;
+}
+void RNFetchBlobStreamMap::Remove(StreamId streamId) noexcept
+{
+	m_streamMap.extract(streamId);
+}
+

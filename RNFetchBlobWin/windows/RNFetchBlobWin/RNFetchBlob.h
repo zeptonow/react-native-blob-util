@@ -3,9 +3,38 @@
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Security.Cryptography.h>
 #include <winrt/Windows.Security.Cryptography.Core.h>
+#include <mutex>
 
 namespace Cryptography = winrt::Windows::Security::Cryptography;
 namespace CryptographyCore = winrt::Windows::Security::Cryptography::Core;
+
+enum struct EncodingOptions { UTF8 , BASE64, ASCII, URI};
+
+struct RNFetchBlobStream
+{
+public:
+	RNFetchBlobStream::RNFetchBlobStream(winrt::Windows::Storage::Streams::IRandomAccessStream& _streamInstance, bool _append, EncodingOptions _encoding) noexcept;
+
+	winrt::Windows::Storage::Streams::IRandomAccessStream streamInstance;
+	const bool append;
+	const EncodingOptions encoding;
+};
+
+struct RNFetchBlobStreamMap
+{
+public:
+	using StreamId = std::string;
+	RNFetchBlobStreamMap() = default;
+	~RNFetchBlobStreamMap() = default;
+	void Add(StreamId streamId, RNFetchBlobStream streamContainer) noexcept;
+	RNFetchBlobStream& Get(StreamId streamId) noexcept;
+	void Remove(StreamId streamId) noexcept;
+
+private:
+	std::mutex m_mutex;
+	std::map<StreamId, RNFetchBlobStream> m_streamMap;
+};
+
 
 REACT_MODULE(RNFetchBlob, L"RNFetchBlob");
 struct RNFetchBlob
@@ -31,7 +60,7 @@ public:
 		winrt::Microsoft::ReactNative::JSValueArray dataArray,
 		winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept;
 
-	
+
 	// writeFile
 	REACT_METHOD(writeFile);
 	winrt::fire_and_forget writeFile(
@@ -48,13 +77,29 @@ public:
 		bool append,
 		winrt::Microsoft::ReactNative::ReactPromise<int> promise) noexcept;
 
-
 	// writeStream
+	REACT_METHOD(writeStream);
+	winrt::fire_and_forget RNFetchBlob::writeStream(
+		std::string path,
+		std::string encoding,
+		bool append,
+		std::function<void(std::string, std::string, std::string)> callback) noexcept;
 
-
+	// writeChunk
+	REACT_METHOD(writeChunk);
+	void RNFetchBlob::writeChunk(
+		std::string streamId,
+		std::string data,
+		std::function<void(std::string)> callback) noexcept;
 
 	// readStream
-
+	REACT_METHOD(readStream);
+	void RNFetchBlob::readStream(
+		std::string path,
+		std::string encoding,
+		int bufferSize,
+		int tick,
+		const std::string streamId) noexcept;
 
 
 	// mkdir
@@ -78,7 +123,7 @@ public:
 		std::string path,
 		std::string algorithm,
 		winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept;
-	
+
 	// ls
 	REACT_METHOD(ls);
 	winrt::fire_and_forget ls(
@@ -142,8 +187,64 @@ public:
 	winrt::fire_and_forget df(
 		std::function<void(std::string, winrt::Microsoft::ReactNative::JSValueObject&)> callback) noexcept;
 
+	REACT_METHOD(slice);
+	winrt::fire_and_forget RNFetchBlob::slice(
+		std::string src,
+		std::string dest,
+		uint32_t start,
+		uint32_t end,
+		winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept;
 
-// Helper methods
+	REACT_METHOD(fetchBlob);
+	void fetchBlob(
+		winrt::Microsoft::ReactNative::JSValueObject options,
+		std::string taskId,
+		std::string method,
+		std::string url,
+		winrt::Microsoft::ReactNative::JSValueObject headers,
+		std::string body,
+		std::function<void(std::string)> callback) noexcept;
+
+	REACT_METHOD(fetchBlobForm);
+	void fetchBlobForm(
+		winrt::Microsoft::ReactNative::JSValueObject options,
+		std::string taskId,
+		std::string method,
+		std::string url,
+		winrt::Microsoft::ReactNative::JSValueObject headers,
+		winrt::Microsoft::ReactNative::JSValueArray body,
+		std::function<void(std::string)> callback) noexcept;
+
+	REACT_METHOD(enableProgressReport);
+	void enableProgressReport(
+		std::string taskId,
+		int interval,
+		int count) noexcept;
+
+	// enableUploadProgressReport
+	REACT_METHOD(enableUploadProgressReport);
+	void enableUploadProgressReport(
+		std::string taskId,
+		int interval,
+		int count) noexcept;
+
+	// cancelRequest
+	REACT_METHOD(cancelRequest);
+	void cancelRequest(
+		std::string taskId,
+		std::function<void(std::string)> callback) noexcept;
+
+	REACT_METHOD(removeSession);
+	void removeSession(
+		winrt::Microsoft::ReactNative::JSValueObject paths,
+		std::function<void(std::string)> callback) noexcept;
+
+	REACT_METHOD(closeStream);
+	void closeStream(
+		std::string streamId,
+		std::function<void(std::string)> callback) noexcept;
+
+	// Helper methods
 private:
 	constexpr static int64_t UNIX_EPOCH_IN_WINRT_SECONDS = 11644473600;
 
