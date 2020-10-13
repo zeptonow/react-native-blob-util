@@ -8,39 +8,25 @@
 namespace Cryptography = winrt::Windows::Security::Cryptography;
 namespace CryptographyCore = winrt::Windows::Security::Cryptography::Core;
 
-enum struct EncodingOptions { UTF8 , BASE64, ASCII, URI};
+enum struct EncodingOptions { UTF8 , BASE64, ASCII, URI };
 
 struct RNFetchBlobStream
 {
 public:
-	RNFetchBlobStream::RNFetchBlobStream(winrt::Windows::Storage::Streams::IRandomAccessStream& _streamInstance, bool _append, EncodingOptions _encoding) noexcept;
-
+	RNFetchBlobStream::RNFetchBlobStream(winrt::Windows::Storage::Streams::IRandomAccessStream& _streamInstance, EncodingOptions _encoding) noexcept;
 	winrt::Windows::Storage::Streams::IRandomAccessStream streamInstance;
-	const bool append;
 	const EncodingOptions encoding;
-};
-
-struct RNFetchBlobStreamMap
-{
-public:
-	using StreamId = std::string;
-	RNFetchBlobStreamMap() = default;
-	~RNFetchBlobStreamMap() = default;
-	void Add(StreamId streamId, RNFetchBlobStream streamContainer) noexcept;
-	RNFetchBlobStream& Get(StreamId streamId) noexcept;
-	void Remove(StreamId streamId) noexcept;
-
-private:
-	std::mutex m_mutex;
-	std::map<StreamId, RNFetchBlobStream> m_streamMap;
 };
 
 
 REACT_MODULE(RNFetchBlob, L"RNFetchBlob");
 struct RNFetchBlob
 {
-
 public:
+	using StreamId = std::string;
+
+	REACT_INIT(Initialize);
+	void RNFetchBlob::Initialize(winrt::Microsoft::ReactNative::ReactContext const& reactContext) noexcept;
 
 	REACT_CONSTANT_PROVIDER(ConstantsViaConstantsProvider);
 	void RNFetchBlob::ConstantsViaConstantsProvider(
@@ -87,18 +73,24 @@ public:
 
 	// writeChunk
 	REACT_METHOD(writeChunk);
-	void RNFetchBlob::writeChunk(
+	winrt::fire_and_forget RNFetchBlob::writeChunk(
 		std::string streamId,
-		std::string data,
+		std::wstring data,
+		std::function<void(std::string)> callback) noexcept;
+
+	REACT_METHOD(writeChunkArray);
+	winrt::fire_and_forget RNFetchBlob::writeChunkArray(
+		std::string streamId,
+		winrt::Microsoft::ReactNative::JSValueArray dataArray,
 		std::function<void(std::string)> callback) noexcept;
 
 	// readStream
 	REACT_METHOD(readStream);
-	void RNFetchBlob::readStream(
+	winrt::fire_and_forget RNFetchBlob::readStream(
 		std::string path,
 		std::string encoding,
-		int bufferSize,
-		int tick,
+		uint32_t bufferSize,
+		uint64_t tick,
 		const std::string streamId) noexcept;
 
 
@@ -247,6 +239,9 @@ public:
 	// Helper methods
 private:
 	constexpr static int64_t UNIX_EPOCH_IN_WINRT_SECONDS = 11644473600;
+
+	std::map<StreamId, RNFetchBlobStream> m_streamMap;
+	winrt::Microsoft::ReactNative::ReactContext m_reactContext;
 
 	const std::map<std::string, std::function<CryptographyCore::HashAlgorithmProvider()>> availableHashes{
 		{"md5", []() { return CryptographyCore::HashAlgorithmProvider::OpenAlgorithm(CryptographyCore::HashAlgorithmNames::Md5()); } },

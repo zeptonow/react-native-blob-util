@@ -18,6 +18,11 @@ using namespace winrt::Windows::Security::Cryptography;
 using namespace winrt::Windows::Security::Cryptography::Core;
 
 
+void RNFetchBlob::Initialize(winrt::Microsoft::ReactNative::ReactContext const& reactContext) noexcept
+{
+	m_reactContext = reactContext;
+}
+
 //
 // RNFS implementations
 //
@@ -297,36 +302,162 @@ try
 	// Generate random data and copy it to a buffer.
 	IBuffer buffer = Cryptography::CryptographicBuffer::GenerateRandom(length);
 	// Encode the buffer to a hexadecimal string (for display).
-	std::string stringId = winrt::to_string(Cryptography::CryptographicBuffer::EncodeToHexString(buffer));
+	std::string streamId = winrt::to_string(Cryptography::CryptographicBuffer::EncodeToHexString(buffer));
 
-	RNFetchBlobStream streamInstance{ stream, append, encodingOption };
+	RNFetchBlobStream streamInstance{ stream, encodingOption };
+	m_streamMap.try_emplace(streamId, streamInstance);
 
-
-
+	callback("","",streamId);
 }
 catch (const hresult_error& ex)
 {
-	callback("EUNSPECIFIED", "Failed to create write stream at path `" + path + "`; " + winrt::to_string(ex.message().c_str()), "");
+	callback("EUNSPECIFIED", "Failed to create write stream at path '" + path + "'; " + winrt::to_string(ex.message().c_str()), "");
 }
 
 
 // writeChunk
-void RNFetchBlob::writeChunk(
+winrt::fire_and_forget RNFetchBlob::writeChunk(
 	std::string streamId,
-	std::string data,
+	std::wstring data,
 	std::function<void(std::string)> callback) noexcept
+try
 {
+	auto stream{ m_streamMap.find(streamId)->second };
+	Streams::IBuffer buffer;
+	if (stream.encoding == EncodingOptions::UTF8)
+	{
+		buffer = Cryptography::CryptographicBuffer::ConvertStringToBinary(data, BinaryStringEncoding::Utf8);
+	}
+	else if (stream.encoding == EncodingOptions::BASE64)
+	{
+		buffer = Cryptography::CryptographicBuffer::DecodeFromBase64String(data);
+	}
+	co_await stream.streamInstance.ReadAsync(buffer, buffer.Length(), Streams::InputStreamOptions::None);
+	callback("");
+}
+catch (const hresult_error& ex)
+{
+	callback(winrt::to_string(ex.message().c_str()));
 }
 
-// readStream
-void RNFetchBlob::readStream(
+winrt::fire_and_forget RNFetchBlob::writeChunkArray(
+	std::string streamId,
+	winrt::Microsoft::ReactNative::JSValueArray dataArray,
+	std::function<void(std::string)> callback) noexcept
+try
+{
+	auto stream{ m_streamMap.find(streamId)->second };
+	std::vector<byte> data;
+	data.reserve(dataArray.size());
+	for (auto& var : dataArray)
+	{
+		data.push_back(var.AsInt8());
+	}
+	Streams::IBuffer buffer{ CryptographicBuffer::CreateFromByteArray(data) };
+
+	co_await stream.streamInstance.ReadAsync(buffer, buffer.Length(), Streams::InputStreamOptions::None);
+	callback("");
+}
+catch (const hresult_error& ex)
+{
+	callback(winrt::to_string(ex.message().c_str()));
+}
+
+// readStream - no promises, callbacks, only event emission
+winrt::fire_and_forget RNFetchBlob::readStream(
 	std::string path,
 	std::string encoding,
-	int bufferSize,
-	int tick,
+	uint32_t bufferSize,
+	uint64_t tick,
 	const std::string streamId) noexcept
+try
 {
+	EncodingOptions usedEncoding;
+	if (encoding.compare("utf8"))
+	{
+		usedEncoding = EncodingOptions::UTF8;
+	}
+	else if (encoding.compare("base64"))
+	{
+		usedEncoding = EncodingOptions::BASE64;
+	}
+	else if (encoding.compare("ascii"))
+	{
+		usedEncoding = EncodingOptions::ASCII;
+	}
+	else
+	{
+		//Wrong encoding yo
 
+		co_return;
+	}
+
+	uint32_t chunkSize = usedEncoding == EncodingOptions::BASE64 ? 4095 : 4096;
+	if (bufferSize > 0)
+	{
+		chunkSize = bufferSize;
+	}
+
+	winrt::hstring directoryPath, fileName;
+	splitPath(path, directoryPath, fileName);
+	StorageFolder folder{ co_await StorageFolder::GetFolderFromPathAsync(directoryPath) };
+	StorageFile file{ co_await folder.GetFileAsync(fileName) };
+
+	Streams::IRandomAccessStream stream{ co_await file.OpenAsync(FileAccessMode::Read) };
+	Buffer buffer{ chunkSize };
+	const TimeSpan time{ tick };
+	IAsyncAction timer;
+
+	for (;;)
+	{
+		auto readBuffer = co_await stream.ReadAsync(buffer, buffer.Capacity(), InputStreamOptions::None);
+		if (readBuffer.Length() == 0)
+		{
+			break;
+		}
+		if (usedEncoding == EncodingOptions::BASE64)
+		{
+			std::wstring base64Content{ Cryptography::CryptographicBuffer::EncodeToBase64String(readBuffer) };
+			m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", streamId,
+				winrt::Microsoft::ReactNative::JSValueObject{
+					{"data", base64Content},
+				});
+		}
+		else
+		{
+			std::wstring utf8Content{ Cryptography::CryptographicBuffer::ConvertBinaryToString(BinaryStringEncoding::Utf8, readBuffer) };
+			if (usedEncoding == EncodingOptions::ASCII)
+			{
+				std::string asciiContent{ winrt::to_string(utf8Content) };
+				std::wstring asciiResult{ winrt::to_hstring(asciiContent) };
+				// emit ascii content
+				m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", streamId,
+					winrt::Microsoft::ReactNative::JSValueObject{
+						{"data", asciiResult},
+					});
+			}
+			else
+			{
+				//emit utf8 content
+				m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", streamId,
+					winrt::Microsoft::ReactNative::JSValueObject{
+						{"data", utf8Content},
+					});
+			}
+		}
+		// sleep
+		if (tick > 0)
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(tick));
+		}
+	}
+}
+catch (const hresult_error& ex)
+{
+	m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"DownloadBegin",
+		winrt::Microsoft::ReactNative::JSValueObject{
+			{streamId, L"help"},
+		});
 }
 
 
@@ -811,6 +942,13 @@ void RNFetchBlob::removeSession(
 void RNFetchBlob::closeStream(
 	std::string streamId,
 	std::function<void(std::string)> callback) noexcept
+try
+{
+	auto stream{ m_streamMap.find(streamId)->second };
+	stream.streamInstance.Close();
+	m_streamMap.extract(streamId);
+}
+catch (...)
 {
 
 }
@@ -827,25 +965,9 @@ void RNFetchBlob::splitPath(const std::string& fullPath, winrt::hstring& directo
 
 
 
-RNFetchBlobStream::RNFetchBlobStream(Streams::IRandomAccessStream & _streamInstance, bool _append, EncodingOptions _encoding) noexcept
+RNFetchBlobStream::RNFetchBlobStream(Streams::IRandomAccessStream & _streamInstance, EncodingOptions _encoding) noexcept
 	: streamInstance{ std::move(_streamInstance) }
-	, append{ _append }
 	, encoding{ _encoding }
 {
-}
-
-
-void RNFetchBlobStreamMap::Add(StreamId streamId, RNFetchBlobStream streamContainer) noexcept
-{
-	m_streamMap.try_emplace(streamId, streamContainer);
-}
-RNFetchBlobStream& RNFetchBlobStreamMap::Get(StreamId streamId) noexcept
-{
-	auto iter{ m_streamMap.find(streamId) };
-	return iter->second;
-}
-void RNFetchBlobStreamMap::Remove(StreamId streamId) noexcept
-{
-	m_streamMap.extract(streamId);
 }
 
