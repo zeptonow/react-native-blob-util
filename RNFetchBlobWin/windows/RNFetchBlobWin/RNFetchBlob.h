@@ -254,9 +254,4 @@ private:
 	void splitPath(const std::string& fullPath,
 		winrt::hstring& directoryPath,
 		winrt::hstring& fileName) noexcept;
-
-	//void splitPath(const winrt::hstring& fullPath,
-	//	winrt::hstring& directoryPath,
-	//	winrt::hstring& folderName) noexcept;
-
 };

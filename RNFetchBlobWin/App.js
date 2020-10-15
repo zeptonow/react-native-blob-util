@@ -24,6 +24,8 @@ import {
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 
+import RNFetchBlob from 'rn-fetch-blob';
+
 const App: () => React$Node = () => {
   return (
     <>

@@ -28,39 +28,26 @@ void RNFetchBlob::Initialize(winrt::Microsoft::ReactNative::ReactContext const& 
 //
 void RNFetchBlob::ConstantsViaConstantsProvider(winrt::Microsoft::ReactNative::ReactConstantProvider& constants) noexcept
 {
-	// RNFS.MainBundlePath
-	//constants.Add(L"RNFSMainBundlePath", to_string(Package::Current().InstalledLocation().Path()));
-
-	// RNFS.CachesDirectoryPath
-	//constants.Add(L"RNFSCachesDirectoryPath", to_string(ApplicationData::Current().LocalCacheFolder().Path()));
-
-	// RNFS.ExternalCachesDirectoryPath - NULL in iOS (No equivalent in Windows)
-
-	// RNFS.DocumentDirectoryPath
-	//constants.Add(L"RNFSDocumentDirectoryPath", to_string(ApplicationData::Current().LocalFolder().Path()));
-
-	// RNFS.DownloadDirectoryPath - IMPLEMENT for convenience? (absent in iOS and deprecated in Android)
-	//constants.Add(L"RNFSDownloadDirectoryPath", UserDataPaths::GetDefault().Downloads());
-
-	// RNFS.ExternalDirectoryPath - NULL in iOS (Pending use case in Windows and deprecated in Android)
-	//constants.Add(L"RNFSExternalDirectoryPath", UserDataPaths::GetDefault().Documents());
-
-	// RNFS.ExternalStorageDirectoryPath - NULL in iOS (Pending use case in Windows and deprecated in Android)
-
-	// RNFS.TemporaryDirectoryPath
-	//constants.Add(L"RNFSTemporaryDirectoryPath", to_string(ApplicationData::Current().TemporaryFolder().Path()));
-
-	// RNFS.LibraryDirectoryPath - NULL in Android (No equivalent in Windows)
-
-	// RNFS.PicturesDirectoryPath - IMPLEMENT for convenience? (absent in iOS though and deprecated in Android)
-	//constants.Add(L"RNFSPicturesDirectoryPath", UserDataPaths::GetDefault().Pictures());
-
-	// RNFS.FileProtectionKeys - NULL in Android (No equivalent in Windows)
-
-	// TODO: Check to see if these can be accessed after package created
-	// Needed for synchronization across Windows devices
-	///constants.Add(L"RNFSRoamingDirectoryPath", to_string(ApplicationData::Current().RoamingFolder().Path()));
-
+	// RNFetchBlob.DocumentDir
+	constants.Add(L"DocumentDir", to_string(ApplicationData::Current().LocalFolder().Path()));
+	
+	// RNFetchBlob.CacheDir
+	constants.Add(L"CacheDir", to_string(ApplicationData::Current().LocalCacheFolder().Path()));
+	
+	// RNFetchBlob.PictureDir
+	constants.Add(L"PictureDir", UserDataPaths::GetDefault().Pictures());
+	
+	// RNFetchBlob.MusicDir
+	constants.Add(L"MusicDir", UserDataPaths::GetDefault().Music());
+	
+	// RNFetchBlob.MovieDir
+	constants.Add(L"MusicDir", UserDataPaths::GetDefault().Videos());
+	
+	// RNFetchBlob.DownloadDirectoryPath - IMPLEMENT for convenience? (absent in iOS and deprecated in Android)
+	constants.Add(L"DownloadDir", UserDataPaths::GetDefault().Downloads());
+	
+	// RNFetchBlob.MainBundleDir
+	constants.Add(L"MainBundleDir", to_string(Package::Current().InstalledLocation().Path()));
 }
 
 // createFile
@@ -417,23 +404,28 @@ try
 		}
 		if (usedEncoding == EncodingOptions::BASE64)
 		{
-			std::wstring base64Content{ Cryptography::CryptographicBuffer::EncodeToBase64String(readBuffer) };
+			// TODO: Investigate returning wstrings as parameters
+			//std::wstring base64Content{ Cryptography::CryptographicBuffer::EncodeToBase64String(readBuffer) };
+			std::string base64Content{ winrt::to_string(Cryptography::CryptographicBuffer::EncodeToBase64String(readBuffer)) };
 			m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", streamId,
 				winrt::Microsoft::ReactNative::JSValueObject{
-					{"data", base64Content},
+					{"data", "base64Content"},
 				});
 		}
 		else
 		{
-			std::wstring utf8Content{ Cryptography::CryptographicBuffer::ConvertBinaryToString(BinaryStringEncoding::Utf8, readBuffer) };
+			// TODO: Investigate returning wstrings as parameters
+			std::string utf8Content{ winrt::to_string(Cryptography::CryptographicBuffer::ConvertBinaryToString(BinaryStringEncoding::Utf8, readBuffer)) };
 			if (usedEncoding == EncodingOptions::ASCII)
 			{
-				std::string asciiContent{ winrt::to_string(utf8Content) };
-				std::wstring asciiResult{ winrt::to_hstring(asciiContent) };
+
+				//std::string asciiContent{ winrt::to_string(utf8Content) };
+				std::string asciiContent{ utf8Content };
+				//std::wstring asciiResult{ winrt::to_hstring(asciiContent) };
 				// emit ascii content
 				m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", streamId,
 					winrt::Microsoft::ReactNative::JSValueObject{
-						{"data", asciiResult},
+						{"data", asciiContent},
 					});
 			}
 			else
@@ -456,7 +448,7 @@ catch (const hresult_error& ex)
 {
 	m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"DownloadBegin",
 		winrt::Microsoft::ReactNative::JSValueObject{
-			{streamId, L"help"},
+			{streamId, winrt::to_string(ex.message()).c_str()},
 		});
 }
 
