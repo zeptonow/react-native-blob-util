@@ -30,22 +30,22 @@ void RNFetchBlob::ConstantsViaConstantsProvider(winrt::Microsoft::ReactNative::R
 {
 	// RNFetchBlob.DocumentDir
 	constants.Add(L"DocumentDir", to_string(ApplicationData::Current().LocalFolder().Path()));
-	
+
 	// RNFetchBlob.CacheDir
 	constants.Add(L"CacheDir", to_string(ApplicationData::Current().LocalCacheFolder().Path()));
-	
+
 	// RNFetchBlob.PictureDir
 	constants.Add(L"PictureDir", UserDataPaths::GetDefault().Pictures());
-	
+
 	// RNFetchBlob.MusicDir
 	constants.Add(L"MusicDir", UserDataPaths::GetDefault().Music());
-	
+
 	// RNFetchBlob.MovieDir
 	constants.Add(L"MusicDir", UserDataPaths::GetDefault().Videos());
-	
+
 	// RNFetchBlob.DownloadDirectoryPath - IMPLEMENT for convenience? (absent in iOS and deprecated in Android)
 	constants.Add(L"DownloadDir", UserDataPaths::GetDefault().Downloads());
-	
+
 	// RNFetchBlob.MainBundleDir
 	constants.Add(L"MainBundleDir", to_string(Package::Current().InstalledLocation().Path()));
 }
@@ -56,7 +56,7 @@ winrt::fire_and_forget RNFetchBlob::createFile(
 	std::wstring content,
 	std::string encoding,
 	winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept
-try
+	try
 {
 	//if (encoding.compare("uri") == 0)
 	//{
@@ -105,7 +105,7 @@ winrt::fire_and_forget RNFetchBlob::createFileASCII(
 	std::string path,
 	winrt::Microsoft::ReactNative::JSValueArray dataArray,
 	winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept
-try
+	try
 {
 	std::vector<byte> data;
 	data.reserve(dataArray.size());
@@ -154,7 +154,7 @@ winrt::fire_and_forget RNFetchBlob::writeFile(
 	std::wstring data,
 	bool append,
 	winrt::Microsoft::ReactNative::ReactPromise<int> promise) noexcept
-try
+	try
 {
 	Streams::IBuffer buffer;
 	if (encoding.compare("utf8") == 0)
@@ -209,7 +209,7 @@ winrt::fire_and_forget RNFetchBlob::writeFileArray(
 	winrt::Microsoft::ReactNative::JSValueArray dataArray,
 	bool append,
 	winrt::Microsoft::ReactNative::ReactPromise<int> promise) noexcept
-try
+	try
 {
 	std::vector<byte> data;
 	data.reserve(dataArray.size());
@@ -254,7 +254,7 @@ winrt::fire_and_forget RNFetchBlob::writeStream(
 	std::string encoding,
 	bool append,
 	std::function<void(std::string, std::string, std::string)> callback) noexcept
-try
+	try
 {
 	winrt::hstring directoryPath, fileName;
 	splitPath(path, directoryPath, fileName);
@@ -294,7 +294,7 @@ try
 	RNFetchBlobStream streamInstance{ stream, encodingOption };
 	m_streamMap.try_emplace(streamId, streamInstance);
 
-	callback("","",streamId);
+	callback("", "", streamId);
 }
 catch (const hresult_error& ex)
 {
@@ -307,7 +307,7 @@ winrt::fire_and_forget RNFetchBlob::writeChunk(
 	std::string streamId,
 	std::wstring data,
 	std::function<void(std::string)> callback) noexcept
-try
+	try
 {
 	auto stream{ m_streamMap.find(streamId)->second };
 	Streams::IBuffer buffer;
@@ -331,7 +331,7 @@ winrt::fire_and_forget RNFetchBlob::writeChunkArray(
 	std::string streamId,
 	winrt::Microsoft::ReactNative::JSValueArray dataArray,
 	std::function<void(std::string)> callback) noexcept
-try
+	try
 {
 	auto stream{ m_streamMap.find(streamId)->second };
 	std::vector<byte> data;
@@ -357,7 +357,7 @@ winrt::fire_and_forget RNFetchBlob::readStream(
 	uint32_t bufferSize,
 	uint64_t tick,
 	const std::string streamId) noexcept
-try
+	try
 {
 	EncodingOptions usedEncoding;
 	if (encoding.compare("utf8"))
@@ -405,12 +405,16 @@ try
 		if (usedEncoding == EncodingOptions::BASE64)
 		{
 			// TODO: Investigate returning wstrings as parameters
+			winrt::hstring base64Content{ Cryptography::CryptographicBuffer::EncodeToBase64String(readBuffer) };
+			//std::string base64Content{ winrt::to_string(Cryptography::CryptographicBuffer::EncodeToBase64String(readBuffer)) };
 			//std::wstring base64Content{ Cryptography::CryptographicBuffer::EncodeToBase64String(readBuffer) };
-			std::string base64Content{ winrt::to_string(Cryptography::CryptographicBuffer::EncodeToBase64String(readBuffer)) };
-			m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", streamId,
-				winrt::Microsoft::ReactNative::JSValueObject{
-					{"data", "base64Content"},
-				});
+			m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", [&streamId, &base64Content](React::IJSValueWriter const& argWriter) {
+				WriteValue(argWriter, streamId);
+				argWriter.WriteObjectBegin();
+				React::WriteProperty(argWriter, "event", L"data");
+				React::WriteProperty(argWriter, "detail", base64Content);
+				argWriter.WriteObjectEnd();
+			});
 		}
 		else
 		{
@@ -457,7 +461,7 @@ catch (const hresult_error& ex)
 void RNFetchBlob::mkdir(
 	std::string path,
 	winrt::Microsoft::ReactNative::ReactPromise<bool> promise) noexcept
-try
+	try
 {
 	std::filesystem::path dirPath(path);
 	dirPath.make_preferred();
@@ -483,7 +487,7 @@ winrt::fire_and_forget RNFetchBlob::readFile(
 	std::string path,
 	std::string encoding,
 	winrt::Microsoft::ReactNative::ReactPromise<std::wstring> promise) noexcept
-try
+	try
 {
 	winrt::hstring directoryPath, fileName;
 	splitPath(path, directoryPath, fileName);
@@ -534,7 +538,7 @@ winrt::fire_and_forget RNFetchBlob::hash(
 	std::string path,
 	std::string algorithm,
 	winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept
-try
+	try
 {
 	// Note: SHA224 is not part of winrt 
 	if (algorithm.compare("sha224") == 0)
@@ -549,7 +553,7 @@ try
 	StorageFolder folder{ co_await StorageFolder::GetFolderFromPathAsync(directoryPath) };
 	StorageFile file{ co_await folder.GetFileAsync(fileName) };
 
-	auto search { availableHashes.find(algorithm) };
+	auto search{ availableHashes.find(algorithm) };
 	if (search == availableHashes.end())
 	{
 		promise.Reject(winrt::Microsoft::ReactNative::ReactError{ "Error", "Invalid hash algorithm " + algorithm });
@@ -591,7 +595,7 @@ try
 {
 	winrt::hstring directoryPath, fileName;
 	splitPath(path, directoryPath, fileName);
-	
+
 	StorageFolder targetDirectory{ co_await StorageFolder::GetFolderFromPathAsync(directoryPath) };
 
 	std::vector<std::string> results;
@@ -691,8 +695,8 @@ void RNFetchBlob::exists(
 {
 	std::filesystem::path fsPath(path);
 	bool doesExist{ std::filesystem::exists(fsPath) };
-	bool isDirectory{ doesExist ? std::filesystem::is_directory(fsPath) : false};
-	
+	bool isDirectory{ std::filesystem::is_directory(fsPath) };
+
 	callback(doesExist, isDirectory);
 }
 
@@ -701,7 +705,7 @@ void RNFetchBlob::exists(
 winrt::fire_and_forget RNFetchBlob::unlink(
 	std::string path,
 	std::function<void(std::string, bool)> callback) noexcept
-try
+	try
 {
 	if (std::filesystem::is_directory(path))
 	{
@@ -828,14 +832,14 @@ catch (const hresult_error& ex)
 // df - Implemented, not tested
 winrt::fire_and_forget RNFetchBlob::df(
 	std::function<void(std::string, winrt::Microsoft::ReactNative::JSValueObject&)> callback) noexcept
-try
+	try
 {
 	auto localFolder{ Windows::Storage::ApplicationData::Current().LocalFolder() };
 	auto properties{ co_await localFolder.Properties().RetrievePropertiesAsync({L"System.FreeSpace", L"System.Capacity"}) };
 
 	winrt::Microsoft::ReactNative::JSValueObject result;
-	result["freeSpace"] = unbox_value<uint64_t>(properties.Lookup(L"System.FreeSpace"));
-	result["totalSpace"] = unbox_value<uint64_t>(properties.Lookup(L"System.Capacity"));
+	result["free"] = unbox_value<uint64_t>(properties.Lookup(L"System.FreeSpace"));
+	result["total"] = unbox_value<uint64_t>(properties.Lookup(L"System.Capacity"));
 	callback("", result);
 }
 catch (...)
@@ -851,7 +855,7 @@ winrt::fire_and_forget RNFetchBlob::slice(
 	uint32_t start,
 	uint32_t end,
 	winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept
-try
+	try
 {
 	winrt::hstring srcDirectoryPath, srcFileName, destDirectoryPath, destFileName;
 	splitPath(src, srcDirectoryPath, srcFileName);
@@ -885,7 +889,7 @@ void RNFetchBlob::fetchBlob(
 	std::string url,
 	winrt::Microsoft::ReactNative::JSValueObject headers,
 	std::string body,
-	std::function<void(std::string)> callback) noexcept
+	std::function<void(std::string, std::string, std::string)> callback) noexcept
 {
 
 }
@@ -899,7 +903,7 @@ void RNFetchBlob::fetchBlobForm(
 	winrt::Microsoft::ReactNative::JSValueArray body,
 	std::function<void(std::string)> callback) noexcept
 {
-	
+
 }
 
 void RNFetchBlob::enableProgressReport(
@@ -934,7 +938,7 @@ void RNFetchBlob::removeSession(
 void RNFetchBlob::closeStream(
 	std::string streamId,
 	std::function<void(std::string)> callback) noexcept
-try
+	try
 {
 	auto stream{ m_streamMap.find(streamId)->second };
 	stream.streamInstance.Close();
@@ -957,7 +961,7 @@ void RNFetchBlob::splitPath(const std::string& fullPath, winrt::hstring& directo
 
 
 
-RNFetchBlobStream::RNFetchBlobStream(Streams::IRandomAccessStream & _streamInstance, EncodingOptions _encoding) noexcept
+RNFetchBlobStream::RNFetchBlobStream(Streams::IRandomAccessStream& _streamInstance, EncodingOptions _encoding) noexcept
 	: streamInstance{ std::move(_streamInstance) }
 	, encoding{ _encoding }
 {

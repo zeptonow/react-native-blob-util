@@ -195,7 +195,7 @@ public:
 		std::string url,
 		winrt::Microsoft::ReactNative::JSValueObject headers,
 		std::string body,
-		std::function<void(std::string)> callback) noexcept;
+		std::function<void(std::string, std::string, std::string)> callback) noexcept;
 
 	REACT_METHOD(fetchBlobForm);
 	void fetchBlobForm(
