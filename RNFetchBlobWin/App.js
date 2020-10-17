@@ -109,7 +109,7 @@ const App: () => React$Node = () => {
 
   // unlink()
   const unlinkCall = () => {
-    RNFetchBlob.fs.unlink(RNFetchBlob.fs.dirs.DocumentDir + '/' + existsParam)
+    RNFetchBlob.fs.unlink(RNFetchBlob.fs.dirs.DocumentDir + '/' + unlinkParam)
     .then(
       Alert.alert('file/directory successfully unlinked')
     )
