@@ -7,11 +7,11 @@
   IgnorableNamespaces="uap mp">
 
   <Identity
-    Name="f0f97f86-7678-420a-9b96-dfbedb29142c"
+    Name="cf7fc71c-3c45-4933-b6e1-d925ae04770b"
     Publisher="CN=andre"
     Version="1.0.0.0" />
 
-  <mp:PhoneIdentity PhoneProductId="f0f97f86-7678-420a-9b96-dfbedb29142c" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+  <mp:PhoneIdentity PhoneProductId="cf7fc71c-3c45-4933-b6e1-d925ae04770b" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
     <DisplayName>RNFetchBlobWin</DisplayName>

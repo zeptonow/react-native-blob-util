@@ -5556,10 +5556,10 @@ react-is@^16.12.0, react-is@^16.8.1, react-is@^16.8.4, react-is@^16.8.6:
   resolved "https://registry.yarnpkg.com/react-is/-/react-is-16.13.1.tgz#789729a4dc36de2999dc156dd6c1d9c18cea56a4"
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
 
-react-native-windows@^0.63.0-0:
-  version "0.63.5"
-  resolved "https://registry.yarnpkg.com/react-native-windows/-/react-native-windows-0.63.5.tgz#0a8e9634d2c5fbdce3876692ff89e5aa2a0aed91"
-  integrity sha512-nlqj358qwwY18IUfK5N6aLqFJ5w/hpB5kckSYrCsFmgjRvUlNgRX3t7RQOpVflXbbavJHClcFZYO3k7PW34bWQ==
+react-native-windows@0.63.0:
+  version "0.63.0"
+  resolved "https://registry.yarnpkg.com/react-native-windows/-/react-native-windows-0.63.0.tgz#640968f773af62b968c6398df08347c1663a8d16"
+  integrity sha512-+MgvzrhmZAdvDv0ytBsnfVc5aP503pn+dNWV8K1lv2/AmnxejWTJxfkOibrIPJOyxM2zkti9aKq32YciAzpfjQ==
   dependencies:
     "@babel/runtime" "^7.8.4"
     "@react-native-windows/cli" "0.63.0"
@@ -5581,10 +5581,10 @@ react-native-windows@^0.63.0-0:
     use-subscription "^1.0.0"
     whatwg-fetch "^3.0.0"
 
-react-native@0.63.2:
-  version "0.63.2"
-  resolved "https://registry.yarnpkg.com/react-native/-/react-native-0.63.2.tgz#eaebf3430577b37fbd66ef228a86b3408259ef8e"
-  integrity sha512-MkxHeJorUDzmQwKJrTfrFYMDRLyu9GSBpsFFMDX7X+HglVnaZi3CTzW2mRv1eIcazoseBOP2eJe+bnkyLl8Y2A==
+react-native@0.63.0:
+  version "0.63.0"
+  resolved "https://registry.yarnpkg.com/react-native/-/react-native-0.63.0.tgz#1444aa04c34b65ca1dce589db166bd112e982b96"
+  integrity sha512-486RaRKKw35+DgZwdbCUQJsjSRflG5JC4w5T9ZfKqUjlyDDQHgew2berQanYAFbgO4Qh/2mAvAMJe6EhUESufQ==
   dependencies:
     "@babel/runtime" "^7.0.0"
     "@react-native-community/cli" "^4.7.0"
@@ -5909,9 +5909,10 @@ rimraf@~2.2.6:
   resolved "https://registry.yarnpkg.com/rimraf/-/rimraf-2.2.8.tgz#e439be2aaee327321952730f99a8929e4fc50582"
   integrity sha1-5Dm+Kq7jJzIZUnMPmaiSnk/FBYI=
 
-"rn-fetch-blob@https://github.com/avmoroz/rn-fetch-blob.git#dev":
+rn-fetch-blob@^0.12.0:
   version "0.12.0"
-  resolved "https://github.com/avmoroz/rn-fetch-blob.git#e85404808a8d6954747b8f65935c8ee9e914bb5c"
+  resolved "https://registry.yarnpkg.com/rn-fetch-blob/-/rn-fetch-blob-0.12.0.tgz#ec610d2f9b3f1065556b58ab9c106eeb256f3cba"
+  integrity sha512-+QnR7AsJ14zqpVVUbzbtAjq0iI8c9tCg49tIoKO2ezjzRunN7YL6zFSFSWZm6d+mE/l9r+OeDM3jmb2tBb2WbA==
   dependencies:
     base-64 "0.1.0"
     glob "7.0.6"

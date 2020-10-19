@@ -8,7 +8,7 @@
 namespace Cryptography = winrt::Windows::Security::Cryptography;
 namespace CryptographyCore = winrt::Windows::Security::Cryptography::Core;
 
-enum struct EncodingOptions { UTF8 , BASE64, ASCII, URI };
+enum struct EncodingOptions { UTF8, BASE64, ASCII, URI };
 
 struct RNFetchBlobStream
 {
@@ -114,7 +114,7 @@ public:
 	winrt::fire_and_forget hash(
 		std::string path,
 		std::string algorithm,
-		winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept;
+		winrt::Microsoft::ReactNative::ReactPromise<std::wstring> promise) noexcept;
 
 	// ls
 	REACT_METHOD(ls);
@@ -157,7 +157,7 @@ public:
 	REACT_METHOD(lstat);
 	winrt::fire_and_forget lstat(
 		std::string path,
-		winrt::Microsoft::ReactNative::ReactPromise<winrt::Microsoft::ReactNative::JSValueArray> promise) noexcept;
+		std::function<void(std::string, winrt::Microsoft::ReactNative::JSValueArray&)> callback) noexcept;
 
 
 	// stat
@@ -252,6 +252,10 @@ private:
 	};
 
 	void splitPath(const std::string& fullPath,
+		winrt::hstring& directoryPath,
+		winrt::hstring& fileName) noexcept;
+
+	void splitPath(const std::wstring& fullPath,
 		winrt::hstring& directoryPath,
 		winrt::hstring& fileName) noexcept;
 };
