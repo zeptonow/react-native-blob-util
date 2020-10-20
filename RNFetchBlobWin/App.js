@@ -47,6 +47,13 @@ const App: () => React$Node = () => {
   const [hashPathParam, setHashPathParam] = useState('');
   const [hashAlgValue, setHashAlgValue] = useState('md5');
 
+  const [writeParam, setWriteParam] = useState('');
+  const [writeURIParam, setWriteURIParam] = useState('');
+  const [writeEncodeParam, setWriteEncodeParam] = useState('utf8');
+
+  const [writeStreamParam, setWriteStreamParam] = useState('');
+  const [writeEncodeStreamParam, setWriteStreamEncodeParam] = useState('utf8');
+
 // Methods ********************************************************************
   // exists()
   const existsCall = () => {
@@ -222,6 +229,109 @@ const App: () => React$Node = () => {
       console.log(hashAlgValue + ': ' + err);
     });
   }
+
+
+  // writeFile()
+  const writeFileCall = () => {
+    if(writeParam.length > 0) {
+      if(writeEncodeParam === 'uri') {
+        if(writeURIParam.length > 0) {
+          RNFetchBlob.fs.writeFile(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeParam, 
+            RNFetchBlob.fs.dirs.DocumentDir + '/' + writeURIParam,
+            writeEncodeParam);
+        }
+        else {
+          Alert.alert('uri path undefined');
+        }
+      }
+      else if(writeEncodeParam === 'ascii') {
+        RNFetchBlob.fs.writeFile(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeParam, [102,111,111], writeEncodeParam);
+      }
+      else {
+        RNFetchBlob.fs.writeFile(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeParam, 'foo', writeEncodeParam);
+      }
+    }
+  }
+
+  // appendFile()
+  const appendFileCall = () => {
+    if(writeParam.length > 0) {
+      if(writeEncodeParam === 'uri') {
+        if(writeURIParam.length > 0) {
+          RNFetchBlob.fs.appendFile(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeParam, 
+            RNFetchBlob.fs.dirs.DocumentDir + '/' + writeURIParam,
+            writeEncodeParam);
+        }
+        else {
+          Alert.alert('uri path undefined');
+        }
+      }
+      else if(writeEncodeParam === 'ascii') {
+        RNFetchBlob.fs.appendFile(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeParam, [102,111,111], writeEncodeParam);
+      }
+      else {
+        RNFetchBlob.fs.appendFile(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeParam, 'foo', writeEncodeParam);
+      }
+    }
+  }
+
+  const writeStreamCall = () => {
+    if(writeStreamParam.length > 0) {
+      if(writeEncodeStreamParam === 'base64') {
+        RNFetchBlob.fs.writeStream(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeStreamParam, writeEncodeStreamParam, false)
+        .then((stream) => {
+            stream.write('Zm9vIChXcml0ZSBCYXNlNjQpMQ==');
+            stream.write('Zm9vIChXcml0ZSBCYXNlNjQpMg==');
+            return stream.close();
+        });
+      }
+      else if(writeEncodeStreamParam=== 'ascii') {
+        RNFetchBlob.fs.writeStream(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeStreamParam, writeEncodeStreamParam, false)
+        .then((stream) => {
+            stream.write([102, 111, 111, 32, 40, 87, 114, 105, 116]);
+            stream.write([ 101, 32, 97, 115, 99, 105, 105, 41]);
+            return stream.close();
+        });
+      }
+      else {
+        RNFetchBlob.fs.writeStream(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeStreamParam, writeEncodeStreamParam, false)
+        .then((stream) => {
+            stream.write('foo (Write utf8)1');
+            stream.write('foo (Write utf8)2');
+            return stream.close();
+        });
+      }
+    }
+  }
+
+  const appendStreamCall = () => {
+    if(writeStreamParam.length > 0) {
+      if(writeEncodeStreamParam === 'base64') {
+        RNFetchBlob.fs.writeStream(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeStreamParam, writeEncodeStreamParam, true)
+        .then((stream) => {
+            stream.write('Zm9vIChBcHBlbmQgQmFzZTY0KTE=');
+            stream.write('Zm9vIChBcHBlbmQgQmFzZTY0KTI=');
+            return stream.close();
+        });
+      }
+      else if(writeEncodeStreamParam=== 'ascii') {
+        RNFetchBlob.fs.writeStream(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeStreamParam, writeEncodeStreamParam, true)
+        .then((stream) => {
+            stream.write([102, 111, 111, 32, 40]);
+            stream.write([65, 112, 112, 101, 110, 100, 32, 65, 83, 67, 73, 73, 41]);
+            return stream.close();
+        });
+      }
+      else {
+        RNFetchBlob.fs.writeStream(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeStreamParam, writeEncodeStreamParam, true)
+        .then((stream) => {
+            stream.write('foo (Append utf8)1');
+            stream.write('foo (Append utf8)2');
+            return stream.close();
+        });
+      }
+    }
+  } 
 
 // App ************************************************************************
   return (
@@ -503,6 +613,87 @@ const App: () => React$Node = () => {
               title="Hash File"
               color="#9a73ef"
               onPress={hashCall}
+            />
+            </View>
+          </View>
+          
+          <View style={styles.body}>
+            <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>
+              {"write - writeFile(), appendFile()"}
+            </Text>
+            <View style={styles.sectionDescription}>
+            <TextInput style = {styles.input}
+              placeholder = "Source path"
+              onChangeText={writeParam => setWriteParam(writeParam)}
+              placeholderTextColor = "#9a73ef"
+              autoCapitalize = "none"
+            />
+            <TextInput style = {styles.input}
+              placeholder = "Source path"
+              onChangeText={writeURIParam => setWriteURIParam(writeURIParam)}
+              placeholderTextColor = "#9a73ef"
+              autoCapitalize = "none"
+            />
+            <Picker
+                writeEncodeStreamParam={writeEncodeParam}
+                onChangeText={readPositionParam => setReadPositionParam(readPositionParam)}
+                style={{ height: 50, width: 150 }}
+                onValueChange={(itemValue, itemIndex) => setWriteEncodeParam(itemValue)}
+              >
+                <Picker.Item label="UTF8" value="utf8" />
+                <Picker.Item label="Base64" value="base64" />
+                <Picker.Item label="ASCII" value="ascii" />
+                <Picker.Item label="URI" value="uri" />
+              </Picker>
+            </View>
+            <Button
+              title="Write"
+              color="#9a73ef"
+              onPress={writeFileCall}
+            />
+            <Button
+              title="Append"
+              color="#9a73ef"
+              onPress={appendFileCall}
+            />
+            </View>
+          </View>
+
+          <View style={styles.body}>
+            <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>
+              {"WriteStream - writeStream()"}
+            </Text>
+            <View style={styles.sectionDescription}>
+            <TextInput style = {styles.input}
+              placeholder = "Source path"
+              onChangeText={writeStreamParam => setWriteStreamParam(writeStreamParam)}
+              placeholderTextColor = "#9a73ef"
+              autoCapitalize = "none"
+            />
+
+            <Picker
+                writeEncodeStreamParam={writeEncodeStreamParam}
+                onChangeText={readPositionParam => setReadPositionParam(readPositionParam)}
+                style={{ height: 50, width: 150 }}
+                onValueChange={(itemValue, itemIndex) => setWriteStreamEncodeParam(itemValue)}
+              >
+                <Picker.Item label="UTF8" value="utf8" />
+                <Picker.Item label="Base64" value="base64" />
+                <Picker.Item label="ASCII" value="ascii" />
+                <Picker.Item label="URI" value="uri" />
+              </Picker>
+            </View>
+            <Button
+              title="Write"
+              color="#9a73ef"
+              onPress={writeStreamCall}
+            />
+            <Button
+              title="Append"
+              color="#9a73ef"
+              onPress={appendStreamCall}
             />
             </View>
           </View>

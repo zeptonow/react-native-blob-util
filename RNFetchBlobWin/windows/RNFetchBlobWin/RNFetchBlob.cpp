@@ -201,9 +201,9 @@ try
 	else if (encoding.compare("uri") == 0)
 	{
 		winrt::hstring srcDirectoryPath, srcFileName;
-		splitPath(path, srcDirectoryPath, srcFileName);
+		splitPath(data, srcDirectoryPath, srcFileName);
 		StorageFolder srcFolder{ co_await StorageFolder::GetFolderFromPathAsync(srcDirectoryPath) };
-		StorageFile srcFile{ co_await StorageFile::GetFileFromPathAsync(srcFileName) };
+		StorageFile srcFile{ co_await srcFolder.GetFileAsync(srcFileName) };
 		buffer = co_await FileIO::ReadBufferAsync(srcFile);
 	}
 	else
@@ -287,28 +287,28 @@ winrt::fire_and_forget RNFetchBlob::writeStream(
 	std::string encoding,
 	bool append,
 	std::function<void(std::string, std::string, std::string)> callback) noexcept
-	try
+try
 {
 	winrt::hstring directoryPath, fileName;
 	splitPath(path, directoryPath, fileName);
 	StorageFolder folder{ co_await StorageFolder::GetFolderFromPathAsync(directoryPath) };
-	StorageFile file{ co_await folder.GetFileAsync(fileName) };
-
+	StorageFile file{ co_await folder.CreateFileAsync(fileName, CreationCollisionOption::OpenIfExists) };
+	std::string temp{encoding};
 	Streams::IRandomAccessStream stream{ co_await file.OpenAsync(FileAccessMode::ReadWrite) };
 	if (append)
 	{
-		stream.Seek(UINT64_MAX);
+		stream.Seek(stream.Size());
 	}
 	EncodingOptions encodingOption;
-	if (encoding.compare("utf8"))
+	if (encoding.compare("utf8") == 0)
 	{
 		encodingOption = EncodingOptions::UTF8;
 	}
-	else if (encoding.compare("base64"))
+	else if (encoding.compare("base64") == 0)
 	{
 		encodingOption = EncodingOptions::BASE64;
 	}
-	else if (encoding.compare("ascii"))
+	else if (encoding.compare("ascii") == 0)
 	{
 		encodingOption = EncodingOptions::ASCII;
 	}
@@ -336,11 +336,11 @@ catch (const hresult_error& ex)
 
 
 // writeChunk
-winrt::fire_and_forget RNFetchBlob::writeChunk(
+void RNFetchBlob::writeChunk(
 	std::string streamId,
 	std::wstring data,
 	std::function<void(std::string)> callback) noexcept
-	try
+try
 {
 	auto stream{ m_streamMap.find(streamId)->second };
 	Streams::IBuffer buffer;
@@ -352,7 +352,12 @@ winrt::fire_and_forget RNFetchBlob::writeChunk(
 	{
 		buffer = Cryptography::CryptographicBuffer::DecodeFromBase64String(data);
 	}
-	co_await stream.streamInstance.ReadAsync(buffer, buffer.Length(), Streams::InputStreamOptions::None);
+	else
+	{
+		callback("Invalid encoding type");
+		return;
+	}
+	stream.streamInstance.WriteAsync(buffer).get(); //Calls it synchronously
 	callback("");
 }
 catch (const hresult_error& ex)
@@ -360,7 +365,7 @@ catch (const hresult_error& ex)
 	callback(winrt::to_string(ex.message().c_str()));
 }
 
-winrt::fire_and_forget RNFetchBlob::writeChunkArray(
+void RNFetchBlob::writeArrayChunk(
 	std::string streamId,
 	winrt::Microsoft::ReactNative::JSValueArray dataArray,
 	std::function<void(std::string)> callback) noexcept
@@ -375,7 +380,7 @@ winrt::fire_and_forget RNFetchBlob::writeChunkArray(
 	}
 	Streams::IBuffer buffer{ CryptographicBuffer::CreateFromByteArray(data) };
 
-	co_await stream.streamInstance.ReadAsync(buffer, buffer.Length(), Streams::InputStreamOptions::None);
+	stream.streamInstance.WriteAsync(buffer).get(); // Calls it synchronously
 	callback("");
 }
 catch (const hresult_error& ex)
@@ -407,8 +412,7 @@ winrt::fire_and_forget RNFetchBlob::readStream(
 	}
 	else
 	{
-		//Wrong encoding yo
-
+		//Wrong encoding
 		co_return;
 	}
 
@@ -439,8 +443,6 @@ winrt::fire_and_forget RNFetchBlob::readStream(
 		{
 			// TODO: Investigate returning wstrings as parameters
 			winrt::hstring base64Content{ Cryptography::CryptographicBuffer::EncodeToBase64String(readBuffer) };
-			//std::string base64Content{ winrt::to_string(Cryptography::CryptographicBuffer::EncodeToBase64String(readBuffer)) };
-			//std::wstring base64Content{ Cryptography::CryptographicBuffer::EncodeToBase64String(readBuffer) };
 			m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", [&streamId, &base64Content](React::IJSValueWriter const& argWriter) {
 				WriteValue(argWriter, streamId);
 				argWriter.WriteObjectBegin();
@@ -972,7 +974,7 @@ void RNFetchBlob::removeSession(
 void RNFetchBlob::closeStream(
 	std::string streamId,
 	std::function<void(std::string)> callback) noexcept
-	try
+try
 {
 	auto stream{ m_streamMap.find(streamId)->second };
 	stream.streamInstance.Close();

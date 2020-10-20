@@ -73,13 +73,13 @@ public:
 
 	// writeChunk
 	REACT_METHOD(writeChunk);
-	winrt::fire_and_forget RNFetchBlob::writeChunk(
+	void RNFetchBlob::writeChunk(
 		std::string streamId,
 		std::wstring data,
 		std::function<void(std::string)> callback) noexcept;
 
-	REACT_METHOD(writeChunkArray);
-	winrt::fire_and_forget RNFetchBlob::writeChunkArray(
+	REACT_METHOD(writeArrayChunk);
+	void RNFetchBlob::writeArrayChunk(
 		std::string streamId,
 		winrt::Microsoft::ReactNative::JSValueArray dataArray,
 		std::function<void(std::string)> callback) noexcept;
