@@ -86,7 +86,7 @@ public:
 
 	// readStream
 	REACT_METHOD(readStream);
-	winrt::fire_and_forget RNFetchBlob::readStream(
+	void RNFetchBlob::readStream(
 		std::string path,
 		std::string encoding,
 		uint32_t bufferSize,

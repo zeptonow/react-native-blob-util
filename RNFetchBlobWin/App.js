@@ -54,6 +54,9 @@ const App: () => React$Node = () => {
   const [writeStreamParam, setWriteStreamParam] = useState('');
   const [writeEncodeStreamParam, setWriteStreamEncodeParam] = useState('utf8');
 
+  const [readStreamParam, setReadStreamParam] = useState('');
+  const [readEncodeStreamParam, setReadStreamEncodeParam] = useState('utf8');
+
 // Methods ********************************************************************
   // exists()
   const existsCall = () => {
@@ -331,7 +334,22 @@ const App: () => React$Node = () => {
         });
       }
     }
-  } 
+  }
+
+  // readStream
+  const readStreamCall = () => {
+    RNFetchBlob.fs.readStream(RNFetchBlob.fs.dirs.DocumentDir + '/' + readStreamParam, 'utf8')
+    .then((stream) => {
+      let data = '';
+      stream.open();
+      stream.onData((chunk) => {
+          data += chunk;
+      })
+      stream.onEnd(() => {
+          console.log('data:' + data);
+      })
+  });
+}
 
 // App ************************************************************************
   return (
@@ -682,7 +700,6 @@ const App: () => React$Node = () => {
                 <Picker.Item label="UTF8" value="utf8" />
                 <Picker.Item label="Base64" value="base64" />
                 <Picker.Item label="ASCII" value="ascii" />
-                <Picker.Item label="URI" value="uri" />
               </Picker>
             </View>
             <Button
@@ -694,6 +711,38 @@ const App: () => React$Node = () => {
               title="Append"
               color="#9a73ef"
               onPress={appendStreamCall}
+            />
+            </View>
+          </View>
+
+          <View style={styles.body}>
+            <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>
+              {"ReadStream - readStream()"}
+            </Text>
+            <View style={styles.sectionDescription}>
+            <TextInput style = {styles.input}
+              placeholder = "Source path"
+              onChangeText={readStreamParam => setReadStreamParam(readStreamParam)}
+              placeholderTextColor = "#9a73ef"
+              autoCapitalize = "none"
+            />
+
+            <Picker
+                readEncodeStreamParam={readEncodeStreamParam}
+                onChangeText={readPositionParam => setReadPositionParam(readPositionParam)}
+                style={{ height: 50, width: 150 }}
+                onValueChange={(itemValue, itemIndex) => setReadStreamEncodeParam(itemValue)}
+              >
+                <Picker.Item label="UTF8" value="utf8" />
+                <Picker.Item label="Base64" value="base64" />
+                <Picker.Item label="ASCII" value="ascii" />
+              </Picker>
+            </View>
+            <Button
+              title="Read"
+              color="#9a73ef"
+              onPress={readStreamCall}
             />
             </View>
           </View>

@@ -389,34 +389,34 @@ catch (const hresult_error& ex)
 }
 
 // readStream - no promises, callbacks, only event emission
-winrt::fire_and_forget RNFetchBlob::readStream(
+void RNFetchBlob::readStream(
 	std::string path,
 	std::string encoding,
 	uint32_t bufferSize,
 	uint64_t tick,
 	const std::string streamId) noexcept
-	try
+try
 {
 	EncodingOptions usedEncoding;
-	if (encoding.compare("utf8"))
+	if (encoding.compare("utf8") == 0)
 	{
 		usedEncoding = EncodingOptions::UTF8;
 	}
-	else if (encoding.compare("base64"))
+	else if (encoding.compare("base64") == 0)
 	{
 		usedEncoding = EncodingOptions::BASE64;
 	}
-	else if (encoding.compare("ascii"))
+	else if (encoding.compare("ascii") == 0)
 	{
 		usedEncoding = EncodingOptions::ASCII;
 	}
 	else
 	{
 		//Wrong encoding
-		co_return;
+		return;
 	}
 
-	uint32_t chunkSize = usedEncoding == EncodingOptions::BASE64 ? 4095 : 4096;
+	uint32_t chunkSize{ usedEncoding == EncodingOptions::BASE64 ? (uint32_t)4095 : (uint32_t)4096 };
 	if (bufferSize > 0)
 	{
 		chunkSize = bufferSize;
@@ -424,47 +424,56 @@ winrt::fire_and_forget RNFetchBlob::readStream(
 
 	winrt::hstring directoryPath, fileName;
 	splitPath(path, directoryPath, fileName);
-	StorageFolder folder{ co_await StorageFolder::GetFolderFromPathAsync(directoryPath) };
-	StorageFile file{ co_await folder.GetFileAsync(fileName) };
+	StorageFolder folder{ StorageFolder::GetFolderFromPathAsync(directoryPath).get() };
+	StorageFile file{ folder.GetFileAsync(fileName).get() };
 
-	Streams::IRandomAccessStream stream{ co_await file.OpenAsync(FileAccessMode::Read) };
+	Streams::IRandomAccessStream stream{ file.OpenAsync(FileAccessMode::Read).get() };
 	Buffer buffer{ chunkSize };
 	const TimeSpan time{ tick };
 	IAsyncAction timer;
 
 	for (;;)
 	{
-		auto readBuffer = co_await stream.ReadAsync(buffer, buffer.Capacity(), InputStreamOptions::None);
+		auto readBuffer = stream.ReadAsync(buffer, buffer.Capacity(), InputStreamOptions::None).get();
 		if (readBuffer.Length() == 0)
 		{
+			m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", streamId,
+				winrt::Microsoft::ReactNative::JSValueObject{
+					{"event", "end"},
+				});
 			break;
 		}
 		if (usedEncoding == EncodingOptions::BASE64)
 		{
 			// TODO: Investigate returning wstrings as parameters
 			winrt::hstring base64Content{ Cryptography::CryptographicBuffer::EncodeToBase64String(readBuffer) };
-			m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", [&streamId, &base64Content](React::IJSValueWriter const& argWriter) {
-				WriteValue(argWriter, streamId);
-				argWriter.WriteObjectBegin();
-				React::WriteProperty(argWriter, "event", L"data");
-				React::WriteProperty(argWriter, "detail", base64Content);
-				argWriter.WriteObjectEnd();
+			//m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", [&streamId, &base64Content](React::IJSValueWriter const& argWriter) {
+			//	WriteValue(argWriter, streamId);
+			//	argWriter.WriteObjectBegin();
+			//	React::WriteProperty(argWriter, "event", L"data");
+			//	React::WriteProperty(argWriter, "detail", base64Content);
+			//	argWriter.WriteObjectEnd();
+			//	});
+			m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", streamId,
+				winrt::Microsoft::ReactNative::JSValueObject{
+					{"event", "data"},
+					{"detail", winrt::to_string(base64Content)},
 				});
 		}
 		else
 		{
-			// TODO: Investigate returning wstrings as parameters
+			// TODO: Sending events not working as necessary with writers
 			std::string utf8Content{ winrt::to_string(Cryptography::CryptographicBuffer::ConvertBinaryToString(BinaryStringEncoding::Utf8, readBuffer)) };
 			if (usedEncoding == EncodingOptions::ASCII)
 			{
 
 				//std::string asciiContent{ winrt::to_string(utf8Content) };
 				std::string asciiContent{ utf8Content };
-				//std::wstring asciiResult{ winrt::to_hstring(asciiContent) };
 				// emit ascii content
 				m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", streamId,
 					winrt::Microsoft::ReactNative::JSValueObject{
-						{"data", asciiContent},
+						{"event", "data"},
+						{"detail", asciiContent},
 					});
 			}
 			else
@@ -472,8 +481,16 @@ winrt::fire_and_forget RNFetchBlob::readStream(
 				//emit utf8 content
 				m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", streamId,
 					winrt::Microsoft::ReactNative::JSValueObject{
-						{"data", utf8Content},
+						{"event", "data"},
+						{"detail", utf8Content},
 					});
+				//m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", [&streamId, &utf8Content](React::IJSValueWriter const& argWriter) {
+				//	WriteValue(argWriter, streamId);
+				//	argWriter.WriteObjectBegin();
+				//	React::WriteProperty(argWriter, "event", L"data");
+				//	React::WriteProperty(argWriter, "detail", utf8Content);
+				//	argWriter.WriteObjectEnd();
+				//	});
 			}
 		}
 		// sleep
@@ -485,10 +502,23 @@ winrt::fire_and_forget RNFetchBlob::readStream(
 }
 catch (const hresult_error& ex)
 {
-	m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"DownloadBegin",
-		winrt::Microsoft::ReactNative::JSValueObject{
-			{streamId, winrt::to_string(ex.message()).c_str()},
-		});
+	hresult result{ ex.code() };
+	if (result == 0x80070002) // FileNotFoundException
+	{
+		m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", streamId,
+			winrt::Microsoft::ReactNative::JSValueObject{
+				{"event", "error"},
+				{"ENOENT", "No such file '" + path + "'"},
+			});
+	}
+	else
+	{
+		m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", streamId,
+			winrt::Microsoft::ReactNative::JSValueObject{
+				{"event", "error"},
+				{"EUNSPECIFIED", winrt::to_string(ex.message())},
+			});
+	}
 }
 
 
