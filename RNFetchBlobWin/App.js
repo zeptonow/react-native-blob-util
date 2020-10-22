@@ -338,7 +338,7 @@ const App: () => React$Node = () => {
 
   // readStream
   const readStreamCall = () => {
-    RNFetchBlob.fs.readStream(RNFetchBlob.fs.dirs.DocumentDir + '/' + readStreamParam, 'utf8')
+    RNFetchBlob.fs.readStream(RNFetchBlob.fs.dirs.DocumentDir + '/' + readStreamParam, readEncodeStreamParam, 4000, 200)
     .then((stream) => {
       let data = '';
       stream.open();
@@ -346,10 +346,26 @@ const App: () => React$Node = () => {
           data += chunk;
       })
       stream.onEnd(() => {
-          console.log('data:' + data);
+          console.log('data: ' + data);
       })
-  });
-}
+    });
+  }
+
+  // fetchCall
+  const fetchCall = () => {
+    RNFetchBlob.config({
+    // add this option that makes response data to be stored as a file,
+    // this is much more performant.
+      fileCache : true,
+    })
+    .fetch('GET', 'https://enag6ppx4ilaf.x.pipedream.net/', {
+      'Content-Type' : 'multipart/form-data' 
+    }, "Hello World!")
+    .then((res) => {
+      // the temp file path
+      console.log('The file saved to ', res.path())
+    });
+  }
 
 // App ************************************************************************
   return (
@@ -743,6 +759,28 @@ const App: () => React$Node = () => {
               title="Read"
               color="#9a73ef"
               onPress={readStreamCall}
+            />
+            </View>
+          </View>
+
+
+          <View style={styles.body}>
+            <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>
+              {"FetchBlobTest"}
+            </Text>
+            <View style={styles.sectionDescription}>
+            <TextInput style = {styles.input}
+              placeholder = "Source path"
+              onChangeText={readStreamParam => setReadStreamParam(readStreamParam)}
+              placeholderTextColor = "#9a73ef"
+              autoCapitalize = "none"
+            />
+            </View>
+            <Button
+              title="Attempt Fetch"
+              color="#9a73ef"
+              onPress={fetchCall}
             />
             </View>
           </View>

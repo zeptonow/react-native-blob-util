@@ -13,9 +13,23 @@ enum struct EncodingOptions { UTF8, BASE64, ASCII, URI };
 struct RNFetchBlobStream
 {
 public:
-	RNFetchBlobStream::RNFetchBlobStream(winrt::Windows::Storage::Streams::IRandomAccessStream& _streamInstance, EncodingOptions _encoding) noexcept;
+	RNFetchBlobStream(winrt::Windows::Storage::Streams::IRandomAccessStream& _streamInstance, EncodingOptions _encoding) noexcept;
 	winrt::Windows::Storage::Streams::IRandomAccessStream streamInstance;
 	const EncodingOptions encoding;
+};
+
+struct RNFetchBlobConfig
+{
+public:
+	RNFetchBlobConfig() = default;
+
+	bool overwrite;
+	int timeout;
+	bool trusty;
+	bool fileCache;
+	std::string appendExt;
+	std::string path;
+	bool followRedirect;
 };
 
 
@@ -188,11 +202,11 @@ public:
 		winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept;
 
 	REACT_METHOD(fetchBlob);
-	void fetchBlob(
+	winrt::fire_and_forget fetchBlob(
 		winrt::Microsoft::ReactNative::JSValueObject options,
 		std::string taskId,
 		std::string method,
-		std::string url,
+		std::wstring url,
 		winrt::Microsoft::ReactNative::JSValueObject headers,
 		std::string body,
 		std::function<void(std::string, std::string, std::string)> callback) noexcept;
@@ -202,7 +216,7 @@ public:
 		winrt::Microsoft::ReactNative::JSValueObject options,
 		std::string taskId,
 		std::string method,
-		std::string url,
+		std::wstring url,
 		winrt::Microsoft::ReactNative::JSValueObject headers,
 		winrt::Microsoft::ReactNative::JSValueArray body,
 		std::function<void(std::string)> callback) noexcept;
@@ -238,6 +252,8 @@ public:
 
 	// Helper methods
 private:
+	winrt::Windows::Web::Http::HttpClient m_httpClient;
+
 	constexpr static int64_t UNIX_EPOCH_IN_WINRT_SECONDS = 11644473600;
 
 	std::map<StreamId, RNFetchBlobStream> m_streamMap;

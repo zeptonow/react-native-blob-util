@@ -7,6 +7,9 @@
 #include <winrt/Windows.Storage.Streams.h>
 #include <winrt/Windows.Storage.h>
 
+#include <winrt/Windows.Web.Http.h>
+#include <winrt/Windows.Web.Http.Headers.h>
+
 #include <filesystem>
 
 using namespace winrt;
@@ -58,7 +61,6 @@ winrt::fire_and_forget RNFetchBlob::createFile(
 	winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept
 try
 {
-	bool isUTF8{ encoding.compare("utf8") == 0 };
 	bool shouldExit{ false };
 	Streams::IBuffer buffer;
 	if (encoding.compare("uri") == 0)
@@ -448,11 +450,13 @@ try
 			// TODO: Investigate returning wstrings as parameters
 			winrt::hstring base64Content{ Cryptography::CryptographicBuffer::EncodeToBase64String(readBuffer) };
 			//m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", [&streamId, &base64Content](React::IJSValueWriter const& argWriter) {
+			//	argWriter.WriteArrayBegin();
 			//	WriteValue(argWriter, streamId);
 			//	argWriter.WriteObjectBegin();
-			//	React::WriteProperty(argWriter, "event", L"data");
+			//	React::WriteProperty(argWriter, "event", "data");
 			//	React::WriteProperty(argWriter, "detail", base64Content);
 			//	argWriter.WriteObjectEnd();
+			//	argWriter.WriteArrayEnd();
 			//	});
 			m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", streamId,
 				winrt::Microsoft::ReactNative::JSValueObject{
@@ -825,7 +829,7 @@ winrt::fire_and_forget RNFetchBlob::lstat(
 
 	callback("", resultsArray);
 }
-catch (const hresult_error& ex)
+catch (...)
 {
 	// "Failed to read directory."
 	winrt::Microsoft::ReactNative::JSValueArray emptyArray;
@@ -948,35 +952,110 @@ catch (...)
 }
 
 
-void RNFetchBlob::fetchBlob(
+winrt::fire_and_forget RNFetchBlob::fetchBlob(
 	winrt::Microsoft::ReactNative::JSValueObject options,
 	std::string taskId,
 	std::string method,
-	std::string url,
+	std::wstring url,
 	winrt::Microsoft::ReactNative::JSValueObject headers,
 	std::string body,
 	std::function<void(std::string, std::string, std::string)> callback) noexcept
 {
+	//winrt::Windows::Web::Http::HttpMethod::Hea
+		// Delete, Patch, Post, Put, Get, Options, Head
+	// Method
+	RNFetchBlobConfig config;
+	config.appendExt = options["appendExt"].AsString();
+	config.fileCache = options["fileCache"].AsBoolean();
+	config.followRedirect = options["followRedirect"].IsNull() ? true : options["followRedirect"].AsBoolean();
+	config.overwrite = options["overwrite"].AsBoolean();
+	config.path = options["path"].AsString();
+	config.timeout = options["timeout"].AsInt32();
+	config.trusty = options["trusty"].AsBoolean();;
 
+
+	winrt::Windows::Web::Http::HttpMethod httpMethod{ winrt::Windows::Web::Http::HttpMethod::Post() };
+	std::string methodUpperCase{ method };
+	for (auto& c : methodUpperCase)
+	{
+		toupper(c);
+	}
+
+	if (methodUpperCase.compare("DELETE") == 0)
+	{
+		httpMethod = winrt::Windows::Web::Http::HttpMethod::Delete();
+	}
+	else if (methodUpperCase.compare("PATCH") == 0)
+	{
+		httpMethod = winrt::Windows::Web::Http::HttpMethod::Patch();
+	}
+	else if (methodUpperCase.compare("PUT") == 0)
+	{
+		httpMethod = winrt::Windows::Web::Http::HttpMethod::Put();
+	}
+	else if (methodUpperCase.compare("GET") == 0)
+	{
+		httpMethod = winrt::Windows::Web::Http::HttpMethod::Get();
+	}
+	else if (methodUpperCase.compare("OPTIONS") == 0)
+	{
+		httpMethod = winrt::Windows::Web::Http::HttpMethod::Options();
+	}
+	else if (methodUpperCase.compare("HEAD") == 0)
+	{
+		httpMethod = winrt::Windows::Web::Http::HttpMethod::Head();
+	}
+	else if (methodUpperCase.compare("POST") != 0)
+	{
+		// Method not supported by winrt
+		co_return;
+	}
+
+	winrt::Windows::Web::Http::HttpRequestMessage requestMessage{ httpMethod, Uri{url} };
+	winrt::Windows::Web::Http::HttpMultipartFormDataContent requestContent{ L"-----" };
+
+	//co_await requestMessage.Content().;
+
+	for (auto const& entry : headers)
+	{
+		if (!requestMessage.Headers().TryAppendWithoutValidation(winrt::to_hstring(entry.first), winrt::to_hstring(entry.second.AsString())))
+		{
+			requestContent.Headers().TryAppendWithoutValidation(winrt::to_hstring(entry.first), winrt::to_hstring(entry.second.AsString()));
+		}
+	}
+
+	std::string temp{ body };
+	if (body.length() > 0) {
+		winrt::Windows::Web::Http::HttpBufferContent content{ CryptographicBuffer::ConvertStringToBinary(winrt::to_hstring(body), BinaryStringEncoding::Utf8) };
+		requestMessage.Content(content);
+	}
+	
+
+	winrt::Windows::Web::Http::HttpResponseMessage response = co_await m_httpClient.SendRequestAsync(requestMessage, winrt::Windows::Web::Http::HttpCompletionOption::ResponseHeadersRead);
+
+	co_return;
 }
 
 void RNFetchBlob::fetchBlobForm(
 	winrt::Microsoft::ReactNative::JSValueObject options,
 	std::string taskId,
 	std::string method,
-	std::string url,
+	std::wstring url,
 	winrt::Microsoft::ReactNative::JSValueObject headers,
 	winrt::Microsoft::ReactNative::JSValueArray body,
 	std::function<void(std::string)> callback) noexcept
 {
-
+	return;
 }
+
+
 
 void RNFetchBlob::enableProgressReport(
 	std::string taskId,
 	int interval,
 	int count) noexcept
 {
+	return;
 }
 
 // enableUploadProgressReport
@@ -985,6 +1064,7 @@ void RNFetchBlob::enableUploadProgressReport(
 	int interval,
 	int count) noexcept
 {
+	return;
 }
 
 // cancelRequest
@@ -992,13 +1072,14 @@ void RNFetchBlob::cancelRequest(
 	std::string taskId,
 	std::function<void(std::string)> callback) noexcept
 {
+	return;
 }
 
 void RNFetchBlob::removeSession(
 	winrt::Microsoft::ReactNative::JSValueObject paths,
 	std::function<void(std::string)> callback) noexcept
 {
-
+	return;
 }
 
 void RNFetchBlob::closeStream(
@@ -1009,10 +1090,11 @@ try
 	auto stream{ m_streamMap.find(streamId)->second };
 	stream.streamInstance.Close();
 	m_streamMap.extract(streamId);
+	callback("");
 }
-catch (...)
+catch (const hresult_error& ex)
 {
-
+	callback(winrt::to_string(ex.message()).c_str());
 }
 
 
