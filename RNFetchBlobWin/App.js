@@ -358,7 +358,7 @@ const App: () => React$Node = () => {
     // this is much more performant.
       fileCache : true,
     })
-    .fetch('GET', 'https://enag6ppx4ilaf.x.pipedream.net/', {
+    .fetch('GET', 'https://bit.ly/2TtutbS', {
       'Content-Type' : 'multipart/form-data' 
     }, "Hello World!")
     .then((res) => {

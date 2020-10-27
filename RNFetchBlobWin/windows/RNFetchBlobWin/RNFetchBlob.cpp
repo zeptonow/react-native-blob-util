@@ -20,6 +20,94 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Security::Cryptography;
 using namespace winrt::Windows::Security::Cryptography::Core;
 
+CancellationDisposable::CancellationDisposable(IAsyncInfo const& async, std::function<void()>&& onCancel) noexcept
+	: m_async{ async }
+	, m_onCancel{ std::move(onCancel) }
+{
+}
+
+CancellationDisposable::CancellationDisposable(CancellationDisposable&& other) noexcept
+	: m_async{ std::move(other.m_async) }
+	, m_onCancel{ std::move(other.m_onCancel) }
+{
+}
+
+CancellationDisposable& CancellationDisposable::operator=(CancellationDisposable&& other) noexcept
+{
+	if (this != &other)
+	{
+		CancellationDisposable temp{ std::move(*this) };
+		m_async = std::move(other.m_async);
+		m_onCancel = std::move(other.m_onCancel);
+	}
+	return *this;
+}
+
+CancellationDisposable::~CancellationDisposable() noexcept
+{
+	Cancel();
+}
+
+void CancellationDisposable::Cancel() noexcept
+{
+	if (m_async)
+	{
+		if (m_async.Status() == AsyncStatus::Started)
+		{
+			m_async.Cancel();
+		}
+
+		if (m_onCancel)
+		{
+			m_onCancel();
+		}
+	}
+}
+
+TaskCancellationManager::~TaskCancellationManager() noexcept
+{
+	// Do the explicit cleaning to make sure that CancellationDisposable
+	// destructors run while this instance still has valid fields because
+	// they are used by the onCancel callback.
+	// We also want to clear the m_pendingTasks before running the
+	// CancellationDisposable destructors since they touch the m_pendingTasks.
+	std::map<TaskId, CancellationDisposable> pendingTasks;
+	{
+		std::scoped_lock lock{ m_mutex };
+		pendingTasks = std::move(m_pendingTasks);
+	}
+}
+
+
+IAsyncAction TaskCancellationManager::Add(TaskId taskId, IAsyncAction const& asyncAction) noexcept
+{
+	std::scoped_lock lock{ m_mutex };
+	m_pendingTasks.try_emplace(taskId, asyncAction, [this, taskId]()
+		{
+			Cancel(taskId);
+		});
+	return asyncAction;
+}
+
+void TaskCancellationManager::Cancel(TaskId taskId) noexcept
+{
+	// The destructor of the token does the cancellation. We must do it outside of lock.
+	CancellationDisposable token;
+
+	{
+		std::scoped_lock lock{ m_mutex };
+		if (!m_pendingTasks.empty())
+		{
+			if (auto it = m_pendingTasks.find(taskId); it != m_pendingTasks.end())
+			{
+				token = std::move(it->second);
+				m_pendingTasks.erase(it);
+			}
+		}
+	}
+}
+
+
 
 void RNFetchBlob::Initialize(winrt::Microsoft::ReactNative::ReactContext const& reactContext) noexcept
 {
@@ -803,7 +891,7 @@ catch (const hresult_error& ex)
 winrt::fire_and_forget RNFetchBlob::lstat(
 	std::string path,
 	std::function<void(std::string, winrt::Microsoft::ReactNative::JSValueArray&)> callback) noexcept
-	try
+try
 {
 	std::filesystem::path directory(path);
 	directory.make_preferred();
@@ -902,7 +990,7 @@ catch (const hresult_error& ex)
 // df - Implemented, not tested
 winrt::fire_and_forget RNFetchBlob::df(
 	std::function<void(std::string, winrt::Microsoft::ReactNative::JSValueObject&)> callback) noexcept
-	try
+try
 {
 	auto localFolder{ Windows::Storage::ApplicationData::Current().LocalFolder() };
 	auto properties{ co_await localFolder.Properties().RetrievePropertiesAsync({L"System.FreeSpace", L"System.Capacity"}) };
@@ -925,7 +1013,7 @@ winrt::fire_and_forget RNFetchBlob::slice(
 	uint32_t start,
 	uint32_t end,
 	winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept
-	try
+try
 {
 	winrt::hstring srcDirectoryPath, srcFileName, destDirectoryPath, destFileName;
 	splitPath(src, srcDirectoryPath, srcFileName);
@@ -962,25 +1050,64 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 	std::function<void(std::string, std::string, std::string)> callback) noexcept
 {
 	//winrt::Windows::Web::Http::HttpMethod::Hea
-		// Delete, Patch, Post, Put, Get, Options, Head
+		
 	// Method
 	RNFetchBlobConfig config;
-	config.appendExt = options["appendExt"].AsString();
+	if (options["appendExt"].IsNull() == true)
+	{
+		config.appendExt = "";
+	}
+	else
+	{
+		std::filesystem::path path(options["appendExt"].AsString());
+		path.make_preferred();
+		config.appendExt = winrt::to_string(path.c_str());
+	}
+	config.appendExt = options["appendExt"].IsNull() ? "" : options["appendExt"].AsString();
 	config.fileCache = options["fileCache"].AsBoolean();
-	config.followRedirect = options["followRedirect"].IsNull() ? true : options["followRedirect"].AsBoolean();
+	config.followRedirect = options["followRedirect"].AsBoolean();
 	config.overwrite = options["overwrite"].AsBoolean();
-	config.path = options["path"].AsString();
+	if (options["path"].IsNull() == true)
+	{
+		config.path = "";
+	}
+	else
+	{
+		std::filesystem::path path{ options["path"].AsString() };
+		path.make_preferred();
+		config.path = winrt::to_string(path.c_str());
+	}
 	config.timeout = options["timeout"].AsInt32();
-	config.trusty = options["trusty"].AsBoolean();;
+	config.trusty = options["trusty"].AsBoolean();
 
+	if (config.followRedirect == true)
+	{
+		// TODO: find winrt config property
+	}
+	if (config.fileCache == true)
+	{
+
+	}
+	if (config.timeout > 0)
+	{
+		// TODO: find winrt config property
+	}
+	if (config.trusty == true)
+	{
+		// TODO: find winrt config property
+	}
+
+	
 
 	winrt::Windows::Web::Http::HttpMethod httpMethod{ winrt::Windows::Web::Http::HttpMethod::Post() };
+	
 	std::string methodUpperCase{ method };
 	for (auto& c : methodUpperCase)
 	{
 		toupper(c);
 	}
 
+	// Delete, Patch, Post, Put, Get, Options, Head
 	if (methodUpperCase.compare("DELETE") == 0)
 	{
 		httpMethod = winrt::Windows::Web::Http::HttpMethod::Delete();
@@ -1029,11 +1156,11 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 		winrt::Windows::Web::Http::HttpBufferContent content{ CryptographicBuffer::ConvertStringToBinary(winrt::to_hstring(body), BinaryStringEncoding::Utf8) };
 		requestMessage.Content(content);
 	}
-	
+	//requestMessage.Content(requestContent);
 
-	winrt::Windows::Web::Http::HttpResponseMessage response = co_await m_httpClient.SendRequestAsync(requestMessage, winrt::Windows::Web::Http::HttpCompletionOption::ResponseHeadersRead);
+	//winrt::Windows::Web::Http::HttpResponseMessage response = co_await m_httpClient.SendRequestAsync(requestMessage, winrt::Windows::Web::Http::HttpCompletionOption::ResponseHeadersRead);
 
-	co_return;
+	co_await m_tasks.Add(taskId, ProcessRequestAsync(requestMessage, config, callback));
 }
 
 void RNFetchBlob::fetchBlobForm(
@@ -1070,9 +1197,15 @@ void RNFetchBlob::enableUploadProgressReport(
 // cancelRequest
 void RNFetchBlob::cancelRequest(
 	std::string taskId,
-	std::function<void(std::string)> callback) noexcept
+	std::function<void(std::string, std::string)> callback) noexcept
+try
 {
-	return;
+	m_tasks.Cancel(taskId);
+	callback("", taskId);
+}
+catch (const hresult_error& ex)
+{
+	callback(winrt::to_string(ex.message()), "");
 }
 
 void RNFetchBlob::removeSession(
@@ -1116,7 +1249,37 @@ void RNFetchBlob::splitPath(const std::wstring& fullPath, winrt::hstring& direct
 	fileName = path.has_filename() ? winrt::to_hstring(path.filename().c_str()) : L"";
 }
 
+winrt::Windows::Foundation::IAsyncAction RNFetchBlob::ProcessRequestAsync(
+	winrt::Windows::Web::Http::HttpRequestMessage& httpRequestMessage,
+	const RNFetchBlobConfig& config,
+	std::function<void(std::string, std::string, std::string)>& callback)
+{
+	winrt::Windows::Web::Http::HttpResponseMessage response = co_await m_httpClient.SendRequestAsync(httpRequestMessage, winrt::Windows::Web::Http::HttpCompletionOption::ResponseHeadersRead);
 
+	if (config.path.empty() == false)
+	{
+		std::filesystem::path path{ config.path };
+		StorageFolder storageFolder{ co_await StorageFolder::GetFolderFromPathAsync(path.parent_path().wstring()) };
+		StorageFile storageFile{ co_await storageFolder.CreateFileAsync(path.filename().wstring(), CreationCollisionOption::ReplaceExisting) };
+		IRandomAccessStream  stream{ co_await storageFile.OpenAsync(FileAccessMode::ReadWrite) };
+		IOutputStream outputStream{ stream.GetOutputStreamAt(0) };
+		//
+		auto contentStream = co_await response.Content().ReadAsInputStreamAsync();
+		Buffer buffer{ 8 * 1024 };
+
+		for (;;)
+		{
+			buffer.Length(0);
+			auto readBuffer = co_await contentStream.ReadAsync(buffer, buffer.Capacity(), InputStreamOptions::None);
+			if (readBuffer.Length() == 0)
+			{
+				break;
+			}
+
+			co_await outputStream.WriteAsync(readBuffer);
+		}
+	}
+}
 
 RNFetchBlobStream::RNFetchBlobStream(Streams::IRandomAccessStream& _streamInstance, EncodingOptions _encoding) noexcept
 	: streamInstance{ std::move(_streamInstance) }

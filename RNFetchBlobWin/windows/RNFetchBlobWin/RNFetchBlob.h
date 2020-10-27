@@ -10,6 +10,44 @@ namespace CryptographyCore = winrt::Windows::Security::Cryptography::Core;
 
 enum struct EncodingOptions { UTF8, BASE64, ASCII, URI };
 
+struct CancellationDisposable
+{
+	CancellationDisposable() = default;
+	CancellationDisposable(winrt::Windows::Foundation::IAsyncInfo const& async, std::function<void()>&& onCancel) noexcept;
+
+	CancellationDisposable(CancellationDisposable&& other) noexcept;
+	CancellationDisposable& operator=(CancellationDisposable&& other) noexcept;
+
+	CancellationDisposable(CancellationDisposable const&) = delete;
+	CancellationDisposable& operator=(CancellationDisposable const&) = delete;
+
+	~CancellationDisposable() noexcept;
+
+	void Cancel() noexcept;
+private:
+	winrt::Windows::Foundation::IAsyncInfo m_async{ nullptr };
+	std::function<void()> m_onCancel;
+};
+
+struct TaskCancellationManager
+{
+	using TaskId = std::string;
+
+	TaskCancellationManager() = default;
+	~TaskCancellationManager() noexcept;
+
+	TaskCancellationManager(TaskCancellationManager const&) = delete;
+	TaskCancellationManager& operator=(TaskCancellationManager const&) = delete;
+
+	winrt::Windows::Foundation::IAsyncAction Add(TaskId taskId, winrt::Windows::Foundation::IAsyncAction const& asyncAction) noexcept;
+	void Cancel(TaskId taskId) noexcept;
+
+private:
+	std::mutex m_mutex; // to protect m_pendingTasks
+	std::map<TaskId, CancellationDisposable> m_pendingTasks;
+};
+
+
 struct RNFetchBlobStream
 {
 public:
@@ -238,7 +276,7 @@ public:
 	REACT_METHOD(cancelRequest);
 	void cancelRequest(
 		std::string taskId,
-		std::function<void(std::string)> callback) noexcept;
+		std::function<void(std::string, std::string)> callback) noexcept;
 
 	REACT_METHOD(removeSession);
 	void removeSession(
@@ -258,6 +296,12 @@ private:
 
 	std::map<StreamId, RNFetchBlobStream> m_streamMap;
 	winrt::Microsoft::ReactNative::ReactContext m_reactContext;
+	TaskCancellationManager m_tasks;
+
+	winrt::Windows::Foundation::IAsyncAction ProcessRequestAsync(
+		winrt::Windows::Web::Http::HttpRequestMessage& httpRequestMessage,
+		const RNFetchBlobConfig& config,
+		std::function<void(std::string, std::string, std::string)>& callback);
 
 	const std::map<std::string, std::function<CryptographyCore::HashAlgorithmProvider()>> availableHashes{
 		{"md5", []() { return CryptographyCore::HashAlgorithmProvider::OpenAlgorithm(CryptographyCore::HashAlgorithmNames::Md5()); } },
