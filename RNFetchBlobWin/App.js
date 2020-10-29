@@ -358,9 +358,23 @@ const App: () => React$Node = () => {
     // this is much more performant.
       fileCache : true,
     })
-    .fetch('GET', 'https://bit.ly/2TtutbS', {
-      'Content-Type' : 'multipart/form-data' 
-    }, "Hello World!")
+    .fetch(
+      'POST',
+      'https://content.dropboxapi.com/2/files/upload',
+      {
+        Authorization : "Bearer access-token...",
+        'Dropbox-API-Arg': JSON.stringify({
+          path : '/img-from-react-native.png',
+          mode : 'add',
+          autorename : true,
+          mute : false
+        }),
+      'Content-Type' : 'application/octet-stream',
+      // here's the body you're going to send, should be a BASE64 encoded string
+      // (you can use "base64"(refer to the library 'mathiasbynens/base64') APIs to make one).
+      // The data will be converted to "byte array"(say, blob) before request sent.
+    }
+    )
     .then((res) => {
       // the temp file path
       console.log('The file saved to ', res.path())
