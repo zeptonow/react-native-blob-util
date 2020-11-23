@@ -1054,6 +1054,28 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 	winrt::Windows::Web::Http::Filters::HttpBaseProtocolFilter filter;
 
 	RNFetchBlobConfig config;
+
+	if (!options["Progress"].IsNull()) {
+		auto& downloadOptions{ options["Progress"].AsObject() };
+		if (!downloadOptions["count"].IsNull()) {
+			int32_t downloadCount{ downloadOptions["count"].AsInt32()};
+			bool lol = true;
+		}
+		if (!downloadOptions["interval"].IsNull()) {
+			int32_t downloadInterval{ downloadOptions["interval"].AsInt32() };
+			bool lol = true;
+		}
+	}
+	if (!options["UploadProgress"].IsNull()) {
+		auto& uploadOptions{ options["UploadProgress"].AsObject() };
+		if (!uploadOptions["count"].IsNull()) {
+			int32_t uploadCount{ uploadOptions["count"].AsInt32() };
+		}
+		if (!uploadOptions["interval"].IsNull()) {
+			int32_t uploadInterval{ uploadOptions["interval"].AsInt32() };
+		}
+	}
+
 	if (options["appendExt"].IsNull() == true)
 	{
 		config.appendExt = "";
@@ -1115,10 +1137,6 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 	{
 		httpMethod = winrt::Windows::Web::Http::HttpMethod::Delete();
 	}
-	else if (methodUpperCase.compare("PATCH") == 0)
-	{
-		httpMethod = winrt::Windows::Web::Http::HttpMethod::Patch();
-	}
 	else if (methodUpperCase.compare("PUT") == 0)
 	{
 		httpMethod = winrt::Windows::Web::Http::HttpMethod::Put();
@@ -1126,14 +1144,6 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 	else if (methodUpperCase.compare("GET") == 0)
 	{
 		httpMethod = winrt::Windows::Web::Http::HttpMethod::Get();
-	}
-	else if (methodUpperCase.compare("OPTIONS") == 0)
-	{
-		httpMethod = winrt::Windows::Web::Http::HttpMethod::Options();
-	}
-	else if (methodUpperCase.compare("HEAD") == 0)
-	{
-		httpMethod = winrt::Windows::Web::Http::HttpMethod::Head();
 	}
 	else if (methodUpperCase.compare("POST") != 0)
 	{
@@ -1143,7 +1153,6 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 
 	winrt::Windows::Web::Http::HttpRequestMessage requestMessage{ httpMethod, Uri{url} };
 
-	std::string prefix{ "RNFetchBlob-file://" };
 	bool pathToFile{ body.rfind(prefix, 0) == 0 };
 	winrt::hstring fileContent;
 	if (pathToFile)
@@ -1168,7 +1177,6 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 	}
 
 	requestMessage.Content(requestContent);
-	
 	co_await m_tasks.Add(taskId, ProcessRequestAsync(filter, requestMessage, config, callback));
 
 }
@@ -1184,9 +1192,33 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 {
 	//createBlobForm(options, taskId, method, url, headers, "", body, callback);
 	//co_return;
+	winrt::hstring boundary{ L"-----" };
+
 	winrt::Windows::Web::Http::Filters::HttpBaseProtocolFilter filter;
 
 	RNFetchBlobConfig config;
+
+	if (!options["Progress"].IsNull()) {
+		auto& downloadOptions{ options["Progress"].AsObject() };
+		if (!downloadOptions["count"].IsNull()) {
+			int32_t downloadCount{ downloadOptions["count"].AsInt32() };
+			bool lol = true;
+		}
+		if (!downloadOptions["interval"].IsNull()) {
+			int32_t downloadInterval{ downloadOptions["interval"].AsInt32() };
+			bool lol = true;
+		}
+	}
+	if (!options["UploadProgress"].IsNull()) {
+		auto& uploadOptions{ options["UploadProgress"].AsObject() };
+		if (!uploadOptions["count"].IsNull()) {
+			int32_t uploadCount{ uploadOptions["count"].AsInt32() };
+		}
+		if (!uploadOptions["interval"].IsNull()) {
+			int32_t uploadInterval{ uploadOptions["interval"].AsInt32() };
+		}
+	}
+
 	if (options["appendExt"].IsNull() == true)
 	{
 		config.appendExt = "";
@@ -1248,10 +1280,6 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 	{
 		httpMethod = winrt::Windows::Web::Http::HttpMethod::Delete();
 	}
-	else if (methodUpperCase.compare("PATCH") == 0)
-	{
-		httpMethod = winrt::Windows::Web::Http::HttpMethod::Patch();
-	}
 	else if (methodUpperCase.compare("PUT") == 0)
 	{
 		httpMethod = winrt::Windows::Web::Http::HttpMethod::Put();
@@ -1260,14 +1288,6 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 	{
 		httpMethod = winrt::Windows::Web::Http::HttpMethod::Get();
 	}
-	else if (methodUpperCase.compare("OPTIONS") == 0)
-	{
-		httpMethod = winrt::Windows::Web::Http::HttpMethod::Options();
-	}
-	else if (methodUpperCase.compare("HEAD") == 0)
-	{
-		httpMethod = winrt::Windows::Web::Http::HttpMethod::Head();
-	}
 	else if (methodUpperCase.compare("POST") != 0)
 	{
 		// Method not supported by winrt
@@ -1275,7 +1295,7 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 	}
 
 	winrt::Windows::Web::Http::HttpRequestMessage requestMessage{ httpMethod, Uri{url} };
-	winrt::Windows::Web::Http::HttpMultipartFormDataContent requestContent{ L"-----" };
+	winrt::Windows::Web::Http::HttpMultipartFormDataContent requestContent{ boundary };
 
 	//co_await requestMessage.Content().;
 
@@ -1283,10 +1303,48 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 	{
 		if (!requestMessage.Headers().TryAppendWithoutValidation(winrt::to_hstring(entry.first), winrt::to_hstring(entry.second.AsString())))
 		{
-			requestContent.Headers().TryAppendWithoutValidation(winrt::to_hstring(entry.first), winrt::to_hstring(entry.second.AsString()));
+			bool result = requestContent.Headers().TryAppendWithoutValidation(winrt::to_hstring(entry.first), winrt::to_hstring(entry.second.AsString()));
 		}
 	}
 
+	
+	for (auto& entry : body) {
+		//winrt::Windows::Web::Http::HttpBufferContent multipartContent{;
+		auto& items{ entry.AsObject() };
+
+		auto data{ items["data"].AsString() };
+		bool pathToFile{ data.rfind(prefix, 0) == 0 };
+		winrt::hstring fileContent;
+		if (pathToFile)
+		{
+			std::string contentPath{ data.substr(prefix.length()) };
+			std::filesystem::path path{ contentPath };
+			path.make_preferred();
+
+			StorageFile storageFile{ co_await StorageFile::GetFileFromPathAsync(winrt::to_hstring(path.c_str())) };
+			fileContent = co_await FileIO::ReadTextAsync(storageFile);
+
+		}
+		winrt::Windows::Web::Http::HttpStringContent dataContents{ pathToFile ? fileContent : winrt::to_hstring(data) };
+		if (!items["type"].IsNull()) {
+			dataContents.Headers().TryAppendWithoutValidation(L"content-type", winrt::to_hstring(items["type"].AsString()));
+		}
+
+		auto name{ items["name"].IsNull() ? L"" : winrt::to_hstring(items["name"].AsString()) };
+		if (name.size() <= 0) {
+			requestContent.Add(dataContents);
+			continue;
+		}
+		auto filename{ items["filename"].IsNull() ? L"" : winrt::to_hstring(items["filename"].AsString()) };
+		if (filename.size() <= 0) {
+			requestContent.Add(dataContents, name);
+		}
+		else {
+			requestContent.Add(dataContents, name, filename);
+		}
+
+	}
+	
 	//if (bodyString.length() > 0) {
 	//	winrt::Windows::Web::Http::HttpBufferContent content{ CryptographicBuffer::ConvertStringToBinary(winrt::to_hstring(bodyString), BinaryStringEncoding::Utf8) };
 	//	requestMessage.Content(content);
@@ -1295,23 +1353,23 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 	//{
 	//	// TODO: Add in multipart aspects
 	//}
-
+	requestMessage.Content(requestContent);
 	co_await m_tasks.Add(taskId, ProcessRequestAsync(filter, requestMessage, config, callback));
 }
 
-winrt::fire_and_forget RNFetchBlob::createBlobForm(
-	const winrt::Microsoft::ReactNative::JSValueObject& options,
-	const std::string& taskId,
-	const std::string& method,
-	const std::wstring& url,
-	const winrt::Microsoft::ReactNative::JSValueObject& headers,
-	const std::string& bodyString,
-	const winrt::Microsoft::ReactNative::JSValueArray& bodyArray,
-	std::function<void(std::string, std::string, std::string)> callback) noexcept
-{
-
-	co_return;
-}
+//winrt::fire_and_forget RNFetchBlob::createBlobForm(
+//	const winrt::Microsoft::ReactNative::JSValueObject& options,
+//	const std::string& taskId,
+//	const std::string& method,
+//	const std::wstring& url,
+//	const winrt::Microsoft::ReactNative::JSValueObject& headers,
+//	const std::string& bodyString,
+//	const winrt::Microsoft::ReactNative::JSValueArray& bodyArray,
+//	std::function<void(std::string, std::string, std::string)> callback) noexcept
+//{
+//
+//	co_return;
+//}
 
 void RNFetchBlob::enableProgressReport(
 	std::string taskId,
@@ -1407,7 +1465,7 @@ try
 	// TODO: implement timeouts
 	winrt::Windows::Web::Http::HttpClient httpClient{filter};
 	winrt::Windows::Web::Http::HttpResponseMessage response = co_await httpClient.SendRequestAsync(httpRequestMessage, winrt::Windows::Web::Http::HttpCompletionOption::ResponseHeadersRead);
-	
+	IReference<uint64_t> contentLength{ response.Content().Headers().ContentLength() };
 
 	if (config.fileCache)
 	{
@@ -1428,19 +1486,38 @@ try
 
 		auto contentStream{ co_await response.Content().ReadAsInputStreamAsync() };
 		Buffer buffer{ 10 * 1024 };
+		uint64_t totalRead{ 0 };
 
 		for (;;)
 		{
 			buffer.Length(0);
 			auto readBuffer = contentStream.ReadAsync(buffer, buffer.Capacity(), InputStreamOptions::None).get();
+			totalRead += readBuffer.Length();
 			if (readBuffer.Length() == 0)
 			{
 				break;
 			}
 			co_await outputStream.WriteAsync(readBuffer);
-		}
 
+			m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"RNFetchBlobProgress",
+				Microsoft::ReactNative::JSValueObject{
+					{ "recieved", totalRead },
+					{ "total", contentLength.Type() == PropertyType::UInt64 ? 
+						Microsoft::ReactNative::JSValue(contentLength.Value()) : 
+						Microsoft::ReactNative::JSValue{nullptr} },
+				});
+
+		}
 		callback("", "path", config.path);
+		
+	}
+	else {
+		m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"RNFetchBlobProgress",
+			Microsoft::ReactNative::JSValueObject{
+				{ "recieved", 0 },
+				{ "total", 0},
+			});
+		callback(winrt::to_string(co_await response.Content().ReadAsStringAsync()), "result", config.path);
 	}
 	co_return;
 }

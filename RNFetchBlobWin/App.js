@@ -360,7 +360,7 @@ const App: () => React$Node = () => {
     })
     .fetch(
       'POST',
-      'https://content.dropboxapi.com/2/files/upload',
+      'https://enb954aqyumba.x.pipedream.net',
       {
         Authorization : "Bearer access-token...",
         'Dropbox-API-Arg': JSON.stringify({
@@ -379,6 +379,113 @@ const App: () => React$Node = () => {
       // the temp file path
       console.log('The file saved to ', res.path())
     });
+  }
+
+    // uploadFileFromStorage
+    const uploadFromStorageCall = () => {
+      RNFetchBlob.fetch('POST', 'https://enb954aqyumba.x.pipedream.net', {
+      Authorization : "Bearer access-token...",
+      'Dropbox-API-Arg': JSON.stringify({
+        path : '/img-from-react-native.png',
+        mode : 'add',
+        autorename : true,
+        mute : false
+      }),
+      'Content-Type' : 'application/octet-stream',
+      // here's the body you're going to send, should be a BASE64 encoded string
+      // (you can use "base64"(refer to the library 'mathiasbynens/base64') APIs to make one).
+      // The data will be converted to "byte array"(say, blob) before request sent.
+    }, RNFetchBlob.wrap(RNFetchBlob.fs.dirs.DocumentDir + '/temp1.txt'))
+    .then((res) => {
+      console.log(res.text());
+    })
+    .catch((err) => {
+      // error handling ..
+    })
+  }
+
+  // uploadTextFromStorage
+  const uploadTextFromCall = () => {
+    RNFetchBlob.fetch('POST', 'https://enb954aqyumba.x.pipedream.net', {
+    Authorization : "Bearer access-token...",
+    'Dropbox-API-Arg': JSON.stringify({
+      path : '/img-from-react-native.png',
+      mode : 'add',
+      autorename : true,
+      mute : false
+    }),
+    'Content-Type' : 'application/octet-stream',
+    // here's the body you're going to send, should be a BASE64 encoded string
+    // (you can use "base64"(refer to the library 'mathiasbynens/base64') APIs to make one).
+    // The data will be converted to "byte array"(say, blob) before request sent.
+    }, "Waka Flacka Flame goes very well with Thomas the Tank Engine.")
+    .then((res) => {
+      console.log(res.text());
+    })
+    .catch((err) => {
+      // error handling ..
+    })
+  }
+
+  // MultipartFileAndData
+  const MultipartFileAndData = () => {
+    RNFetchBlob.fetch('POST', 'https://enb954aqyumba.x.pipedream.net', {
+    Authorization : "Bearer access-token...",
+    'Dropbox-API-Arg': JSON.stringify({
+      path : '/img-from-react-native.png',
+      mode : 'add',
+      autorename : true,
+      mute : false
+    }),
+    'Content-Type' : 'application/octet-stream',
+    // here's the body you're going to send, should be a BASE64 encoded string
+    // (you can use "base64"(refer to the library 'mathiasbynens/base64') APIs to make one).
+    // The data will be converted to "byte array"(say, blob) before request sent.
+    }, "Waka Flacka Flame goes very well with Thomas the Tank Engine.")
+    .progress((received, total) => {
+      console.log('progress', received / total)
+    })
+    .then((res) => {
+      console.log(res.text());
+    })
+    .catch((err) => {
+      // error handling ..
+    })
+  }
+
+  // 
+  const MakeRequestWithProgress = () => {
+    RNFetchBlob.config({
+      // add this option that makes response data to be stored as a file,
+      // this is much more performant.
+        Progress: {count : 10, interval : 10},
+        UploadProgress: {count : 10, interval : 10},
+        fileCache : true,
+      }).fetch('POST', 'https://enb954aqyumba.x.pipedream.net', {
+      Authorization : "Bearer access-token",
+      otherHeader : "foo",
+      'Content-Type' : 'multipart/form-data',
+    }, [
+      // element with property `filename` will be transformed into `file` in form data
+      { name : 'avatar', filename : 'avatar.png', data: "Kentucky Fried Seth"},
+      // custom content type
+      { name : 'avatar-png', filename : 'avatar-png.png', type:'image/png', data: "whaddup my pickles"},
+      // part file from storage
+      { name : 'avatar-foo', filename : 'avatar-foo.png', type:'image/foo', data: RNFetchBlob.wrap(RNFetchBlob.fs.dirs.DocumentDir + '/temp1.txt')},
+      // elements without property `filename` will be sent as plain text
+      { name : 'name', data : 'user'},
+      { name : 'info', data : JSON.stringify({
+        mail : 'example@example.com',
+        tel : '12345678'
+      })},  
+    ]).progress((received, total) => {
+      console.log('progress', received / total)
+    }).then((res) => {
+      console.log(res.text());
+    })
+    .catch((err) => {
+      // error handling ..
+    })
   }
 
 // App ************************************************************************
@@ -795,6 +902,26 @@ const App: () => React$Node = () => {
               title="Attempt Fetch"
               color="#9a73ef"
               onPress={fetchCall}
+            />
+            <Button
+              title="Attempt Storage Call Fetch"
+              color="#9a73ef"
+              onPress={uploadFromStorageCall}
+            />
+            <Button
+              title="Upload Text From Call"
+              color="#9a73ef"
+              onPress={uploadTextFromCall}
+            />
+            <Button
+              title="Multipart Call"
+              color="#9a73ef"
+              onPress={MultipartFileAndData}
+            />
+            <Button
+              title="Progress Call"
+              color="#9a73ef"
+              onPress={MakeRequestWithProgress}
             />
             </View>
           </View>

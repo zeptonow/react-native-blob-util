@@ -332,4 +332,6 @@ private:
 	void splitPath(const std::wstring& fullPath,
 		winrt::hstring& directoryPath,
 		winrt::hstring& fileName) noexcept;
+
+	const std::string prefix{ "RNFetchBlob-file://" };
 };
