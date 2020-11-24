@@ -73,6 +73,19 @@ public:
 };
 
 
+struct RNFetchBlobProgressConfig {
+public:
+	RNFetchBlobProgressConfig() = default;
+	RNFetchBlobProgressConfig(int32_t count_, int32_t interval_);
+
+private:
+	int32_t lastTick{ 0 };
+	int32_t tick{ 0 };
+	int32_t count{ -1 };
+	int32_t interval{ -1 };
+};
+
+
 REACT_MODULE(RNFetchBlob, L"RNFetchBlob");
 struct RNFetchBlob
 {
@@ -302,6 +315,7 @@ private:
 	TaskCancellationManager m_tasks;
 
 	winrt::Windows::Foundation::IAsyncAction ProcessRequestAsync(
+		const std::string& taskId,
 		const winrt::Windows::Web::Http::Filters::HttpBaseProtocolFilter& filter,
 		winrt::Windows::Web::Http::HttpRequestMessage& httpRequestMessage,
 		RNFetchBlobConfig& config,
@@ -334,4 +348,11 @@ private:
 		winrt::hstring& fileName) noexcept;
 
 	const std::string prefix{ "RNFetchBlob-file://" };
+
+	std::mutex m_mutex;
+	std::map<std::string, RNFetchBlobProgressConfig> downloadProgressMap;
+	std::map<std::string, RNFetchBlobProgressConfig> uploadProgressMap;
 };
+
+
+

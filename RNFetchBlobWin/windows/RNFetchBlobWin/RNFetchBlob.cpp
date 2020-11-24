@@ -109,7 +109,21 @@ void TaskCancellationManager::Cancel(TaskId taskId) noexcept
 	}
 }
 
+/*
+struct RNFetchBlobProgressConfig {
+public:
+	RNFetchBlobProgressConfig();
+	RNFetchBlobProgressConfig(int32_t count_, int32_t interval_);
 
+	int32_t lastTick;
+	int32_t tick;
+	int32_t count;
+	int32_t interval;
+};
+*/
+
+RNFetchBlobProgressConfig::RNFetchBlobProgressConfig(int32_t count_, int32_t interval_) : count(count_), interval(interval_) {
+}
 
 void RNFetchBlob::Initialize(winrt::Microsoft::ReactNative::ReactContext const& reactContext) noexcept
 {
@@ -1055,26 +1069,26 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 
 	RNFetchBlobConfig config;
 
-	if (!options["Progress"].IsNull()) {
-		auto& downloadOptions{ options["Progress"].AsObject() };
-		if (!downloadOptions["count"].IsNull()) {
-			int32_t downloadCount{ downloadOptions["count"].AsInt32()};
-			bool lol = true;
-		}
-		if (!downloadOptions["interval"].IsNull()) {
-			int32_t downloadInterval{ downloadOptions["interval"].AsInt32() };
-			bool lol = true;
-		}
-	}
-	if (!options["UploadProgress"].IsNull()) {
-		auto& uploadOptions{ options["UploadProgress"].AsObject() };
-		if (!uploadOptions["count"].IsNull()) {
-			int32_t uploadCount{ uploadOptions["count"].AsInt32() };
-		}
-		if (!uploadOptions["interval"].IsNull()) {
-			int32_t uploadInterval{ uploadOptions["interval"].AsInt32() };
-		}
-	}
+	//if (!options["Progress"].IsNull()) {
+	//	auto& downloadOptions{ options["Progress"].AsObject() };
+	//	if (!downloadOptions["count"].IsNull()) {
+	//		int32_t downloadCount{ downloadOptions["count"].AsInt32()};
+	//		bool lol = true;
+	//	}
+	//	if (!downloadOptions["interval"].IsNull()) {
+	//		int32_t downloadInterval{ downloadOptions["interval"].AsInt32() };
+	//		bool lol = true;
+	//	}
+	//}
+	//if (!options["UploadProgress"].IsNull()) {
+	//	auto& uploadOptions{ options["UploadProgress"].AsObject() };
+	//	if (!uploadOptions["count"].IsNull()) {
+	//		int32_t uploadCount{ uploadOptions["count"].AsInt32() };
+	//	}
+	//	if (!uploadOptions["interval"].IsNull()) {
+	//		int32_t uploadInterval{ uploadOptions["interval"].AsInt32() };
+	//	}
+	//}
 
 	if (options["appendExt"].IsNull() == true)
 	{
@@ -1129,7 +1143,7 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 	std::string methodUpperCase{ method };
 	for (auto& c : methodUpperCase)
 	{
-		toupper(c);
+		putchar(toupper(c));
 	}
 
 	// Delete, Patch, Post, Put, Get, Options, Head
@@ -1177,7 +1191,7 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 	}
 
 	requestMessage.Content(requestContent);
-	co_await m_tasks.Add(taskId, ProcessRequestAsync(filter, requestMessage, config, callback));
+	co_await m_tasks.Add(taskId, ProcessRequestAsync(taskId, filter, requestMessage, config, callback));
 
 }
 
@@ -1198,26 +1212,26 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 
 	RNFetchBlobConfig config;
 
-	if (!options["Progress"].IsNull()) {
-		auto& downloadOptions{ options["Progress"].AsObject() };
-		if (!downloadOptions["count"].IsNull()) {
-			int32_t downloadCount{ downloadOptions["count"].AsInt32() };
-			bool lol = true;
-		}
-		if (!downloadOptions["interval"].IsNull()) {
-			int32_t downloadInterval{ downloadOptions["interval"].AsInt32() };
-			bool lol = true;
-		}
-	}
-	if (!options["UploadProgress"].IsNull()) {
-		auto& uploadOptions{ options["UploadProgress"].AsObject() };
-		if (!uploadOptions["count"].IsNull()) {
-			int32_t uploadCount{ uploadOptions["count"].AsInt32() };
-		}
-		if (!uploadOptions["interval"].IsNull()) {
-			int32_t uploadInterval{ uploadOptions["interval"].AsInt32() };
-		}
-	}
+	//if (!options["Progress"].IsNull()) {
+	//	auto& downloadOptions{ options["Progress"].AsObject() };
+	//	if (!downloadOptions["count"].IsNull()) {
+	//		int32_t downloadCount{ downloadOptions["count"].AsInt32() };
+	//		bool lol = true;
+	//	}
+	//	if (!downloadOptions["interval"].IsNull()) {
+	//		int32_t downloadInterval{ downloadOptions["interval"].AsInt32() };
+	//		bool lol = true;
+	//	}
+	//}
+	//if (!options["UploadProgress"].IsNull()) {
+	//	auto& uploadOptions{ options["UploadProgress"].AsObject() };
+	//	if (!uploadOptions["count"].IsNull()) {
+	//		int32_t uploadCount{ uploadOptions["count"].AsInt32() };
+	//	}
+	//	if (!uploadOptions["interval"].IsNull()) {
+	//		int32_t uploadInterval{ uploadOptions["interval"].AsInt32() };
+	//	}
+	//}
 
 	if (options["appendExt"].IsNull() == true)
 	{
@@ -1354,7 +1368,7 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 	//	// TODO: Add in multipart aspects
 	//}
 	requestMessage.Content(requestContent);
-	co_await m_tasks.Add(taskId, ProcessRequestAsync(filter, requestMessage, config, callback));
+	co_await m_tasks.Add(taskId, ProcessRequestAsync(taskId, filter, requestMessage, config, callback));
 }
 
 //winrt::fire_and_forget RNFetchBlob::createBlobForm(
@@ -1374,18 +1388,20 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 void RNFetchBlob::enableProgressReport(
 	std::string taskId,
 	int interval,
-	int count) noexcept
-{
-	return;
+	int count) noexcept {
+	RNFetchBlobProgressConfig config{interval, count};
+	std::scoped_lock lock{ m_mutex };
+	downloadProgressMap.try_emplace(taskId, config);
 }
 
 // enableUploadProgressReport
 void RNFetchBlob::enableUploadProgressReport(
 	std::string taskId,
 	int interval,
-	int count) noexcept
-{
-	return;
+	int count) noexcept {
+	RNFetchBlobProgressConfig config{ interval, count };
+	std::scoped_lock lock{ m_mutex };
+	uploadProgressMap.try_emplace(taskId, config);
 }
 
 // cancelRequest
@@ -1456,6 +1472,7 @@ void RNFetchBlob::splitPath(const std::wstring& fullPath, winrt::hstring& direct
 }
 
 winrt::Windows::Foundation::IAsyncAction RNFetchBlob::ProcessRequestAsync(
+	const std::string& taskId,
 	const winrt::Windows::Web::Http::Filters::HttpBaseProtocolFilter& filter,
 	winrt::Windows::Web::Http::HttpRequestMessage& httpRequestMessage,
 	RNFetchBlobConfig& config,
@@ -1491,7 +1508,7 @@ try
 		for (;;)
 		{
 			buffer.Length(0);
-			auto readBuffer = contentStream.ReadAsync(buffer, buffer.Capacity(), InputStreamOptions::None).get();
+			auto readBuffer = co_await contentStream.ReadAsync(buffer, buffer.Capacity(), InputStreamOptions::None);
 			totalRead += readBuffer.Length();
 			if (readBuffer.Length() == 0)
 			{
@@ -1499,24 +1516,37 @@ try
 			}
 			co_await outputStream.WriteAsync(readBuffer);
 
-			m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"RNFetchBlobProgress",
-				Microsoft::ReactNative::JSValueObject{
-					{ "recieved", totalRead },
-					{ "total", contentLength.Type() == PropertyType::UInt64 ? 
-						Microsoft::ReactNative::JSValue(contentLength.Value()) : 
-						Microsoft::ReactNative::JSValue{nullptr} },
-				});
-
+			// condition if taskId in a table where I need to report, then emit this
+			// to do that, I need a map that with a mutex
+			// mutex for all rn fetch blob main class
+			// std::scoped_lock lock {m_mutex}
+			auto it{ downloadProgressMap.find(taskId) };
+			if (it != downloadProgressMap.end()) {
+				auto var{ downloadProgressMap[taskId] };
+				m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"RNFetchBlobProgress",
+					Microsoft::ReactNative::JSValueObject{
+						{ "recieved", totalRead },
+						{ "total", contentLength.Type() == PropertyType::UInt64 ?
+							Microsoft::ReactNative::JSValue(contentLength.Value()) :
+							Microsoft::ReactNative::JSValue{nullptr} },
+					});
+			}
 		}
 		callback("", "path", config.path);
 		
 	}
 	else {
-		m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"RNFetchBlobProgress",
-			Microsoft::ReactNative::JSValueObject{
-				{ "recieved", 0 },
-				{ "total", 0},
-			});
+		auto it{ downloadProgressMap.find(taskId) };
+		if (it != downloadProgressMap.end()) {
+
+			auto var{ downloadProgressMap[taskId] };
+
+			m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"RNFetchBlobProgress",
+				Microsoft::ReactNative::JSValueObject{
+					{ "recieved", 0 },
+					{ "total", 0},
+				});
+		}
 		callback(winrt::to_string(co_await response.Content().ReadAsStringAsync()), "result", config.path);
 	}
 	co_return;
