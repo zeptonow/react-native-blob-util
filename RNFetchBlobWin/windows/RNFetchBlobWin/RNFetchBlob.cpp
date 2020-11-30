@@ -22,6 +22,9 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Security::Cryptography;
 using namespace winrt::Windows::Security::Cryptography::Core;
 
+
+using namespace std::chrono_literals;
+
 CancellationDisposable::CancellationDisposable(IAsyncInfo const& async, std::function<void()>&& onCancel) noexcept
 	: m_async{ async }
 	, m_onCancel{ std::move(onCancel) }
@@ -148,7 +151,7 @@ void RNFetchBlob::ConstantsViaConstantsProvider(winrt::Microsoft::ReactNative::R
 	constants.Add(L"MusicDir", UserDataPaths::GetDefault().Music());
 
 	// RNFetchBlob.MovieDir
-	constants.Add(L"MusicDir", UserDataPaths::GetDefault().Videos());
+	constants.Add(L"MovieDir", UserDataPaths::GetDefault().Videos());
 
 	// RNFetchBlob.DownloadDirectoryPath - IMPLEMENT for convenience? (absent in iOS and deprecated in Android)
 	constants.Add(L"DownloadDir", UserDataPaths::GetDefault().Downloads());
@@ -1063,7 +1066,7 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 	std::wstring url,
 	winrt::Microsoft::ReactNative::JSValueObject headers,
 	std::string body,
-	std::function<void(std::string, std::string, std::string)> callback) noexcept
+	std::function<void(std::string, std::string, std::string, std::string)> callback) noexcept
 {
 	winrt::Windows::Web::Http::Filters::HttpBaseProtocolFilter filter;
 
@@ -1165,8 +1168,9 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 		co_return;
 	}
 
-	winrt::Windows::Web::Http::HttpRequestMessage requestMessage{ httpMethod, Uri{url} };
+	
 
+	winrt::Windows::Web::Http::HttpRequestMessage requestMessage{ httpMethod, Uri{url} };
 	bool pathToFile{ body.rfind(prefix, 0) == 0 };
 	winrt::hstring fileContent;
 	if (pathToFile)
@@ -1202,7 +1206,7 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 	std::wstring url,
 	winrt::Microsoft::ReactNative::JSValueObject headers,
 	winrt::Microsoft::ReactNative::JSValueArray body,
-	std::function<void(std::string, std::string, std::string)> callback) noexcept
+	std::function<void(std::string, std::string, std::string, std::string)> callback) noexcept
 {
 	//createBlobForm(options, taskId, method, url, headers, "", body, callback);
 	//co_return;
@@ -1318,6 +1322,7 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 		if (!requestMessage.Headers().TryAppendWithoutValidation(winrt::to_hstring(entry.first), winrt::to_hstring(entry.second.AsString())))
 		{
 			bool result = requestContent.Headers().TryAppendWithoutValidation(winrt::to_hstring(entry.first), winrt::to_hstring(entry.second.AsString()));
+			bool lol = true;
 		}
 	}
 
@@ -1476,85 +1481,106 @@ winrt::Windows::Foundation::IAsyncAction RNFetchBlob::ProcessRequestAsync(
 	const winrt::Windows::Web::Http::Filters::HttpBaseProtocolFilter& filter,
 	winrt::Windows::Web::Http::HttpRequestMessage& httpRequestMessage,
 	RNFetchBlobConfig& config,
-	std::function<void(std::string, std::string, std::string)> callback) noexcept
+	std::function<void(std::string, std::string, std::string, std::string)> callback) noexcept
 try
 {
 	// TODO: implement timeouts
 	winrt::Windows::Web::Http::HttpClient httpClient{filter};
-	winrt::Windows::Web::Http::HttpResponseMessage response = co_await httpClient.SendRequestAsync(httpRequestMessage, winrt::Windows::Web::Http::HttpCompletionOption::ResponseHeadersRead);
-	IReference<uint64_t> contentLength{ response.Content().Headers().ContentLength() };
+	
+	IAsyncOperationWithProgress async{ httpClient.SendRequestAsync(httpRequestMessage, winrt::Windows::Web::Http::HttpCompletionOption::ResponseHeadersRead) };
+	if (async.wait_for(100s) == AsyncStatus::Completed) {
+		winrt::Windows::Web::Http::HttpResponseMessage response{async.get()};
+		IReference<uint64_t> contentLength{ response.Content().Headers().ContentLength() };
 
-	if (config.fileCache)
-	{
-		if (config.path.empty())
+		if (config.fileCache)
 		{
-			config.path = winrt::to_string(ApplicationData::Current().TemporaryFolder().Path()) + "\\RNFetchBlobTmp_" + config.taskId;
-			if (config.appendExt.length() > 0)
+			if (config.path.empty())
 			{
-				config.path += "." + config.appendExt;
+				config.path = winrt::to_string(ApplicationData::Current().TemporaryFolder().Path()) + "\\RNFetchBlobTmp_" + config.taskId;
+				if (config.appendExt.length() > 0)
+				{
+					config.path += "." + config.appendExt;
+				}
 			}
+
+			std::filesystem::path path{ config.path };
+			StorageFolder storageFolder{ co_await StorageFolder::GetFolderFromPathAsync(ApplicationData::Current().TemporaryFolder().Path()) };
+			StorageFile storageFile{ co_await storageFolder.CreateFileAsync(path.filename().wstring(), CreationCollisionOption::FailIfExists) };
+			IRandomAccessStream  stream{ co_await storageFile.OpenAsync(FileAccessMode::ReadWrite) };
+			IOutputStream outputStream{ stream.GetOutputStreamAt(0) };
+
+			auto contentStream{ co_await response.Content().ReadAsInputStreamAsync() };
+			Buffer buffer{ 10 * 1024 };
+			uint64_t totalRead{ 0 };
+
+			for (;;)
+			{
+				buffer.Length(0);
+				auto readBuffer = co_await contentStream.ReadAsync(buffer, buffer.Capacity(), InputStreamOptions::None);
+				totalRead += readBuffer.Length();
+
+				auto it{ downloadProgressMap.find(taskId) };
+				if (it != downloadProgressMap.end()) {
+					auto var{ downloadProgressMap[taskId] };
+					std::string chunk{ winrt::to_string(CryptographicBuffer::ConvertBinaryToString(BinaryStringEncoding::Utf8, readBuffer)) };
+					m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"RNFetchBlobProgress",
+						Microsoft::ReactNative::JSValueObject{
+							{ "taskId", taskId },
+							{ "written", totalRead },
+							{ "total", contentLength.Type() == PropertyType::UInt64 ?
+										Microsoft::ReactNative::JSValue(contentLength.Value()) :
+										Microsoft::ReactNative::JSValue{nullptr} },
+							{ "chunk", chunk },
+						});
+				}
+
+				if (readBuffer.Length() == 0)
+				{
+					break;
+				}
+				co_await outputStream.WriteAsync(readBuffer);
+
+				// condition if taskId in a table where I need to report, then emit this
+				// to do that, I need a map that with a mutex
+				// mutex for all rn fetch blob main class
+				// std::scoped_lock lock {m_mutex}
+
+			}
+			callback("", "path", config.path, "");
+
 		}
-
-		std::filesystem::path path{ config.path };
-		StorageFolder storageFolder{ co_await StorageFolder::GetFolderFromPathAsync(ApplicationData::Current().TemporaryFolder().Path()) };
-		StorageFile storageFile{ co_await storageFolder.CreateFileAsync(path.filename().wstring(), CreationCollisionOption::FailIfExists) };
-		IRandomAccessStream  stream{ co_await storageFile.OpenAsync(FileAccessMode::ReadWrite) };
-		IOutputStream outputStream{ stream.GetOutputStreamAt(0) };
-
-		auto contentStream{ co_await response.Content().ReadAsInputStreamAsync() };
-		Buffer buffer{ 10 * 1024 };
-		uint64_t totalRead{ 0 };
-
-		for (;;)
-		{
-			buffer.Length(0);
-			auto readBuffer = co_await contentStream.ReadAsync(buffer, buffer.Capacity(), InputStreamOptions::None);
-			totalRead += readBuffer.Length();
-			if (readBuffer.Length() == 0)
-			{
-				break;
-			}
-			co_await outputStream.WriteAsync(readBuffer);
-
-			// condition if taskId in a table where I need to report, then emit this
-			// to do that, I need a map that with a mutex
-			// mutex for all rn fetch blob main class
-			// std::scoped_lock lock {m_mutex}
+		else {
+			std::string chunk{ winrt::to_string(CryptographicBuffer::ConvertBinaryToString(BinaryStringEncoding::Utf8, co_await response.Content().ReadAsBufferAsync())) };
 			auto it{ downloadProgressMap.find(taskId) };
 			if (it != downloadProgressMap.end()) {
+
 				auto var{ downloadProgressMap[taskId] };
+
 				m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"RNFetchBlobProgress",
 					Microsoft::ReactNative::JSValueObject{
-						{ "recieved", totalRead },
+						{ "taskId", taskId },
+						{ "written", contentLength.Type() == PropertyType::UInt64 ?
+									Microsoft::ReactNative::JSValue(contentLength.Value()) :
+									Microsoft::ReactNative::JSValue{nullptr} },
 						{ "total", contentLength.Type() == PropertyType::UInt64 ?
-							Microsoft::ReactNative::JSValue(contentLength.Value()) :
-							Microsoft::ReactNative::JSValue{nullptr} },
+									Microsoft::ReactNative::JSValue(contentLength.Value()) :
+									Microsoft::ReactNative::JSValue{nullptr} },
+						{ "chunk", chunk },
 					});
 			}
+			callback(chunk, "result", config.path, "");
 		}
-		callback("", "path", config.path);
-		
-	}
-	else {
-		auto it{ downloadProgressMap.find(taskId) };
-		if (it != downloadProgressMap.end()) {
 
-			auto var{ downloadProgressMap[taskId] };
-
-			m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"RNFetchBlobProgress",
-				Microsoft::ReactNative::JSValueObject{
-					{ "recieved", 0 },
-					{ "total", 0},
-				});
-		}
-		callback(winrt::to_string(co_await response.Content().ReadAsStringAsync()), "result", config.path);
 	}
-	co_return;
+
+
+	
 }
 catch (const hresult_error& ex)
 {
-	callback(winrt::to_string(ex.message().c_str()), "error", "");
+	callback(winrt::to_string(ex.message().c_str()), "error", "", "");
 }
+
 
 RNFetchBlobStream::RNFetchBlobStream(Streams::IRandomAccessStream& _streamInstance, EncodingOptions _encoding) noexcept
 	: streamInstance{ std::move(_streamInstance) }

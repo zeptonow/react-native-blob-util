@@ -360,7 +360,7 @@ const App: () => React$Node = () => {
     })
     .fetch(
       'POST',
-      'https://enb954aqyumba.x.pipedream.net',
+      'https://enb954aqyumba.x.pipedream.net/',
       {
         Authorization : "Bearer access-token...",
         'Dropbox-API-Arg': JSON.stringify({
@@ -383,7 +383,7 @@ const App: () => React$Node = () => {
 
     // uploadFileFromStorage
     const uploadFromStorageCall = () => {
-      RNFetchBlob.fetch('POST', 'https://enb954aqyumba.x.pipedream.net', {
+      RNFetchBlob.fetch('POST', 'https://enb954aqyumba.x.pipedream.net/', {
       Authorization : "Bearer access-token...",
       'Dropbox-API-Arg': JSON.stringify({
         path : '/img-from-react-native.png',
@@ -406,7 +406,7 @@ const App: () => React$Node = () => {
 
   // uploadTextFromStorage
   const uploadTextFromCall = () => {
-    RNFetchBlob.fetch('POST', 'https://enb954aqyumba.x.pipedream.net', {
+    RNFetchBlob.fetch('POST', 'https://enb954aqyumba.x.pipedream.net/', {
     Authorization : "Bearer access-token...",
     'Dropbox-API-Arg': JSON.stringify({
       path : '/img-from-react-native.png',
@@ -429,7 +429,7 @@ const App: () => React$Node = () => {
 
   // MultipartFileAndData
   const MultipartFileAndData = () => {
-    RNFetchBlob.fetch('POST', 'https://enb954aqyumba.x.pipedream.net', {
+    RNFetchBlob.fetch('POST', 'https://enb954aqyumba.x.pipedream.net/', {
     Authorization : "Bearer access-token...",
     'Dropbox-API-Arg': JSON.stringify({
       path : '/img-from-react-native.png',
@@ -461,31 +461,30 @@ const App: () => React$Node = () => {
         Progress: {count : 10, interval : 10},
         UploadProgress: {count : 10, interval : 10},
         fileCache : true,
-      }).fetch('POST', 'https://enb954aqyumba.x.pipedream.net', {
-      Authorization : "Bearer access-token",
-      otherHeader : "foo",
-      'Content-Type' : 'multipart/form-data',
-    }, [
-      // element with property `filename` will be transformed into `file` in form data
-      { name : 'avatar', filename : 'avatar.png', data: "Kentucky Fried Seth"},
-      // custom content type
-      { name : 'avatar-png', filename : 'avatar-png.png', type:'image/png', data: "whaddup my pickles"},
-      // part file from storage
-      { name : 'avatar-foo', filename : 'avatar-foo.png', type:'image/foo', data: RNFetchBlob.wrap(RNFetchBlob.fs.dirs.DocumentDir + '/temp1.txt')},
-      // elements without property `filename` will be sent as plain text
-      { name : 'name', data : 'user'},
-      { name : 'info', data : JSON.stringify({
-        mail : 'example@example.com',
-        tel : '12345678'
-      })},  
-    ]).progress((received, total) => {
+      }).fetch('POST', 'https://enb954aqyumba.x.pipedream.net/', {
+          Authorization : "Bearer access-token",
+          otherHeader : "foo",
+          'Content-Type' : 'multipart/form-data',
+          }, [
+          // element with property `filename` will be transformed into `file` in form data
+          { name : 'avatar', filename : 'avatar.png', data: "Kentucky Fried Seth"},
+          // custom content type
+          { name : 'avatar-png', filename : 'avatar-png.png', type:'image/png', data: "whaddup my pickles"},
+          // part file from storage
+          { name : 'avatar-foo', filename : 'avatar-foo.png', type:'image/foo', data: RNFetchBlob.wrap(RNFetchBlob.fs.dirs.DocumentDir + '/temp1.txt')},
+          // elements without property `filename` will be sent as plain text
+          { name : 'name', data : 'user'},
+          { name : 'info', data : JSON.stringify({
+            mail : 'example@example.com',
+            tel : '12345678'
+          })},  
+      ]).progress((received, total) => {
       console.log('progress', received / total)
-    }).then((res) => {
+      }).then((res) => {
       console.log(res.text());
-    })
-    .catch((err) => {
+      }).catch((err) => {
       // error handling ..
-    })
+      })
   }
 
 // App ************************************************************************

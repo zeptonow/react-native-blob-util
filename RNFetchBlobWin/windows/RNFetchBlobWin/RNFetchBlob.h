@@ -262,7 +262,7 @@ public:
 		std::wstring url,
 		winrt::Microsoft::ReactNative::JSValueObject headers,
 		std::string body,
-		std::function<void(std::string, std::string, std::string)> callback) noexcept;
+		std::function<void(std::string, std::string, std::string, std::string)> callback) noexcept;
 
 	REACT_METHOD(fetchBlobForm);
 	winrt::fire_and_forget  fetchBlobForm(
@@ -272,7 +272,7 @@ public:
 		std::wstring url,
 		winrt::Microsoft::ReactNative::JSValueObject headers,
 		winrt::Microsoft::ReactNative::JSValueArray body,
-		std::function<void(std::string, std::string, std::string)> callback) noexcept;
+		std::function<void(std::string, std::string, std::string, std::string)> callback) noexcept;
 
 	REACT_METHOD(enableProgressReport);
 	void enableProgressReport(
@@ -319,7 +319,7 @@ private:
 		const winrt::Windows::Web::Http::Filters::HttpBaseProtocolFilter& filter,
 		winrt::Windows::Web::Http::HttpRequestMessage& httpRequestMessage,
 		RNFetchBlobConfig& config,
-		std::function<void(std::string, std::string, std::string)> callback) noexcept;
+		std::function<void(std::string, std::string, std::string, std::string)> callback) noexcept;
 
 	const std::map<std::string, std::function<CryptographyCore::HashAlgorithmProvider()>> availableHashes{
 		{"md5", []() { return CryptographyCore::HashAlgorithmProvider::OpenAlgorithm(CryptographyCore::HashAlgorithmNames::Md5()); } },
@@ -329,15 +329,15 @@ private:
 		{"sha512", []() { return CryptographyCore::HashAlgorithmProvider::OpenAlgorithm(CryptographyCore::HashAlgorithmNames::Sha512()); } }
 	};
 
-	winrt::fire_and_forget createBlobForm(
-		const winrt::Microsoft::ReactNative::JSValueObject& options,
-		const std::string& taskId,
-		const std::string& method,
-		const std::wstring& url,
-		const winrt::Microsoft::ReactNative::JSValueObject& headers,
-		const std::string& bodyString,
-		const winrt::Microsoft::ReactNative::JSValueArray& bodyArray,
-		std::function<void(std::string, std::string, std::string)> callback) noexcept;
+	//winrt::fire_and_forget createBlobForm(
+	//	const winrt::Microsoft::ReactNative::JSValueObject& options,
+	//	const std::string& taskId,
+	//	const std::string& method,
+	//	const std::wstring& url,
+	//	const winrt::Microsoft::ReactNative::JSValueObject& headers,
+	//	const std::string& bodyString,
+	//	const winrt::Microsoft::ReactNative::JSValueArray& bodyArray,
+	//	std::function<void(std::string, std::string, std::string, std::string)> callback) noexcept;
 
 	void splitPath(const std::string& fullPath,
 		winrt::hstring& directoryPath,
