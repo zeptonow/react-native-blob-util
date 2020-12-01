@@ -112,18 +112,34 @@ void TaskCancellationManager::Cancel(TaskId taskId) noexcept
 	}
 }
 
-/*
-struct RNFetchBlobProgressConfig {
-public:
-	RNFetchBlobProgressConfig();
-	RNFetchBlobProgressConfig(int32_t count_, int32_t interval_);
+RNFetchBlobConfig::RNFetchBlobConfig(winrt::Microsoft::ReactNative::JSValueObject& options) {
+	if (options["appendExt"].IsNull() == true)
+	{
+		appendExt = "";
+	}
+	else
+	{
+		appendExt = options["appendExt"].AsString();
+	}
+	fileCache = options["fileCache"].AsBoolean();
+	followRedirect = options["followRedirect"].AsBoolean();
+	overwrite = options["overwrite"].AsBoolean();
+	if (options["path"].IsNull() == true)
+	{
+		path = "";
+	}
+	else
+	{
+		std::filesystem::path pathToParse{ options["path"].AsString() };
+		pathToParse.make_preferred();
+		path = winrt::to_string(pathToParse.c_str());
+	}
+	trusty = options["trusty"].AsBoolean();
 
-	int32_t lastTick;
-	int32_t tick;
-	int32_t count;
-	int32_t interval;
-};
-*/
+	int64_t potentialTimeout{ options["timeout"].AsInt64() };
+	timeout = std::chrono::seconds{ potentialTimeout > 0 ? potentialTimeout : 60000 };
+
+}
 
 RNFetchBlobProgressConfig::RNFetchBlobProgressConfig(int32_t count_, int32_t interval_) : count(count_), interval(interval_) {
 }
@@ -1066,61 +1082,10 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 	std::wstring url,
 	winrt::Microsoft::ReactNative::JSValueObject headers,
 	std::string body,
-	std::function<void(std::string, std::string, std::string, std::string)> callback) noexcept
+	std::function<void(std::string, std::string, std::string)> callback) noexcept
 {
 	winrt::Windows::Web::Http::Filters::HttpBaseProtocolFilter filter;
-
-	RNFetchBlobConfig config;
-
-	//if (!options["Progress"].IsNull()) {
-	//	auto& downloadOptions{ options["Progress"].AsObject() };
-	//	if (!downloadOptions["count"].IsNull()) {
-	//		int32_t downloadCount{ downloadOptions["count"].AsInt32()};
-	//		bool lol = true;
-	//	}
-	//	if (!downloadOptions["interval"].IsNull()) {
-	//		int32_t downloadInterval{ downloadOptions["interval"].AsInt32() };
-	//		bool lol = true;
-	//	}
-	//}
-	//if (!options["UploadProgress"].IsNull()) {
-	//	auto& uploadOptions{ options["UploadProgress"].AsObject() };
-	//	if (!uploadOptions["count"].IsNull()) {
-	//		int32_t uploadCount{ uploadOptions["count"].AsInt32() };
-	//	}
-	//	if (!uploadOptions["interval"].IsNull()) {
-	//		int32_t uploadInterval{ uploadOptions["interval"].AsInt32() };
-	//	}
-	//}
-
-	if (options["appendExt"].IsNull() == true)
-	{
-		config.appendExt = "";
-	}
-	else
-	{
-		std::filesystem::path path(options["appendExt"].AsString());
-		path.make_preferred();
-		config.appendExt = winrt::to_string(path.c_str());
-	}
-	config.taskId = taskId;
-	config.appendExt = options["appendExt"].IsNull() ? "" : options["appendExt"].AsString();
-	config.fileCache = options["fileCache"].AsBoolean();
-	config.followRedirect = options["followRedirect"].AsBoolean();
-	config.overwrite = options["overwrite"].AsBoolean();
-	if (options["path"].IsNull() == true)
-	{
-		config.path = "";
-	}
-	else
-	{
-		std::filesystem::path path{ options["path"].AsString() };
-		path.make_preferred();
-		config.path = winrt::to_string(path.c_str());
-	}
-	config.timeout = options["timeout"].AsInt32();
-
-	config.trusty = options["trusty"].AsBoolean();
+	RNFetchBlobConfig config{ options };
 	if (config.followRedirect == true)
 	{
 		filter.AllowAutoRedirect(true);
@@ -1128,11 +1093,6 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 	else
 	{
 		filter.AllowAutoRedirect(false);
-	}
-
-	if (config.timeout > 0)
-	{
-		// TODO: find winrt config property
 	}
 
 	if (config.trusty)
@@ -1143,32 +1103,24 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 	winrt::Windows::Web::Http::HttpClient httpClient{ filter };
 
 	winrt::Windows::Web::Http::HttpMethod httpMethod{ winrt::Windows::Web::Http::HttpMethod::Post() };
-	std::string methodUpperCase{ method };
-	for (auto& c : methodUpperCase)
-	{
-		putchar(toupper(c));
-	}
-
 	// Delete, Patch, Post, Put, Get, Options, Head
-	if (methodUpperCase.compare("DELETE") == 0)
+	if (method.compare("DELETE") == 0 || method.compare("delete") == 0)
 	{
 		httpMethod = winrt::Windows::Web::Http::HttpMethod::Delete();
 	}
-	else if (methodUpperCase.compare("PUT") == 0)
+	else if (method.compare("PUT") == 0 || method.compare("put") == 0)
 	{
 		httpMethod = winrt::Windows::Web::Http::HttpMethod::Put();
 	}
-	else if (methodUpperCase.compare("GET") == 0)
+	else if (method.compare("GET") == 0 || method.compare("get") == 0)
 	{
 		httpMethod = winrt::Windows::Web::Http::HttpMethod::Get();
 	}
-	else if (methodUpperCase.compare("POST") != 0)
+	else if (method.compare("POST") != 0 && method.compare("post") != 0)
 	{
-		// Method not supported by winrt
+		callback("Method not supported", "error", "");
 		co_return;
 	}
-
-	
 
 	winrt::Windows::Web::Http::HttpRequestMessage requestMessage{ httpMethod, Uri{url} };
 	bool pathToFile{ body.rfind(prefix, 0) == 0 };
@@ -1181,7 +1133,6 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 
 		StorageFile storageFile{ co_await StorageFile::GetFileFromPathAsync(winrt::to_hstring(path.c_str())) };
 		fileContent = co_await FileIO::ReadTextAsync(storageFile);
-
 	}
 
 	winrt::Windows::Web::Http::HttpStringContent requestContent{ pathToFile ? fileContent : winrt::to_hstring(body) };
@@ -1193,10 +1144,76 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 			requestContent.Headers().TryAppendWithoutValidation(winrt::to_hstring(entry.first), winrt::to_hstring(entry.second.AsString()));
 		}
 	}
-
+	
 	requestMessage.Content(requestContent);
-	co_await m_tasks.Add(taskId, ProcessRequestAsync(taskId, filter, requestMessage, config, callback));
 
+	auto exists{ uploadProgressMap.find(taskId) };
+	if (exists != uploadProgressMap.end()) {
+		auto progress{ uploadProgressMap[taskId] };
+		uint64_t bodySize{ (co_await requestMessage.Content().ReadAsBufferAsync()).Length() };
+		auto contentStream{ co_await requestMessage.Content().ReadAsInputStreamAsync() };
+		Buffer buffer{ 10 * 1024 };
+		uint64_t read{ 0 };
+
+		if (progress.count > -1) {
+			uint64_t progressInterval{ bodySize / 100 * progress.count };
+			for (;;) {
+
+				buffer.Length(0);
+				auto readBuffer = co_await contentStream.ReadAsync(buffer, buffer.Capacity(), InputStreamOptions::None);
+				read += readBuffer.Length();
+
+				if (readBuffer.Length() == 0)
+				{
+					break;
+				}
+
+				if (read >= progressInterval) {
+					m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"RNFetchBlobProgress-upload",
+						Microsoft::ReactNative::JSValueObject{
+							{ "taskId", taskId },
+							{ "written", read },
+							{ "total", bodySize },
+						});
+					read = 0;
+				}
+			}
+		}
+		else if (progress.interval > -1) {
+			int64_t initialProgressTime{ winrt::clock::now().time_since_epoch().count() / 10000 };
+			int64_t currentProgressTime;
+			for (;;) {
+				buffer.Length(0);
+
+				auto readBuffer = co_await contentStream.ReadAsync(buffer, buffer.Capacity(), InputStreamOptions::None);
+				read += readBuffer.Length();
+
+				if (readBuffer.Length() == 0)
+				{
+					break;
+				}
+
+				currentProgressTime = winrt::clock::now().time_since_epoch().count() / 10000;
+				if (currentProgressTime - initialProgressTime >= progress.interval) {
+					m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"RNFetchBlobProgress-upload",
+						Microsoft::ReactNative::JSValueObject{
+							{ "taskId", taskId },
+							{ "written", read },
+							{ "total", bodySize },
+						});
+					initialProgressTime = winrt::clock::now().time_since_epoch().count() / 10000;
+				}
+			}
+		}
+	}
+
+	co_await m_tasks.Add(taskId, ProcessRequestAsync(taskId, filter, requestMessage, config, callback));
+	m_tasks.Cancel(taskId);
+	{
+		std::scoped_lock lock{ m_mutex };
+		uploadProgressMap.extract(taskId);
+		downloadProgressMap.extract(taskId);
+	}
 }
 
 winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
@@ -1206,64 +1223,14 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 	std::wstring url,
 	winrt::Microsoft::ReactNative::JSValueObject headers,
 	winrt::Microsoft::ReactNative::JSValueArray body,
-	std::function<void(std::string, std::string, std::string, std::string)> callback) noexcept
+	std::function<void(std::string, std::string, std::string)> callback) noexcept
 {
 	//createBlobForm(options, taskId, method, url, headers, "", body, callback);
 	//co_return;
 	winrt::hstring boundary{ L"-----" };
-
 	winrt::Windows::Web::Http::Filters::HttpBaseProtocolFilter filter;
 
-	RNFetchBlobConfig config;
-
-	//if (!options["Progress"].IsNull()) {
-	//	auto& downloadOptions{ options["Progress"].AsObject() };
-	//	if (!downloadOptions["count"].IsNull()) {
-	//		int32_t downloadCount{ downloadOptions["count"].AsInt32() };
-	//		bool lol = true;
-	//	}
-	//	if (!downloadOptions["interval"].IsNull()) {
-	//		int32_t downloadInterval{ downloadOptions["interval"].AsInt32() };
-	//		bool lol = true;
-	//	}
-	//}
-	//if (!options["UploadProgress"].IsNull()) {
-	//	auto& uploadOptions{ options["UploadProgress"].AsObject() };
-	//	if (!uploadOptions["count"].IsNull()) {
-	//		int32_t uploadCount{ uploadOptions["count"].AsInt32() };
-	//	}
-	//	if (!uploadOptions["interval"].IsNull()) {
-	//		int32_t uploadInterval{ uploadOptions["interval"].AsInt32() };
-	//	}
-	//}
-
-	if (options["appendExt"].IsNull() == true)
-	{
-		config.appendExt = "";
-	}
-	else
-	{
-		std::filesystem::path path(options["appendExt"].AsString());
-		path.make_preferred();
-		config.appendExt = winrt::to_string(path.c_str());
-	}
-	config.taskId = taskId;
-	config.appendExt = options["appendExt"].IsNull() ? "" : options["appendExt"].AsString();
-	config.fileCache = options["fileCache"].AsBoolean();
-	config.followRedirect = options["followRedirect"].AsBoolean();
-	config.overwrite = options["overwrite"].AsBoolean();
-	if (options["path"].IsNull() == true)
-	{
-		config.path = "";
-	}
-	else
-	{
-		std::filesystem::path path{ options["path"].AsString() };
-		path.make_preferred();
-		config.path = winrt::to_string(path.c_str());
-	}
-	config.timeout = options["timeout"].AsInt32();
-	config.trusty = options["trusty"].AsBoolean();
+	RNFetchBlobConfig config{ options };
 
 	if (config.followRedirect == true)
 	{
@@ -1274,61 +1241,45 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 		filter.AllowAutoRedirect(false);
 	}
 
-	if (config.timeout > 0)
-	{
-		// TODO: find winrt config property
-	}
-
 	if (config.trusty)
 	{
 		filter.IgnorableServerCertificateErrors().Append(Cryptography::Certificates::ChainValidationResult::Untrusted);
 	}
 
 	winrt::Windows::Web::Http::HttpClient httpClient{ filter };
-
+	
 	winrt::Windows::Web::Http::HttpMethod httpMethod{ winrt::Windows::Web::Http::HttpMethod::Post() };
-	std::string methodUpperCase{ method };
-	for (auto& c : methodUpperCase)
-	{
-		toupper(c);
-	}
-
 	// Delete, Patch, Post, Put, Get, Options, Head
-	if (methodUpperCase.compare("DELETE") == 0)
+	if (method.compare("DELETE") == 0 || method.compare("delete") == 0)
 	{
 		httpMethod = winrt::Windows::Web::Http::HttpMethod::Delete();
 	}
-	else if (methodUpperCase.compare("PUT") == 0)
+	else if (method.compare("PUT") == 0 || method.compare("put") == 0)
 	{
 		httpMethod = winrt::Windows::Web::Http::HttpMethod::Put();
 	}
-	else if (methodUpperCase.compare("GET") == 0)
+	else if (method.compare("GET") == 0 || method.compare("get") == 0)
 	{
 		httpMethod = winrt::Windows::Web::Http::HttpMethod::Get();
 	}
-	else if (methodUpperCase.compare("POST") != 0)
+	else if (method.compare("POST") != 0 && method.compare("post") != 0)
 	{
-		// Method not supported by winrt
+		callback("Method not supported", "error", "");
 		co_return;
 	}
 
 	winrt::Windows::Web::Http::HttpRequestMessage requestMessage{ httpMethod, Uri{url} };
 	winrt::Windows::Web::Http::HttpMultipartFormDataContent requestContent{ boundary };
 
-	//co_await requestMessage.Content().;
-
 	for (auto const& entry : headers)
 	{
 		if (!requestMessage.Headers().TryAppendWithoutValidation(winrt::to_hstring(entry.first), winrt::to_hstring(entry.second.AsString())))
 		{
-			bool result = requestContent.Headers().TryAppendWithoutValidation(winrt::to_hstring(entry.first), winrt::to_hstring(entry.second.AsString()));
-			bool lol = true;
+			requestContent.Headers().TryAppendWithoutValidation(winrt::to_hstring(entry.first), winrt::to_hstring(entry.second.AsString()));
 		}
 	}
 
-	
 	for (auto& entry : body) {
-		//winrt::Windows::Web::Http::HttpBufferContent multipartContent{;
 		auto& items{ entry.AsObject() };
 
 		auto data{ items["data"].AsString() };
@@ -1363,38 +1314,82 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 		}
 
 	}
-	
-	//if (bodyString.length() > 0) {
-	//	winrt::Windows::Web::Http::HttpBufferContent content{ CryptographicBuffer::ConvertStringToBinary(winrt::to_hstring(bodyString), BinaryStringEncoding::Utf8) };
-	//	requestMessage.Content(content);
-	//}
-	//else if (!bodyArray.empty())
-	//{
-	//	// TODO: Add in multipart aspects
-	//}
 	requestMessage.Content(requestContent);
-	co_await m_tasks.Add(taskId, ProcessRequestAsync(taskId, filter, requestMessage, config, callback));
-}
 
-//winrt::fire_and_forget RNFetchBlob::createBlobForm(
-//	const winrt::Microsoft::ReactNative::JSValueObject& options,
-//	const std::string& taskId,
-//	const std::string& method,
-//	const std::wstring& url,
-//	const winrt::Microsoft::ReactNative::JSValueObject& headers,
-//	const std::string& bodyString,
-//	const winrt::Microsoft::ReactNative::JSValueArray& bodyArray,
-//	std::function<void(std::string, std::string, std::string)> callback) noexcept
-//{
-//
-//	co_return;
-//}
+	auto exists{ uploadProgressMap.find(taskId) };
+	if (exists != uploadProgressMap.end()) {
+		auto progress{ uploadProgressMap[taskId] };
+		uint64_t bodySize{ (co_await requestMessage.Content().ReadAsBufferAsync()).Length() };
+		auto contentStream{ co_await requestMessage.Content().ReadAsInputStreamAsync() };
+		Buffer buffer{ 10 * 1024 };
+		uint64_t read{ 0 };
+
+		if (progress.count > -1) {
+			uint64_t progressInterval{ bodySize / 100 * progress.count };
+			for (;;) {
+
+				buffer.Length(0);
+				auto readBuffer = co_await contentStream.ReadAsync(buffer, buffer.Capacity(), InputStreamOptions::None);
+				read += readBuffer.Length();
+
+				if (readBuffer.Length() == 0)
+				{
+					break;
+				}
+
+				if (read >= progressInterval) {
+					m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"RNFetchBlobProgress-upload",
+						Microsoft::ReactNative::JSValueObject{
+							{ "taskId", taskId },
+							{ "written", read },
+							{ "total", bodySize },
+						});
+					read = 0;
+				}
+			}
+		}
+		else if (progress.interval > -1) {
+			int64_t initialProgressTime{ winrt::clock::now().time_since_epoch().count() / 10000 };
+			int64_t currentProgressTime;
+			for (;;) {
+				buffer.Length(0);
+			
+				auto readBuffer = co_await contentStream.ReadAsync(buffer, buffer.Capacity(), InputStreamOptions::None);
+				read += readBuffer.Length();
+				
+				if (readBuffer.Length() == 0)
+				{
+					break;
+				}
+
+				currentProgressTime = winrt::clock::now().time_since_epoch().count() / 10000;
+				if (currentProgressTime - initialProgressTime >= progress.interval) {
+					m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"RNFetchBlobProgress-upload",
+						Microsoft::ReactNative::JSValueObject{
+							{ "taskId", taskId },
+							{ "written", read },
+							{ "total", bodySize },
+						});
+					initialProgressTime = winrt::clock::now().time_since_epoch().count() / 10000;
+				}
+			}
+		}
+	}
+
+	co_await m_tasks.Add(taskId, ProcessRequestAsync(taskId, filter, requestMessage, config, callback));
+	m_tasks.Cancel(taskId);
+	{
+		std::scoped_lock lock{ m_mutex };
+		uploadProgressMap.extract(taskId);
+		downloadProgressMap.extract(taskId);
+	}
+}
 
 void RNFetchBlob::enableProgressReport(
 	std::string taskId,
 	int interval,
 	int count) noexcept {
-	RNFetchBlobProgressConfig config{interval, count};
+	RNFetchBlobProgressConfig config{ count, interval };
 	std::scoped_lock lock{ m_mutex };
 	downloadProgressMap.try_emplace(taskId, config);
 }
@@ -1404,7 +1399,7 @@ void RNFetchBlob::enableUploadProgressReport(
 	std::string taskId,
 	int interval,
 	int count) noexcept {
-	RNFetchBlobProgressConfig config{ interval, count };
+	RNFetchBlobProgressConfig config{ count, interval };
 	std::scoped_lock lock{ m_mutex };
 	uploadProgressMap.try_emplace(taskId, config);
 }
@@ -1481,22 +1476,23 @@ winrt::Windows::Foundation::IAsyncAction RNFetchBlob::ProcessRequestAsync(
 	const winrt::Windows::Web::Http::Filters::HttpBaseProtocolFilter& filter,
 	winrt::Windows::Web::Http::HttpRequestMessage& httpRequestMessage,
 	RNFetchBlobConfig& config,
-	std::function<void(std::string, std::string, std::string, std::string)> callback) noexcept
+	std::function<void(std::string, std::string, std::string)> callback) noexcept
 try
 {
-	// TODO: implement timeouts
 	winrt::Windows::Web::Http::HttpClient httpClient{filter};
 	
 	IAsyncOperationWithProgress async{ httpClient.SendRequestAsync(httpRequestMessage, winrt::Windows::Web::Http::HttpCompletionOption::ResponseHeadersRead) };
-	if (async.wait_for(100s) == AsyncStatus::Completed) {
+	if (async.wait_for(config.timeout) == AsyncStatus::Completed) {
 		winrt::Windows::Web::Http::HttpResponseMessage response{async.get()};
 		IReference<uint64_t> contentLength{ response.Content().Headers().ContentLength() };
+
+		IOutputStream outputStream;
 
 		if (config.fileCache)
 		{
 			if (config.path.empty())
 			{
-				config.path = winrt::to_string(ApplicationData::Current().TemporaryFolder().Path()) + "\\RNFetchBlobTmp_" + config.taskId;
+				config.path = winrt::to_string(ApplicationData::Current().TemporaryFolder().Path()) + "\\RNFetchBlobTmp_" + taskId;
 				if (config.appendExt.length() > 0)
 				{
 					config.path += "." + config.appendExt;
@@ -1506,79 +1502,93 @@ try
 			std::filesystem::path path{ config.path };
 			StorageFolder storageFolder{ co_await StorageFolder::GetFolderFromPathAsync(ApplicationData::Current().TemporaryFolder().Path()) };
 			StorageFile storageFile{ co_await storageFolder.CreateFileAsync(path.filename().wstring(), CreationCollisionOption::FailIfExists) };
-			IRandomAccessStream  stream{ co_await storageFile.OpenAsync(FileAccessMode::ReadWrite) };
-			IOutputStream outputStream{ stream.GetOutputStreamAt(0) };
+			IRandomAccessStream stream{ co_await storageFile.OpenAsync(FileAccessMode::ReadWrite) };
+			outputStream = stream.GetOutputStreamAt(0) ;
+		}
 
-			auto contentStream{ co_await response.Content().ReadAsInputStreamAsync() };
-			Buffer buffer{ 10 * 1024 };
-			uint64_t totalRead{ 0 };
+		auto contentStream{ co_await response.Content().ReadAsInputStreamAsync() };
+		Buffer buffer{ 10 * 1024 };
+		uint64_t read{ 0 };
+		uint64_t totalRead{ 0 };
 
-			for (;;)
+		RNFetchBlobProgressConfig progressInfo;
+		uint64_t progressInterval{ 0 };
+
+		std::stringstream chunkStream;
+		std::stringstream resultOutput;
+
+		std::string readContents{""};
+
+		auto exists{ downloadProgressMap.find(taskId) };
+		if (exists != downloadProgressMap.end() && contentLength.Type() == PropertyType::UInt64) {
+			progressInfo = downloadProgressMap[taskId];
+
+			if (progressInfo.count > -1) {
+				progressInterval = contentLength.Value() / 100 * progressInfo.count;
+			}
+		}
+
+		int64_t initialProgressTime{ winrt::clock::now().time_since_epoch().count() / 10000 };
+		int64_t currentProgressTime;
+
+		for (;;)
+		{
+			buffer.Length(0);
+			auto readBuffer = co_await contentStream.ReadAsync(buffer, buffer.Capacity(), InputStreamOptions::None);
+			readContents = winrt::to_string(CryptographicBuffer::ConvertBinaryToString(BinaryStringEncoding::Utf8, readBuffer));
+			read += readBuffer.Length();
+			totalRead += read;
+
+			if (readBuffer.Length() == 0)
 			{
-				buffer.Length(0);
-				auto readBuffer = co_await contentStream.ReadAsync(buffer, buffer.Capacity(), InputStreamOptions::None);
-				totalRead += readBuffer.Length();
+				break;
+			}
+			
+			if (config.fileCache) {
+				co_await outputStream.WriteAsync(readBuffer);
+			}
+			else {
+				resultOutput << readContents;
+			}
 
-				auto it{ downloadProgressMap.find(taskId) };
-				if (it != downloadProgressMap.end()) {
-					auto var{ downloadProgressMap[taskId] };
-					std::string chunk{ winrt::to_string(CryptographicBuffer::ConvertBinaryToString(BinaryStringEncoding::Utf8, readBuffer)) };
+			if (progressInfo.count > -1 || progressInfo.interval > -1) {
+				chunkStream << readContents;
+
+				currentProgressTime = winrt::clock::now().time_since_epoch().count() / 10000;
+				if ((currentProgressTime - initialProgressTime >= progressInfo.interval && progressInfo.interval > -1) ||
+					(totalRead >= progressInterval && progressInfo.count > -1)) {
 					m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"RNFetchBlobProgress",
 						Microsoft::ReactNative::JSValueObject{
 							{ "taskId", taskId },
-							{ "written", totalRead },
+							{ "written", int64_t(totalRead) },
 							{ "total", contentLength.Type() == PropertyType::UInt64 ?
 										Microsoft::ReactNative::JSValue(contentLength.Value()) :
 										Microsoft::ReactNative::JSValue{nullptr} },
-							{ "chunk", chunk },
+							{ "chunk", chunkStream.str() },
 						});
+					chunkStream.clear();
+					initialProgressTime = winrt::clock::now().time_since_epoch().count() / 10000;
+					if (progressInfo.count > -1) {
+						read = 0;
+					}
 				}
-
-				if (readBuffer.Length() == 0)
-				{
-					break;
-				}
-				co_await outputStream.WriteAsync(readBuffer);
-
-				// condition if taskId in a table where I need to report, then emit this
-				// to do that, I need a map that with a mutex
-				// mutex for all rn fetch blob main class
-				// std::scoped_lock lock {m_mutex}
-
 			}
-			callback("", "path", config.path, "");
+		}
 
+		if (config.fileCache) {
+			callback("", "path", config.path);
 		}
 		else {
-			std::string chunk{ winrt::to_string(CryptographicBuffer::ConvertBinaryToString(BinaryStringEncoding::Utf8, co_await response.Content().ReadAsBufferAsync())) };
-			auto it{ downloadProgressMap.find(taskId) };
-			if (it != downloadProgressMap.end()) {
-
-				auto var{ downloadProgressMap[taskId] };
-
-				m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"RNFetchBlobProgress",
-					Microsoft::ReactNative::JSValueObject{
-						{ "taskId", taskId },
-						{ "written", contentLength.Type() == PropertyType::UInt64 ?
-									Microsoft::ReactNative::JSValue(contentLength.Value()) :
-									Microsoft::ReactNative::JSValue{nullptr} },
-						{ "total", contentLength.Type() == PropertyType::UInt64 ?
-									Microsoft::ReactNative::JSValue(contentLength.Value()) :
-									Microsoft::ReactNative::JSValue{nullptr} },
-						{ "chunk", chunk },
-					});
-			}
-			callback(chunk, "result", config.path, "");
+			callback("", "result", resultOutput.str());
 		}
-
 	}
-
-
-	
+	else {
+		callback("RNFetchBlob request timed out", "error", "");
+	}
 }
 catch (const hresult_error& ex)
 {
-	callback(winrt::to_string(ex.message().c_str()), "error", "", "");
+	callback(winrt::to_string(ex.message().c_str()), "error", "");
 }
 
 

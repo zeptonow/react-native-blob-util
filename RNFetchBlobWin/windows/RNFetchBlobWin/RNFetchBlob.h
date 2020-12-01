@@ -59,17 +59,16 @@ public:
 struct RNFetchBlobConfig
 {
 public:
-	RNFetchBlobConfig() = default;
+	RNFetchBlobConfig(winrt::Microsoft::ReactNative::JSValueObject& options);
 
 	bool overwrite;
-	int timeout;
+	std::chrono::seconds timeout;
 	bool trusty;
 	bool fileCache;
 	std::string key;
 	std::string appendExt;
 	std::string path;
 	bool followRedirect;
-	std::string taskId;
 };
 
 
@@ -77,12 +76,9 @@ struct RNFetchBlobProgressConfig {
 public:
 	RNFetchBlobProgressConfig() = default;
 	RNFetchBlobProgressConfig(int32_t count_, int32_t interval_);
-
-private:
-	int32_t lastTick{ 0 };
-	int32_t tick{ 0 };
-	int32_t count{ -1 };
-	int32_t interval{ -1 };
+	
+	int64_t count{ -1 };
+	int64_t interval{ -1 };
 };
 
 
@@ -233,14 +229,6 @@ public:
 		std::string path,
 		std::function<void(std::string, winrt::Microsoft::ReactNative::JSValueObject&)> callback) noexcept;
 
-
-	// asset - appears to be Android only
-	//REACT_METHOD(asset);
-	//winrt::fire_and_forget asset(
-	//	std::string filename,
-	//	winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept;
-
-
 	// df
 	REACT_METHOD(df);
 	winrt::fire_and_forget df(
@@ -262,7 +250,7 @@ public:
 		std::wstring url,
 		winrt::Microsoft::ReactNative::JSValueObject headers,
 		std::string body,
-		std::function<void(std::string, std::string, std::string, std::string)> callback) noexcept;
+		std::function<void(std::string, std::string, std::string)> callback) noexcept;
 
 	REACT_METHOD(fetchBlobForm);
 	winrt::fire_and_forget  fetchBlobForm(
@@ -272,7 +260,7 @@ public:
 		std::wstring url,
 		winrt::Microsoft::ReactNative::JSValueObject headers,
 		winrt::Microsoft::ReactNative::JSValueArray body,
-		std::function<void(std::string, std::string, std::string, std::string)> callback) noexcept;
+		std::function<void(std::string, std::string, std::string)> callback) noexcept;
 
 	REACT_METHOD(enableProgressReport);
 	void enableProgressReport(
@@ -319,7 +307,7 @@ private:
 		const winrt::Windows::Web::Http::Filters::HttpBaseProtocolFilter& filter,
 		winrt::Windows::Web::Http::HttpRequestMessage& httpRequestMessage,
 		RNFetchBlobConfig& config,
-		std::function<void(std::string, std::string, std::string, std::string)> callback) noexcept;
+		std::function<void(std::string, std::string, std::string)> callback) noexcept;
 
 	const std::map<std::string, std::function<CryptographyCore::HashAlgorithmProvider()>> availableHashes{
 		{"md5", []() { return CryptographyCore::HashAlgorithmProvider::OpenAlgorithm(CryptographyCore::HashAlgorithmNames::Md5()); } },
@@ -328,16 +316,6 @@ private:
 		{"sha384", []() { return CryptographyCore::HashAlgorithmProvider::OpenAlgorithm(CryptographyCore::HashAlgorithmNames::Sha384()); } },
 		{"sha512", []() { return CryptographyCore::HashAlgorithmProvider::OpenAlgorithm(CryptographyCore::HashAlgorithmNames::Sha512()); } }
 	};
-
-	//winrt::fire_and_forget createBlobForm(
-	//	const winrt::Microsoft::ReactNative::JSValueObject& options,
-	//	const std::string& taskId,
-	//	const std::string& method,
-	//	const std::wstring& url,
-	//	const winrt::Microsoft::ReactNative::JSValueObject& headers,
-	//	const std::string& bodyString,
-	//	const winrt::Microsoft::ReactNative::JSValueArray& bodyArray,
-	//	std::function<void(std::string, std::string, std::string, std::string)> callback) noexcept;
 
 	void splitPath(const std::string& fullPath,
 		winrt::hstring& directoryPath,

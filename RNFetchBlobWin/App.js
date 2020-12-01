@@ -442,8 +442,11 @@ const App: () => React$Node = () => {
     // (you can use "base64"(refer to the library 'mathiasbynens/base64') APIs to make one).
     // The data will be converted to "byte array"(say, blob) before request sent.
     }, "Waka Flacka Flame goes very well with Thomas the Tank Engine.")
+    .uploadProgress((received, total) => {
+      console.log('upload progress', received / total)
+    })
     .progress((received, total) => {
-      console.log('progress', received / total)
+      console.log('download progress', received / total)
     })
     .then((res) => {
       console.log(res.text());
@@ -458,8 +461,6 @@ const App: () => React$Node = () => {
     RNFetchBlob.config({
       // add this option that makes response data to be stored as a file,
       // this is much more performant.
-        Progress: {count : 10, interval : 10},
-        UploadProgress: {count : 10, interval : 10},
         fileCache : true,
       }).fetch('POST', 'https://enb954aqyumba.x.pipedream.net/', {
           Authorization : "Bearer access-token",
@@ -478,12 +479,14 @@ const App: () => React$Node = () => {
             mail : 'example@example.com',
             tel : '12345678'
           })},  
-      ]).progress((received, total) => {
-      console.log('progress', received / total)
+      ]).uploadProgress({ interval : 250 }, (written, total) => {
+        console.log('uploaded', written / total)
+      }).progress({ count : 10, interval: -1 }, (received, total) => {
+        console.log('progress', received / total)
       }).then((res) => {
-      console.log(res.text());
+        console.log(res.text());
       }).catch((err) => {
-      // error handling ..
+        console.log(err.text());
       })
   }
 
@@ -890,12 +893,6 @@ const App: () => React$Node = () => {
               {"FetchBlobTest"}
             </Text>
             <View style={styles.sectionDescription}>
-            <TextInput style = {styles.input}
-              placeholder = "Source path"
-              onChangeText={readStreamParam => setReadStreamParam(readStreamParam)}
-              placeholderTextColor = "#9a73ef"
-              autoCapitalize = "none"
-            />
             </View>
             <Button
               title="Attempt Fetch"
