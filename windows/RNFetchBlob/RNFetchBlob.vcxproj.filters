@@ -11,14 +11,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="Class.cpp" />
+    <ClCompile Include="ReactPackageProvider.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="RNFetchBlob.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="RNFetchBlob.h" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="Class.idl" />
+    <Midl Include="ReactPackageProvider.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="RNFetchBlob.def" />
@@ -26,8 +28,5 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="PropertySheet.props" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="readme.txt" />
   </ItemGroup>
 </Project>

@@ -3,6 +3,7 @@
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Security.Cryptography.h>
 #include <winrt/Windows.Security.Cryptography.Core.h>
+#include <winrt/Windows.Web.Http.Filters.h>
 #include <mutex>
 
 namespace Cryptography = winrt::Windows::Security::Cryptography;
