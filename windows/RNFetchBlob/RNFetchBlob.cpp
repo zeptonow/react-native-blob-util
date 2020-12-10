@@ -1,16 +1,14 @@
 #include "pch.h"
 #include "RNFetchBlob.h"
-#include <windows.h>
+#include <winrt/Windows.ApplicationModel.Activation.h>
 #include <winrt/Windows.Security.Cryptography.h>
 #include <winrt/Windows.Security.Cryptography.Core.h>
 #include <winrt/Windows.Storage.FileProperties.h>
 #include <winrt/Windows.Storage.Streams.h>
 #include <winrt/Windows.Storage.h>
-
 #include <winrt/Windows.Web.Http.h>
 #include <winrt/Windows.Web.Http.Headers.h>
 #include <winrt/windows.web.http.filters.h>
-
 #include <filesystem>
 #include <sstream> 
 
@@ -21,8 +19,6 @@ using namespace winrt::Windows::Storage::Streams;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Security::Cryptography;
 using namespace winrt::Windows::Security::Cryptography::Core;
-
-
 using namespace std::chrono_literals;
 
 CancellationDisposable::CancellationDisposable(IAsyncInfo const& async, std::function<void()>&& onCancel) noexcept
@@ -260,11 +256,11 @@ winrt::fire_and_forget RNFetchBlob::createFileASCII(
 	winrt::Microsoft::ReactNative::ReactPromise<std::string> promise) noexcept
 	try
 {
-	std::vector<byte> data;
+	std::vector<uint8_t> data;
 	data.reserve(dataArray.size());
 	for (auto& var : dataArray)
 	{
-		data.push_back(var.AsInt8());
+		data.push_back(var.AsUInt8());
 	}
 
 	Streams::IBuffer buffer{ CryptographicBuffer::CreateFromByteArray(data) };
@@ -369,11 +365,11 @@ winrt::fire_and_forget RNFetchBlob::writeFileArray(
 	winrt::Microsoft::ReactNative::ReactPromise<int> promise) noexcept
 	try
 {
-	std::vector<byte> data;
+	std::vector<uint8_t> data;
 	data.reserve(dataArray.size());
 	for (auto& var : dataArray)
 	{
-		data.push_back(var.AsInt8());
+		data.push_back(var.AsUInt8());
 	}
 	Streams::IBuffer buffer{ CryptographicBuffer::CreateFromByteArray(data) };
 
@@ -497,11 +493,11 @@ void RNFetchBlob::writeArrayChunk(
 	try
 {
 	auto stream{ m_streamMap.find(streamId)->second };
-	std::vector<byte> data;
+	std::vector<uint8_t> data;
 	data.reserve(dataArray.size());
 	for (auto& var : dataArray)
 	{
-		data.push_back(var.AsInt8());
+		data.push_back(var.AsUInt8());
 	}
 	Streams::IBuffer buffer{ CryptographicBuffer::CreateFromByteArray(data) };
 
