@@ -1120,29 +1120,47 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 
 	winrt::Windows::Web::Http::HttpRequestMessage requestMessage{ httpMethod, Uri{url} };
 	bool pathToFile{ body.rfind(prefix, 0) == 0 };
-	winrt::hstring fileContent;
 	if (pathToFile)
 	{
 		std::string contentPath{ body.substr(prefix.length()) };
-		std::filesystem::path path{ contentPath };
-		path.make_preferred();
+		size_t fileLength = contentPath.length();
+		bool hasTrailingSlash{ contentPath[fileLength - 1] == '\\' || contentPath[fileLength - 1] == '/' };
+		winrt::hstring directoryPath, fileName;
+		splitPath(hasTrailingSlash ? contentPath.substr(0, fileLength - 1) : contentPath, directoryPath, fileName);
+		StorageFolder folder{ co_await StorageFolder::GetFolderFromPathAsync(directoryPath) };
+		StorageFile storageFile{ co_await folder.CreateFileAsync(fileName, CreationCollisionOption::OpenIfExists) };
+		IBuffer requestBuffer{ co_await FileIO::ReadBufferAsync(storageFile) };
 
-		StorageFile storageFile{ co_await StorageFile::GetFileFromPathAsync(winrt::to_hstring(path.c_str())) };
-		fileContent = co_await FileIO::ReadTextAsync(storageFile);
-	}
+		winrt::Windows::Web::Http::HttpBufferContent requestContent{ requestBuffer };
 
-	winrt::Windows::Web::Http::HttpStringContent requestContent{ pathToFile ? fileContent : winrt::to_hstring(body) };
-
-	for (auto const& entry : headers)
-	{
-		if (!requestMessage.Headers().TryAppendWithoutValidation(winrt::to_hstring(entry.first), winrt::to_hstring(entry.second.AsString())))
+		for (auto const& entry : headers)
 		{
-			requestContent.Headers().TryAppendWithoutValidation(winrt::to_hstring(entry.first), winrt::to_hstring(entry.second.AsString()));
+			if (!requestMessage.Headers().TryAppendWithoutValidation(winrt::to_hstring(entry.first), winrt::to_hstring(entry.second.AsString())))
+			{
+				requestContent.Headers().TryAppendWithoutValidation(winrt::to_hstring(entry.first), winrt::to_hstring(entry.second.AsString()));
+			}
+		}
+		requestMessage.Content(requestContent);
+	}
+	else if (!body.empty()) {
+		winrt::Windows::Web::Http::HttpStringContent requestString{ winrt::to_hstring(body) };
+
+		for (auto const& entry : headers)
+		{
+			if (!requestMessage.Headers().TryAppendWithoutValidation(winrt::to_hstring(entry.first), winrt::to_hstring(entry.second.AsString())))
+			{
+				requestString.Headers().TryAppendWithoutValidation(winrt::to_hstring(entry.first), winrt::to_hstring(entry.second.AsString()));
+			}
+		}
+		requestMessage.Content(requestString);
+	}
+	else {
+		for (auto const& entry : headers)
+		{
+			requestMessage.Headers().TryAppendWithoutValidation(winrt::to_hstring(entry.first), winrt::to_hstring(entry.second.AsString()));
 		}
 	}
 	
-	requestMessage.Content(requestContent);
-
 	auto exists{ uploadProgressMap.find(taskId) };
 	if (exists != uploadProgressMap.end()) {
 		auto progress{ uploadProgressMap[taskId] };
@@ -1280,35 +1298,55 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 
 		auto data{ items["data"].AsString() };
 		bool pathToFile{ data.rfind(prefix, 0) == 0 };
-		winrt::hstring fileContent;
 		if (pathToFile)
 		{
 			std::string contentPath{ data.substr(prefix.length()) };
-			std::filesystem::path path{ contentPath };
-			path.make_preferred();
+			size_t fileLength = contentPath.length();
+			bool hasTrailingSlash{ contentPath[fileLength - 1] == '\\' || contentPath[fileLength - 1] == '/' };
+			winrt::hstring directoryPath, fileName;
+			splitPath(hasTrailingSlash ? contentPath.substr(0, fileLength - 1) : contentPath, directoryPath, fileName);
+			StorageFolder folder{ co_await StorageFolder::GetFolderFromPathAsync(directoryPath) };
+			StorageFile storageFile = co_await folder.CreateFileAsync(fileName, CreationCollisionOption::OpenIfExists);
+			IBuffer requestBuffer{ co_await FileIO::ReadBufferAsync(storageFile) };
 
-			StorageFile storageFile{ co_await StorageFile::GetFileFromPathAsync(winrt::to_hstring(path.c_str())) };
-			fileContent = co_await FileIO::ReadTextAsync(storageFile);
+			winrt::Windows::Web::Http::HttpBufferContent requestBufferContent{ requestBuffer };
 
-		}
-		winrt::Windows::Web::Http::HttpStringContent dataContents{ pathToFile ? fileContent : winrt::to_hstring(data) };
-		if (!items["type"].IsNull()) {
-			dataContents.Headers().TryAppendWithoutValidation(L"content-type", winrt::to_hstring(items["type"].AsString()));
-		}
+			if (!items["type"].IsNull()) {
+				requestBufferContent.Headers().TryAppendWithoutValidation(L"content-type", winrt::to_hstring(items["type"].AsString()));
+			}
 
-		auto name{ items["name"].IsNull() ? L"" : winrt::to_hstring(items["name"].AsString()) };
-		if (name.size() <= 0) {
-			requestContent.Add(dataContents);
-			continue;
-		}
-		auto filename{ items["filename"].IsNull() ? L"" : winrt::to_hstring(items["filename"].AsString()) };
-		if (filename.size() <= 0) {
-			requestContent.Add(dataContents, name);
+			auto name{ items["name"].IsNull() ? L"" : winrt::to_hstring(items["name"].AsString()) };
+			if (name.size() <= 0) {
+				requestContent.Add(requestBufferContent);
+				continue;
+			}
+			auto filename{ items["filename"].IsNull() ? L"" : winrt::to_hstring(items["filename"].AsString()) };
+			if (filename.size() <= 0) {
+				requestContent.Add(requestBufferContent, name);
+			}
+			else {
+				requestContent.Add(requestBufferContent, name, filename);
+			}
 		}
 		else {
-			requestContent.Add(dataContents, name, filename);
-		}
+			winrt::Windows::Web::Http::HttpStringContent dataContents{ winrt::to_hstring(data) };
+			if (!items["type"].IsNull()) {
+				dataContents.Headers().TryAppendWithoutValidation(L"content-type", winrt::to_hstring(items["type"].AsString()));
+			}
 
+			auto name{ items["name"].IsNull() ? L"" : winrt::to_hstring(items["name"].AsString()) };
+			if (name.size() <= 0) {
+				requestContent.Add(dataContents);
+				continue;
+			}
+			auto filename{ items["filename"].IsNull() ? L"" : winrt::to_hstring(items["filename"].AsString()) };
+			if (filename.size() <= 0) {
+				requestContent.Add(dataContents, name);
+			}
+			else {
+				requestContent.Add(dataContents, name, filename);
+			}
+		}
 	}
 	requestMessage.Content(requestContent);
 
@@ -1530,7 +1568,8 @@ try
 		for (;;)
 		{
 			buffer.Length(0);
-			auto readBuffer = co_await contentStream.ReadAsync(buffer, buffer.Capacity(), InputStreamOptions::None);
+			auto readBuffer{ co_await contentStream.ReadAsync(buffer, buffer.Capacity(), InputStreamOptions::None) };
+			//readBuffer.
 			readContents = winrt::to_string(CryptographicBuffer::ConvertBinaryToString(BinaryStringEncoding::Utf8, readBuffer));
 			read += readBuffer.Length();
 			totalRead += read;

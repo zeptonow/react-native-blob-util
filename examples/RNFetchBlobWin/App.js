@@ -359,21 +359,8 @@ const App: () => React$Node = () => {
       fileCache : true,
     })
     .fetch(
-      'POST',
-      'https://enb954aqyumba.x.pipedream.net/',
-      {
-        Authorization : "Bearer access-token...",
-        'Dropbox-API-Arg': JSON.stringify({
-          path : '/img-from-react-native.png',
-          mode : 'add',
-          autorename : true,
-          mute : false
-        }),
-      'Content-Type' : 'application/octet-stream',
-      // here's the body you're going to send, should be a BASE64 encoded string
-      // (you can use "base64"(refer to the library 'mathiasbynens/base64') APIs to make one).
-      // The data will be converted to "byte array"(say, blob) before request sent.
-    }
+      'GET',
+      'https://upload.wikimedia.org/wikipedia/commons/c/c4/Change-5.png',
     )
     .then((res) => {
       // the temp file path
@@ -395,7 +382,7 @@ const App: () => React$Node = () => {
       // here's the body you're going to send, should be a BASE64 encoded string
       // (you can use "base64"(refer to the library 'mathiasbynens/base64') APIs to make one).
       // The data will be converted to "byte array"(say, blob) before request sent.
-    }, RNFetchBlob.wrap(RNFetchBlob.fs.dirs.DocumentDir + '/temp1.txt'))
+    }, RNFetchBlob.wrap(RNFetchBlob.fs.dirs.DocumentDir + '\\ImageToUpload.jpg'))
     .then((res) => {
       console.log(res.text());
     })
@@ -472,7 +459,7 @@ const App: () => React$Node = () => {
           // custom content type
           { name : 'avatar-png', filename : 'avatar-png.png', type:'image/png', data: "whaddup my pickles"},
           // part file from storage
-          { name : 'avatar-foo', filename : 'avatar-foo.png', type:'image/foo', data: RNFetchBlob.wrap(RNFetchBlob.fs.dirs.DocumentDir + '/temp1.txt')},
+          { name : 'avatar-foo', filename : 'avatar-foo.png', type:'image/foo', data: RNFetchBlob.wrap(RNFetchBlob.fs.dirs.DocumentDir + '\\ImageToUpload.jpg')},
           // elements without property `filename` will be sent as plain text
           { name : 'name', data : 'user'},
           { name : 'info', data : JSON.stringify({
@@ -900,12 +887,12 @@ const App: () => React$Node = () => {
               onPress={fetchCall}
             />
             <Button
-              title="Attempt Storage Call Fetch"
+              title="Upload File from Storage"
               color="#9a73ef"
               onPress={uploadFromStorageCall}
             />
             <Button
-              title="Upload Text From Call"
+              title="Upload Text From Storage"
               color="#9a73ef"
               onPress={uploadTextFromCall}
             />
