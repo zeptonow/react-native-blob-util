@@ -28,6 +28,7 @@ import com.facebook.react.modules.network.OkHttpClientProvider;
 import okhttp3.JavaNetCookieJar;
 import okhttp3.OkHttpClient;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -107,7 +108,7 @@ public class RNFetchBlob extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void actionViewIntent(String path, String mime, final Promise promise) {
+    public void actionViewIntent(String path, String mime, @Nullable String chooserTitle, final Promise promise) {
         try {
             Uri uriForFile = FileProvider.getUriForFile(this.getReactApplicationContext(),
                     this.getReactApplicationContext().getPackageName() + ".provider", new File(path));
@@ -116,6 +117,9 @@ public class RNFetchBlob extends ReactContextBaseJavaModule {
                 // Create the intent with data and type
                 Intent intent = new Intent(Intent.ACTION_VIEW)
                         .setDataAndType(uriForFile, mime);
+                if (chooserTitle != null) {
+                    intent = Intent.createChooser(intent, chooserTitle);
+                }
 
                 // Set flag to give temporary permission to external app to use FileProvider
                 intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -131,6 +135,9 @@ public class RNFetchBlob extends ReactContextBaseJavaModule {
             } else {
                 Intent intent = new Intent(Intent.ACTION_VIEW)
                         .setDataAndType(Uri.parse("file://" + path), mime).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                if (chooserTitle != null) {
+                    intent = Intent.createChooser(intent, chooserTitle);
+                }
 
                 this.getReactApplicationContext().startActivity(intent);
             }
