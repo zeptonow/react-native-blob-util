@@ -14,6 +14,7 @@ const RNFetchBlob = NativeModules.RNFetchBlob
  * @return {Promise}
  */
 function actionViewIntent(path, mime, chooserTitle) {
+  if(typeof chooserTitle === 'undefined') chooserTitle = null;
   if(Platform.OS === 'android')
     return RNFetchBlob.actionViewIntent(path, mime, chooserTitle)
   else
