@@ -588,22 +588,14 @@ RNFetchBlob.config({
   })
   .fetch('GET', `http://www.example.com/awesome.apk`)
   .then((res) => {
-      android.actionViewIntent(res.path(), 'application/vnd.android.package-archive').then(() => {
-        console.log('File opened')
-      }).catch(e => {
-        console.warn('Unable to open file', e);
-      })
+      android.actionViewIntent(res.path(), 'application/vnd.android.package-archive')
   })
 ```
 
 Or show an image in image viewer
 
 ```js
-      android.actionViewIntent(PATH_OF_IMG, 'image/png').then(() => {
-        console.log('File opened')
-      }).catch(e => {
-        console.warn('Unable to open file', e);
-      })
+      android.actionViewIntent(PATH_OF_IMG, 'image/png')
 ```
 
 ## File System

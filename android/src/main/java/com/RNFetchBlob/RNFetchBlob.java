@@ -129,6 +129,10 @@ public class RNFetchBlob extends ReactContextBaseJavaModule {
 
                 // Validate that the device can open the file
                 PackageManager pm = getCurrentActivity().getPackageManager();
+                if (intent.resolveActivity(pm) != null) {
+                    this.getReactApplicationContext().startActivity(intent);
+                }
+
             } else {
                 Intent intent = new Intent(Intent.ACTION_VIEW)
                         .setDataAndType(Uri.parse("file://" + path), mime).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
