@@ -113,6 +113,7 @@ public class RNFetchBlob extends ReactContextBaseJavaModule {
             Uri uriForFile = FileProvider.getUriForFile(this.getReactApplicationContext(),
                     this.getReactApplicationContext().getPackageName() + ".provider", new File(path));
 
+            Intent intent = new Intent(Intent.ACTION_VIEW);
             if (Build.VERSION.SDK_INT >= 24) {
                 // Create the intent with data and type
                 Intent intent = new Intent(Intent.ACTION_VIEW)
@@ -128,18 +129,17 @@ public class RNFetchBlob extends ReactContextBaseJavaModule {
 
                 // Validate that the device can open the file
                 PackageManager pm = getCurrentActivity().getPackageManager();
-                if (intent.resolveActivity(pm) != null) {
-                    this.getReactApplicationContext().startActivity(intent);
-                }
-
             } else {
                 Intent intent = new Intent(Intent.ACTION_VIEW)
                         .setDataAndType(Uri.parse("file://" + path), mime).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 if (chooserTitle != null) {
-                    intent = Intent.createChooser(intent, chooserTitle);
-                }
 
+            PackageManager pm = getCurrentActivity().getPackageManager();
+            if (intent.resolveActivity(pm) != null) {
                 this.getReactApplicationContext().startActivity(intent);
+                promise.resolve(true);
+            } else {
+                promise.reject("ENOAPP", "No app installed for " + mime);
             }
             ActionViewVisible = true;
 
