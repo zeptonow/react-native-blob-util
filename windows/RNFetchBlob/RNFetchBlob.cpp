@@ -126,7 +126,10 @@ RNFetchBlobConfig::RNFetchBlobConfig(winrt::Microsoft::ReactNative::JSValueObjec
 	}
 	else
 	{
-		std::filesystem::path pathToParse{ options["path"].AsString() };
+		auto filepath{ options["path"].AsString() };
+		auto fileLength{ filepath.length() };
+		bool hasTrailingSlash{ filepath[fileLength - 1] == '\\' || filepath[fileLength - 1] == '/' };
+		std::filesystem::path pathToParse{ hasTrailingSlash ? filepath.substr(0, fileLength - 1) : filepath };
 		pathToParse.make_preferred();
 		path = winrt::to_string(pathToParse.c_str());
 	}
@@ -1523,6 +1526,7 @@ try
 
 	if (config.fileCache)
 	{
+		
 		if (config.path.empty())
 		{
 			config.path = winrt::to_string(ApplicationData::Current().TemporaryFolder().Path()) + "\\RNFetchBlobTmp_" + taskId;
@@ -1533,7 +1537,7 @@ try
 		}
 
 		std::filesystem::path path{ config.path };
-		StorageFolder storageFolder{ co_await StorageFolder::GetFolderFromPathAsync(ApplicationData::Current().TemporaryFolder().Path()) };
+		StorageFolder storageFolder{ co_await StorageFolder::GetFolderFromPathAsync( path.parent_path().wstring()) };
 		StorageFile storageFile{ co_await storageFolder.CreateFileAsync(path.filename().wstring(), CreationCollisionOption::FailIfExists) };
 		IRandomAccessStream stream{ co_await storageFile.OpenAsync(FileAccessMode::ReadWrite) };
 		outputStream = stream.GetOutputStreamAt(0) ;
