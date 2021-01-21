@@ -1578,11 +1578,12 @@ try
 			break;
 		}
 		
+		readContents = winrt::to_string(CryptographicBuffer::EncodeToBase64String(readBuffer));
+
 		if (config.fileCache) {
 			co_await outputStream.WriteAsync(readBuffer);
 		}
 		else {
-			readContents = winrt::to_string(CryptographicBuffer::ConvertBinaryToString(BinaryStringEncoding::Utf8, readBuffer));
 			resultOutput << readContents;
 		}
 
