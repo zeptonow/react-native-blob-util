@@ -645,7 +645,7 @@ catch (const hresult_error& ex)
 }
 
 
-// mkdir - Implemented, not tested
+// mkdir
 void RNFetchBlob::mkdir(
 	std::string path,
 	winrt::Microsoft::ReactNative::ReactPromise<bool> promise) noexcept
@@ -721,7 +721,7 @@ catch (const hresult_error& ex)
 }
 
 
-// hash - Implemented, not tested
+// hash
 winrt::fire_and_forget RNFetchBlob::hash(
 	std::string path,
 	std::string algorithm,
@@ -775,7 +775,7 @@ catch (const hresult_error& ex)
 }
 
 
-// ls - Implemented, not tested
+// ls
 winrt::fire_and_forget RNFetchBlob::ls(
 	std::string path,
 	winrt::Microsoft::ReactNative::ReactPromise<std::vector<std::string>> promise) noexcept
@@ -808,7 +808,7 @@ catch (const hresult_error& ex)
 }
 
 
-// mv - Implemented, not tested
+// mv
 winrt::fire_and_forget RNFetchBlob::mv(
 	std::string src, // from
 	std::string dest, // to
@@ -844,7 +844,7 @@ winrt::fire_and_forget RNFetchBlob::mv(
 }
 
 
-// cp - Implemented, not tested
+// cp
 winrt::fire_and_forget RNFetchBlob::cp(
 	std::string src, // from
 	std::string dest, // to
@@ -876,7 +876,7 @@ catch (const hresult_error& ex)
 }
 
 
-// exists - Implemented, not tested
+// exists
 void RNFetchBlob::exists(
 	std::string path,
 	std::function<void(bool, bool)> callback) noexcept
@@ -889,7 +889,7 @@ void RNFetchBlob::exists(
 }
 
 
-// unlink - Implemented, not tested
+// unlink
 winrt::fire_and_forget RNFetchBlob::unlink(
 	std::string path,
 	std::function<void(std::string, bool)> callback) noexcept
@@ -918,7 +918,7 @@ catch (const hresult_error& ex)
 }
 
 
-// lstat - Implemented, not tested
+// lstat
 winrt::fire_and_forget RNFetchBlob::lstat(
 	std::string path,
 	std::function<void(std::string, winrt::Microsoft::ReactNative::JSValueArray&)> callback) noexcept
@@ -956,7 +956,7 @@ catch (...)
 }
 
 
-// stat - Implemented, not tested
+// stat
 winrt::fire_and_forget RNFetchBlob::stat(
 	std::string path,
 	std::function<void(std::string, winrt::Microsoft::ReactNative::JSValueObject&)> callback) noexcept
@@ -1018,7 +1018,7 @@ catch (const hresult_error& ex)
 }
 
 
-// df - Implemented, not tested
+// df
 winrt::fire_and_forget RNFetchBlob::df(
 	std::function<void(std::string, winrt::Microsoft::ReactNative::JSValueObject&)> callback) noexcept
 try
@@ -1410,6 +1410,7 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 		}
 	}
 
+	// TODO, set a timeout for cancellation
 	co_await m_tasks.Add(taskId, ProcessRequestAsync(taskId, filter, requestMessage, config, callback));
 	m_tasks.Cancel(taskId);
 	{
@@ -1515,111 +1516,107 @@ try
 {
 	winrt::Windows::Web::Http::HttpClient httpClient{filter};
 	
-	IAsyncOperationWithProgress async{ httpClient.SendRequestAsync(httpRequestMessage, winrt::Windows::Web::Http::HttpCompletionOption::ResponseHeadersRead) };
-	if (async.wait_for(config.timeout) == AsyncStatus::Completed) {
-		winrt::Windows::Web::Http::HttpResponseMessage response{async.get()};
-		IReference<uint64_t> contentLength{ response.Content().Headers().ContentLength() };
+	winrt::Windows::Web::Http::HttpResponseMessage response{ co_await httpClient.SendRequestAsync(httpRequestMessage, winrt::Windows::Web::Http::HttpCompletionOption::ResponseHeadersRead) };
+	IReference<uint64_t> contentLength{ response.Content().Headers().ContentLength() };
 
-		IOutputStream outputStream;
+	IOutputStream outputStream;
 
-		if (config.fileCache)
+	if (config.fileCache)
+	{
+		if (config.path.empty())
 		{
-			if (config.path.empty())
+			config.path = winrt::to_string(ApplicationData::Current().TemporaryFolder().Path()) + "\\RNFetchBlobTmp_" + taskId;
+			if (config.appendExt.length() > 0)
 			{
-				config.path = winrt::to_string(ApplicationData::Current().TemporaryFolder().Path()) + "\\RNFetchBlobTmp_" + taskId;
-				if (config.appendExt.length() > 0)
-				{
-					config.path += "." + config.appendExt;
-				}
-			}
-
-			std::filesystem::path path{ config.path };
-			StorageFolder storageFolder{ co_await StorageFolder::GetFolderFromPathAsync(ApplicationData::Current().TemporaryFolder().Path()) };
-			StorageFile storageFile{ co_await storageFolder.CreateFileAsync(path.filename().wstring(), CreationCollisionOption::FailIfExists) };
-			IRandomAccessStream stream{ co_await storageFile.OpenAsync(FileAccessMode::ReadWrite) };
-			outputStream = stream.GetOutputStreamAt(0) ;
-		}
-
-		auto contentStream{ co_await response.Content().ReadAsInputStreamAsync() };
-		Buffer buffer{ 10 * 1024 };
-		uint64_t read{ 0 };
-		uint64_t totalRead{ 0 };
-
-		RNFetchBlobProgressConfig progressInfo;
-		uint64_t progressInterval{ 0 };
-
-		std::stringstream chunkStream;
-		std::stringstream resultOutput;
-
-		std::string readContents{""};
-
-		auto exists{ downloadProgressMap.find(taskId) };
-		if (exists != downloadProgressMap.end() && contentLength.Type() == PropertyType::UInt64) {
-			progressInfo = downloadProgressMap[taskId];
-
-			if (progressInfo.count > -1) {
-				progressInterval = contentLength.Value() / 100 * progressInfo.count;
+				config.path += "." + config.appendExt;
 			}
 		}
 
-		int64_t initialProgressTime{ winrt::clock::now().time_since_epoch().count() / 10000 };
-		int64_t currentProgressTime;
+		std::filesystem::path path{ config.path };
+		StorageFolder storageFolder{ co_await StorageFolder::GetFolderFromPathAsync(ApplicationData::Current().TemporaryFolder().Path()) };
+		StorageFile storageFile{ co_await storageFolder.CreateFileAsync(path.filename().wstring(), CreationCollisionOption::FailIfExists) };
+		IRandomAccessStream stream{ co_await storageFile.OpenAsync(FileAccessMode::ReadWrite) };
+		outputStream = stream.GetOutputStreamAt(0) ;
+	}
 
-		for (;;)
+	auto contentStream{ co_await response.Content().ReadAsInputStreamAsync() };
+	Buffer buffer{ 10 * 1024 };
+	uint64_t read{ 0 };
+	uint64_t totalRead{ 0 };
+
+	RNFetchBlobProgressConfig progressInfo;
+	uint64_t progressInterval{ 0 };
+
+	std::stringstream chunkStream;
+	std::stringstream resultOutput;
+
+	std::string readContents{""};
+
+	auto exists{ downloadProgressMap.find(taskId) };
+	if (exists != downloadProgressMap.end() && contentLength.Type() == PropertyType::UInt64) {
+		progressInfo = downloadProgressMap[taskId];
+
+		if (progressInfo.count > -1) {
+			progressInterval = contentLength.Value() / 100 * progressInfo.count;
+		}
+	}
+
+	int64_t initialProgressTime{ winrt::clock::now().time_since_epoch().count() / 10000 };
+	int64_t currentProgressTime;
+
+	for (;;)
+	{
+		buffer.Length(0);
+		auto readBuffer{ co_await contentStream.ReadAsync(buffer, buffer.Capacity(), InputStreamOptions::None) };
+
+		//
+		read += readBuffer.Length();
+		totalRead += read;
+
+		if (readBuffer.Length() == 0)
 		{
-			buffer.Length(0);
-			auto readBuffer{ co_await contentStream.ReadAsync(buffer, buffer.Capacity(), InputStreamOptions::None) };
-			//readBuffer.
-			readContents = winrt::to_string(CryptographicBuffer::ConvertBinaryToString(BinaryStringEncoding::Utf8, readBuffer));
-			read += readBuffer.Length();
-			totalRead += read;
-
-			if (readBuffer.Length() == 0)
-			{
-				break;
-			}
-			
-			if (config.fileCache) {
-				co_await outputStream.WriteAsync(readBuffer);
-			}
-			else {
-				resultOutput << readContents;
-			}
-
-			if (progressInfo.count > -1 || progressInfo.interval > -1) {
-				chunkStream << readContents;
-
-				currentProgressTime = winrt::clock::now().time_since_epoch().count() / 10000;
-				if ((currentProgressTime - initialProgressTime >= progressInfo.interval && progressInfo.interval > -1) ||
-					(totalRead >= progressInterval && progressInfo.count > -1)) {
-					m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"RNFetchBlobProgress",
-						Microsoft::ReactNative::JSValueObject{
-							{ "taskId", taskId },
-							{ "written", int64_t(totalRead) },
-							{ "total", contentLength.Type() == PropertyType::UInt64 ?
-										Microsoft::ReactNative::JSValue(contentLength.Value()) :
-										Microsoft::ReactNative::JSValue{nullptr} },
-							{ "chunk", chunkStream.str() },
-						});
-					chunkStream.clear();
-					initialProgressTime = winrt::clock::now().time_since_epoch().count() / 10000;
-					if (progressInfo.count > -1) {
-						read = 0;
-					}
-				}
-			}
+			break;
 		}
-
+		
 		if (config.fileCache) {
-			callback("", "path", config.path);
+			co_await outputStream.WriteAsync(readBuffer);
 		}
 		else {
-			callback("", "result", resultOutput.str());
+			readContents = winrt::to_string(CryptographicBuffer::ConvertBinaryToString(BinaryStringEncoding::Utf8, readBuffer));
+			resultOutput << readContents;
+		}
+
+		if (progressInfo.count > -1 || progressInfo.interval > -1) {
+			chunkStream << readContents;
+
+			currentProgressTime = winrt::clock::now().time_since_epoch().count() / 10000;
+			if ((currentProgressTime - initialProgressTime >= progressInfo.interval && progressInfo.interval > -1) ||
+				(totalRead >= progressInterval && progressInfo.count > -1)) {
+				m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"RNFetchBlobProgress",
+					Microsoft::ReactNative::JSValueObject{
+						{ "taskId", taskId },
+						{ "written", int64_t(totalRead) },
+						{ "total", contentLength.Type() == PropertyType::UInt64 ?
+									Microsoft::ReactNative::JSValue(contentLength.Value()) :
+									Microsoft::ReactNative::JSValue{nullptr} },
+						{ "chunk", chunkStream.str() },
+					});
+				chunkStream.clear();
+				initialProgressTime = winrt::clock::now().time_since_epoch().count() / 10000;
+				if (progressInfo.count > -1) {
+					read = 0;
+				}
+			}
 		}
 	}
-	else {
-		callback("RNFetchBlob request timed out", "error", "");
+
+	if (config.fileCache) {
+		callback("", "path", config.path);
 	}
+	else {
+		callback("", "result", resultOutput.str());
+	}
+	//	callback("RNFetchBlob request timed out", "error", "");
 }
 catch (const hresult_error& ex)
 {
