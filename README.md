@@ -2,8 +2,9 @@
 [![release](https://img.shields.io/github/release/joltup/rn-fetch-blob.svg?style=flat-square)](https://github.com/joltup/rn-fetch-blob/releases) [![npm](https://img.shields.io/npm/v/rn-fetch-blob.svg?style=flat-square)](https://www.npmjs.com/package/rn-fetch-blob) ![](https://img.shields.io/badge/PR-Welcome-brightgreen.svg?style=flat-square) [![](https://img.shields.io/badge/Wiki-Public-brightgreen.svg?style=flat-square)](https://github.com/joltup/rn-fetch-blob/wiki) [![npm](https://img.shields.io/npm/l/rn-fetch-blob.svg?maxAge=2592000&style=flat-square)]()
 
 A project committed to making file access and data transfer easier and more efficient for React Native developers.
-
-# ⚠️ Unmaintained ⚠️ 
+# I forked this project to continue working on it.
+I will soon publish it on npm. So far Android 10 support is added and some other fixes.
+Also changes are made for feedback (rejected promise) if there is no app to open the given file.
 
 # Version Compatibility Warning
 
