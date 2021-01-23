@@ -249,7 +249,9 @@ catch (const hresult_error& ex)
 	}
 	else
 	{
-		promise.Reject("EUNSPECIFIED: Failed to write to file.");
+		// EUNSPECIFIED: Failed to write to file
+		auto errorMessage{ L"EUNSPECIFIED: " + ex.message() };
+		promise.Reject(errorMessage.c_str());
 	}
 }
 
@@ -271,23 +273,12 @@ winrt::fire_and_forget RNFetchBlob::createFileASCII(
 	winrt::hstring directoryPath, fileName;
 	splitPath(path, directoryPath, fileName);
 
-	bool shouldExit{ false };
 	StorageFolder folder{ co_await StorageFolder::GetFolderFromPathAsync(directoryPath) };
-	try
-	{
-		StorageFile file{ co_await folder.CreateFileAsync(fileName, CreationCollisionOption::FailIfExists) };
-		Streams::IRandomAccessStream stream{ co_await file.OpenAsync(FileAccessMode::ReadWrite) };
-		co_await stream.WriteAsync(buffer);
-	}
-	catch (...)
-	{
-		promise.Reject("EEXIST: File already exists."); // TODO: Include filepath
-		shouldExit = true;
-	}
-	if (shouldExit)
-	{
-		co_return;
-	}
+
+	StorageFile file{ co_await folder.CreateFileAsync(fileName, CreationCollisionOption::FailIfExists) };
+	Streams::IRandomAccessStream stream{ co_await file.OpenAsync(FileAccessMode::ReadWrite) };
+	co_await stream.WriteAsync(buffer);
+
 	promise.Resolve(path);
 }
 catch (const hresult_error& ex)
@@ -297,9 +288,14 @@ catch (const hresult_error& ex)
 	{
 		promise.Reject("ENOENT: File does not exist and could not be created"); // TODO: Include filepath
 	}
-	else
+	else if (result == 0x80070050) 
 	{
-		promise.Reject("EUNSPECIFIED: Failed to write to file.");
+		promise.Reject("EEXIST: File already exists.");
+	}
+	else
+	{	
+		auto errorMessage{ L"EUNSPECIFIED: " + ex.message() };
+		promise.Reject(errorMessage.c_str());
 	}
 }
 
@@ -332,7 +328,8 @@ try
 	}
 	else
 	{
-		promise.Reject("Invalid encoding");
+		auto errorMessage{ "Invalid encoding: " + encoding };
+		promise.Reject(errorMessage.c_str());
 	}
 
 	winrt::hstring destDirectoryPath, destFileName;
@@ -963,54 +960,30 @@ catch (...)
 winrt::fire_and_forget RNFetchBlob::stat(
 	std::string path,
 	std::function<void(std::string, winrt::Microsoft::ReactNative::JSValueObject&)> callback) noexcept
-	try
+try
 {
 	std::filesystem::path givenPath(path);
 	givenPath.make_preferred();
+	bool isDirectory{ std::filesystem::is_directory(path) };
 
-	std::string resultPath{ winrt::to_string(givenPath.c_str()) };
-	auto potentialPath{ winrt::to_hstring(resultPath) };
-	bool isFile{ false };
-	uint64_t mtime{ 0 };
-	uint64_t size{ 0 };
+	//std::string resultPath{ winrt::to_string(givenPath.c_str()) };
+	auto resultPath{ winrt::to_hstring(givenPath.c_str()) };
 
 	// Try to open as folder
-	try
-	{
-		StorageFolder folder{ co_await StorageFolder::GetFolderFromPathAsync(potentialPath) };
-		auto properties{ co_await folder.GetBasicPropertiesAsync() };
-		mtime = properties.DateModified().time_since_epoch() / std::chrono::seconds(1) - UNIX_EPOCH_IN_WINRT_SECONDS;
-		size = properties.Size();
+	IStorageItem item;
+	if (isDirectory) {
+		item = co_await StorageFolder::GetFolderFromPathAsync(resultPath);
 	}
-	catch (...)
-	{
-		isFile = true;
-		auto lastCharIndex{ path.length() - 1 };
-		if (resultPath[lastCharIndex] == '\\')
-		{
-			givenPath = std::filesystem::path(resultPath.substr(0, lastCharIndex));
-		}
+	else {
+		item = co_await StorageFile::GetFileFromPathAsync(resultPath);
 	}
-
-	// Try to open as file
-	if (isFile)
-	{
-		auto directoryPath{ givenPath.has_parent_path() ? winrt::to_hstring(givenPath.parent_path().c_str()) : L"" };
-		auto fileName{ givenPath.has_filename() ? winrt::to_hstring(givenPath.filename().c_str()) : L"" };
-
-		StorageFolder folder{ co_await StorageFolder::GetFolderFromPathAsync(directoryPath) };
-		auto properties{ (co_await folder.GetFileAsync(fileName)).Properties() };
-		auto propertyMap{ co_await properties.RetrievePropertiesAsync({ L"System.DateCreated", L"System.DateModified", L"System.Size" }) };
-		mtime = winrt::unbox_value<DateTime>(propertyMap.Lookup(L"System.DateModified")).time_since_epoch() / std::chrono::seconds(1) - UNIX_EPOCH_IN_WINRT_SECONDS;
-		size = winrt::unbox_value<uint64_t>(propertyMap.Lookup(L"System.Size"));
-	}
-
+	auto properties{ co_await item.GetBasicPropertiesAsync() };
 	winrt::Microsoft::ReactNative::JSValueObject fileInfo;
-	fileInfo["size"] = size;
+	fileInfo["size"] = properties.Size();
 	fileInfo["filename"] = givenPath.filename().string();
 	fileInfo["path"] = givenPath.string();
-	fileInfo["lastModified"] = mtime;
-	fileInfo["type"] = isFile ? "file" : "directory";
+	fileInfo["lastModified"] = winrt::clock::to_time_t(properties.DateModified());;
+	fileInfo["type"] = isDirectory ? "directory" : "file";
 
 	callback("", fileInfo);
 }
@@ -1115,7 +1088,7 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 	{
 		httpMethod = winrt::Windows::Web::Http::HttpMethod::Get();
 	}
-	else if (method.compare("POST") != 0 && method.compare("post") != 0)
+	else
 	{
 		callback("Method not supported", "error", "");
 		co_return;
