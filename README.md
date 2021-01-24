@@ -1,4 +1,4 @@
-# rn-fetch-blob
+# react-native-blob-util
 [![release](https://img.shields.io/github/release/joltup/rn-fetch-blob.svg?style=flat-square)](https://github.com/joltup/rn-fetch-blob/releases) [![npm](https://img.shields.io/npm/v/rn-fetch-blob.svg?style=flat-square)](https://www.npmjs.com/package/rn-fetch-blob) ![](https://img.shields.io/badge/PR-Welcome-brightgreen.svg?style=flat-square) [![](https://img.shields.io/badge/Wiki-Public-brightgreen.svg?style=flat-square)](https://github.com/joltup/rn-fetch-blob/wiki) [![npm](https://img.shields.io/npm/l/rn-fetch-blob.svg?maxAge=2592000&style=flat-square)]()
 
 A project committed to making file access and data transfer easier and more efficient for React Native developers.
@@ -8,7 +8,7 @@ Also changes are made for feedback (rejected promise) if there is no app to open
 
 # Version Compatibility Warning
 
-rn-fetch-blob version 0.10.16 is only compatible with react native 0.60 and up. It should have been a major version bump, we apologize for the mistake. If you are not yet upgraded to react native 0.60 or above, you should remain on rn-fetch-blob version 0.10.15
+react-native-blob-util version 0.10.16 is only compatible with react native 0.60 and up. It should have been a major version bump, we apologize for the mistake. If you are not yet upgraded to react native 0.60 or above, you should remain on  react-native-blob-util version 0.10.15
 
 ## Features
 - Transfer data directly from/to storage without BASE64 bridging
@@ -56,21 +56,21 @@ In `0.8.0` we introduced experimental Web API polyfills that make it possible to
 Install package from npm
 
 ```sh
-npm install --save rn-fetch-blob
+npm install --save react-native-blob-util
 ```
 
 Or if using CocoaPods, add the pod to your `Podfile`
 
 ```
-pod 'rn-fetch-blob',
-    :path => '../node_modules/rn-fetch-blob'
+pod 'react-native-blob-util',
+    :path => '../node_modules/react-native-blob-util'
 ```
 
 After `0.10.3` you can install this package directly from Github
 
 ```sh
 # replace <branch_name> with any one of the branches
-npm install --save github:joltup/rn-fetch-blob#<branch_name>
+npm install --save github:RonRadtke/react-native-blob-util#<branch_name>
 ```
 
 **Manually Link Native Modules**
@@ -82,7 +82,7 @@ If automatically linking doesn't work for you, see instructions on [manually lin
 For 0.29.2+ projects, simply link native packages via the following command (note: rnpm has been merged into react-native)
 
 ```
-react-native link rn-fetch-blob
+react-native link react-native-blob-util
 ```
 
 As for projects < 0.29 you need `rnpm` to link native packages
@@ -94,7 +94,7 @@ rnpm link
 Optionally, use the following command to add Android permissions to `AndroidManifest.xml` automatically
 
 ```sh
-RNFB_ANDROID_PERMISSIONS=true react-native link rn-fetch-blob
+RNFB_ANDROID_PERMISSIONS=true react-native react-native-blob-util
 ```
 
 pre 0.29 projects

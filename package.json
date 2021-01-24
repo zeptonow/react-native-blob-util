@@ -1,5 +1,5 @@
 {
-  "name": "rn-fetch-blob",
+  "name": "react-native-blob-util",
   "version": "0.13.0",
   "description": "A module provides upload, download, and files access API. Supports file stream read/write for process large files.",
   "main": "index.js",
@@ -22,11 +22,12 @@
     "image header"
   ],
   "repository": {
-    "url": "https://github.com/joltup/rn-fetch-blob.git"
+    "url": "https://github.com/RonRadtke/react-native-blob-util"
   },
-  "author": "Joltup",
+  "author": "RonRadtke",
   "license": "MIT",
   "contributors": [
+    "Traviskn <>",
     "Ben <benhsieh@catchplay.com>",
     "wkh237 <xeiyan@gmail.com>"
   ]
