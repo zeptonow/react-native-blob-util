@@ -48,6 +48,34 @@ private:
 	std::map<TaskId, CancellationDisposable> m_pendingTasks;
 };
 
+struct RNFetchBlobState
+{
+	/*
+		
+		@"state": @"2", // store
+		@"headers": headers, // store
+		@"redirects": redirects, //check how to track, store
+		@"respType" : respType, // store
+		@"status": [NSNumber numberWithInteger : statusCode] // store
+	*/
+	std::string state;
+	winrt::Microsoft::ReactNative::JSValueObject headers;
+	std::vector<std::string> redirects;
+	std::string respType;
+	int status = 0;
+
+	/*
+	taskId: string;
+    state: string;
+    headers: any;
+    redirects: string[];
+    status: number;
+    respType: "text" | "blob" | "" | "json";
+    rnfbEncode: "path" | "base64" | "ascii" | "utf8";
+    timeout: boolean;
+	*/
+};
+
 
 struct RNFetchBlobStream
 {
@@ -308,7 +336,8 @@ private:
 		const winrt::Windows::Web::Http::Filters::HttpBaseProtocolFilter& filter,
 		winrt::Windows::Web::Http::HttpRequestMessage& httpRequestMessage,
 		RNFetchBlobConfig& config,
-		std::function<void(std::string, std::string, std::string)> callback) noexcept;
+		std::function<void(std::string, std::string, std::string)> callback,
+		RNFetchBlobState& eventState) noexcept;
 
 	const std::map<std::string, std::function<CryptographyCore::HashAlgorithmProvider()>> availableHashes{
 		{"md5", []() { return CryptographyCore::HashAlgorithmProvider::OpenAlgorithm(CryptographyCore::HashAlgorithmNames::Md5()); } },
