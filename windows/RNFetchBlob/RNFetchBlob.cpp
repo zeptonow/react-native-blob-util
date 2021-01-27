@@ -131,7 +131,7 @@ RNFetchBlobConfig::RNFetchBlobConfig(winrt::Microsoft::ReactNative::JSValueObjec
 		bool hasTrailingSlash{ filepath[fileLength - 1] == '\\' || filepath[fileLength - 1] == '/' };
 		std::filesystem::path pathToParse{ hasTrailingSlash ? filepath.substr(0, fileLength - 1) : filepath };
 		pathToParse.make_preferred();
-		path = winrt::to_string(pathToParse.c_str());
+		path = pathToParse.string();
 	}
 	trusty = options["trusty"].AsBoolean();
 
@@ -230,7 +230,7 @@ try
 		}
 		catch (...)
 		{
-			promise.Reject("EEXIST: File already exists."); // TODO: Include filepath
+			promise.Reject(winrt::Microsoft::ReactNative::ReactError{ "EEXIST", "EEXIST: File already exists; " + path });
 			shouldExit = true;
 		}
 	}
@@ -245,13 +245,11 @@ catch (const hresult_error& ex)
 	hresult result{ ex.code() };
 	if (result == 0x80070002) // FileNotFoundException
 	{
-		promise.Reject("ENOENT: File does not exist and could not be created"); // TODO: Include filepath
+		promise.Reject(winrt::Microsoft::ReactNative::ReactError{ "ENOENT", "ENOENT: File does not exist and could not be created; " + path });
 	}
 	else
 	{
-		// EUNSPECIFIED: Failed to write to file
-		auto errorMessage{ L"EUNSPECIFIED: " + ex.message() };
-		promise.Reject(errorMessage.c_str());
+		promise.Reject(winrt::Microsoft::ReactNative::ReactError{ "EUNSPECIFIED", "EUNSPECIFIED: " + winrt::to_string(ex.message()) +  "; " + path  });
 	}
 }
 
@@ -286,16 +284,15 @@ catch (const hresult_error& ex)
 	hresult result{ ex.code() };
 	if (result == 0x80070002) // FileNotFoundException
 	{
-		promise.Reject("ENOENT: File does not exist and could not be created"); // TODO: Include filepath
+		promise.Reject(winrt::Microsoft::ReactNative::ReactError{ "ENOENT", "ENOENT: File does not exist and could not be created; " + path });
 	}
 	else if (result == 0x80070050) 
 	{
-		promise.Reject("EEXIST: File already exists.");
+		promise.Reject(winrt::Microsoft::ReactNative::ReactError{ "EEXIST", "EEXIST: File already exists; " + path });
 	}
 	else
 	{	
-		auto errorMessage{ L"EUNSPECIFIED: " + ex.message() };
-		promise.Reject(errorMessage.c_str());
+		promise.Reject(winrt::Microsoft::ReactNative::ReactError{ "EUNSPECIFIED", "EUNSPECIFIED: " + winrt::to_string(ex.message()) });
 	}
 }
 
@@ -353,9 +350,9 @@ try
 	co_await stream.WriteAsync(buffer);
 	promise.Resolve(buffer.Length());
 }
-catch (...)
+catch (const hresult_error& ex)
 {
-	promise.Reject("Failed to write");
+	promise.Reject(winrt::Microsoft::ReactNative::ReactError{ "EUNSPECIFIED", "EUNSPECIFIED: " + winrt::to_string(ex.message()) + "; " + path });
 }
 
 winrt::fire_and_forget RNFetchBlob::writeFileArray(
@@ -396,9 +393,9 @@ winrt::fire_and_forget RNFetchBlob::writeFileArray(
 
 	co_return;
 }
-catch (...)
+catch (const hresult_error& ex)
 {
-	promise.Reject("Failed to write");
+	promise.Reject(winrt::Microsoft::ReactNative::ReactError{ "EUNSPECIFIED", "EUNSPECIFIED: " + winrt::to_string(ex.message()) + "; " + path });
 }
 
 
@@ -1058,15 +1055,7 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 {
 	winrt::Windows::Web::Http::Filters::HttpBaseProtocolFilter filter;
 	RNFetchBlobConfig config{ options };
-	if (config.followRedirect == true)
-	{
-		filter.AllowAutoRedirect(true);
-	}
-	else
-	{
-		filter.AllowAutoRedirect(false);
-	}
-
+	filter.AllowAutoRedirect(false);
 	if (config.trusty)
 	{
 		filter.IgnorableServerCertificateErrors().Append(Cryptography::Certificates::ChainValidationResult::Untrusted);
@@ -1197,7 +1186,10 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 		}
 	}
 
-	co_await m_tasks.Add(taskId, ProcessRequestAsync(taskId, filter, requestMessage, config, callback));
+	RNFetchBlobState eventState;
+
+	co_await m_tasks.Add(taskId, ProcessRequestAsync(taskId, filter, requestMessage, config, callback, eventState));
+
 	m_tasks.Cancel(taskId);
 	{
 		std::scoped_lock lock{ m_mutex };
@@ -1215,8 +1207,6 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 	winrt::Microsoft::ReactNative::JSValueArray body,
 	std::function<void(std::string, std::string, std::string)> callback) noexcept
 {
-	//createBlobForm(options, taskId, method, url, headers, "", body, callback);
-	//co_return;
 	winrt::hstring boundary{ L"-----" };
 	winrt::Windows::Web::Http::Filters::HttpBaseProtocolFilter filter;
 
@@ -1387,7 +1377,23 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 	}
 
 	// TODO, set a timeout for cancellation
-	co_await m_tasks.Add(taskId, ProcessRequestAsync(taskId, filter, requestMessage, config, callback));
+	
+	//Create EVENT_STATE_CHANGE
+	/*
+		taskId, // DO NOT STORE
+                @"state": @"2", // store
+                @"headers": headers, // store
+                @"redirects": redirects, //check how to track
+                @"respType" : respType, // store
+                @"timeout" : @NO, // do not store
+                @"status": [NSNumber numberWithInteger:statusCode] // store
+	*/
+	
+	RNFetchBlobState eventState;
+
+	co_await m_tasks.Add(taskId, ProcessRequestAsync(taskId, filter, requestMessage, config, callback, eventState));
+
+
 	m_tasks.Cancel(taskId);
 	{
 		std::scoped_lock lock{ m_mutex };
@@ -1487,19 +1493,32 @@ winrt::Windows::Foundation::IAsyncAction RNFetchBlob::ProcessRequestAsync(
 	const winrt::Windows::Web::Http::Filters::HttpBaseProtocolFilter& filter,
 	winrt::Windows::Web::Http::HttpRequestMessage& httpRequestMessage,
 	RNFetchBlobConfig& config,
-	std::function<void(std::string, std::string, std::string)> callback) noexcept
+	std::function<void(std::string, std::string, std::string)> callback,
+	RNFetchBlobState& eventState) noexcept
 try
 {
 	winrt::Windows::Web::Http::HttpClient httpClient{filter};
 	
 	winrt::Windows::Web::Http::HttpResponseMessage response{ co_await httpClient.SendRequestAsync(httpRequestMessage, winrt::Windows::Web::Http::HttpCompletionOption::ResponseHeadersRead) };
+	
+	auto status{ static_cast<int>(response.StatusCode()) };
+	if (config.followRedirect) {
+		while (status >= 300 && status < 400) {
+			auto redirect{ response.Headers().Location().ToString() };
+			eventState.redirects.push_back(winrt::to_string(redirect));
+			httpRequestMessage.RequestUri(Uri{ redirect });
+			response = co_await httpClient.SendRequestAsync(httpRequestMessage, winrt::Windows::Web::Http::HttpCompletionOption::ResponseHeadersRead);
+			status = static_cast<int>(response.StatusCode());
+		}
+	}
+	
 	IReference<uint64_t> contentLength{ response.Content().Headers().ContentLength() };
 
 	IOutputStream outputStream;
+	bool writeToFile{ config.fileCache || !config.path.empty() };
 
-	if (config.fileCache)
+	if (writeToFile)
 	{
-		
 		if (config.path.empty())
 		{
 			config.path = winrt::to_string(ApplicationData::Current().TemporaryFolder().Path()) + "\\RNFetchBlobTmp_" + taskId;
@@ -1508,7 +1527,6 @@ try
 				config.path += "." + config.appendExt;
 			}
 		}
-
 		std::filesystem::path path{ config.path };
 		StorageFolder storageFolder{ co_await StorageFolder::GetFolderFromPathAsync( path.parent_path().wstring()) };
 		StorageFile storageFile{ co_await storageFolder.CreateFileAsync(path.filename().wstring(), CreationCollisionOption::FailIfExists) };
@@ -1546,7 +1564,6 @@ try
 		buffer.Length(0);
 		auto readBuffer{ co_await contentStream.ReadAsync(buffer, buffer.Capacity(), InputStreamOptions::None) };
 
-		//
 		read += readBuffer.Length();
 		totalRead += read;
 
@@ -1557,7 +1574,7 @@ try
 		
 		readContents = winrt::to_string(CryptographicBuffer::EncodeToBase64String(readBuffer));
 
-		if (config.fileCache) {
+		if (writeToFile) {
 			co_await outputStream.WriteAsync(readBuffer);
 		}
 		else {
@@ -1587,8 +1604,20 @@ try
 			}
 		}
 	}
+	
+	eventState.status = static_cast<int>(response.StatusCode());
 
-	if (config.fileCache) {
+	for (const auto header : response.Content().Headers().GetView()) {
+		eventState.headers[winrt::to_string(header.Key())] = winrt::to_string(header.Value());
+	}
+	
+	if (response.Content().Headers().ContentType() != nullptr) {
+		eventState.respType = winrt::to_string(response.Content().Headers().ContentType().ToString());
+	}
+
+	eventState.state = winrt::to_string(response.ReasonPhrase());
+
+	if (writeToFile) {
 		callback("", "path", config.path);
 	}
 	else {
@@ -1599,6 +1628,9 @@ try
 catch (const hresult_error& ex)
 {
 	callback(winrt::to_string(ex.message().c_str()), "error", "");
+}
+catch (...) {
+	co_return;
 }
 
 
