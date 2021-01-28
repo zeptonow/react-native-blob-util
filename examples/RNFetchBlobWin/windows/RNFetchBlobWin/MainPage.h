@@ -3,7 +3,7 @@
 #include <winrt/Microsoft.ReactNative.h>
 
 
-namespace winrt::RNFetchBlobWin::implementation
+namespace winrt::ReactNativeBlobUtilWin::implementation
 {
     struct MainPage : MainPageT<MainPage>
     {
@@ -11,7 +11,7 @@ namespace winrt::RNFetchBlobWin::implementation
     };
 }
 
-namespace winrt::RNFetchBlobWin::factory_implementation
+namespace winrt::ReactNativeBlobUtilWin::factory_implementation
 {
     struct MainPage : MainPageT<MainPage, implementation::MainPage>
     {

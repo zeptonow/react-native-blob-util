@@ -4,7 +4,7 @@ import fs from '../fs'
 import unicode from '../utils/unicode'
 import Blob from './Blob'
 
-const RNFetchBlob = NativeModules.RNFetchBlob
+const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil
 const log = new Log('FetchPolyfill')
 
 log.disable()
@@ -12,15 +12,15 @@ log.disable()
 
 export default class Fetch {
 
-  constructor(config:RNFetchBlobConfig) {
-    Object.assign(this, new RNFetchBlobFetchPolyfill(config))
+  constructor(config:ReactNativeBlobUtilConfig) {
+    Object.assign(this, new ReactNativeBlobUtilFetchPolyfill(config))
   }
 
 }
 
-class RNFetchBlobFetchPolyfill {
+class ReactNativeBlobUtilFetchPolyfill {
 
-  constructor(config:RNFetchBlobConfig) {
+  constructor(config:ReactNativeBlobUtilConfig) {
     this.build = () => (url, options = {}) => {
 
       let body = options.body
@@ -41,12 +41,12 @@ class RNFetchBlobFetchPolyfill {
           promise = Blob.build(body).then((b) => {
             blobCache = b
             options.headers['Content-Type'] = 'multipart/form-data;boundary=' + b.multipartBoundary
-            return Promise.resolve(RNFetchBlob.wrap(b._ref))
+            return Promise.resolve(ReactNativeBlobUtil.wrap(b._ref))
           })
         }
         // When request body is a Blob, use file URI of the Blob as request body.
-        else if (body.isRNFetchBlobPolyfill)
-          promise = Promise.resolve(RNFetchBlob.wrap(body.blobPath))
+        else if (body.isReactNativeBlobUtilPolyfill)
+          promise = Promise.resolve(ReactNativeBlobUtil.wrap(body.blobPath))
         else if (typeof body !== 'object' && options.headers['Content-Type'] !== 'application/json')
           promise = Promise.resolve(JSON.stringify(body))
         else if (typeof body !== 'string')
@@ -61,7 +61,7 @@ class RNFetchBlobFetchPolyfill {
       let progressHandler, uploadHandler, cancelHandler
       let statefulPromise = promise
           .then((body) => {
-            let task = RNFetchBlob.config(config)
+            let task = ReactNativeBlobUtil.config(config)
               .fetch(options.method, url, options.headers, body)
             if(progressHandler)
               task.progress(progressHandler)
@@ -74,7 +74,7 @@ class RNFetchBlobFetchPolyfill {
               // release blob cache created when sending request
               if(blobCache !== null && blobCache instanceof Blob)
                 blobCache.close()
-              return Promise.resolve(new RNFetchBlobFetchResponse(resp))
+              return Promise.resolve(new ReactNativeBlobUtilFetchResponse(resp))
             })
           })
 
@@ -98,7 +98,7 @@ class RNFetchBlobFetchPolyfill {
 
 }
 
-class RNFetchBlobFetchResponse {
+class ReactNativeBlobUtilFetchResponse {
 
   constructor(resp:FetchBlobResponse) {
     let info = resp.info()
@@ -144,7 +144,7 @@ class RNFetchBlobFetchResponse {
 /**
  * Get response data as array.
  * @param  {FetchBlobResponse} resp Response data object from RNFB fetch call.
- * @param  {RNFetchBlobResponseInfo} info Response informations.
+ * @param  {ReactNativeBlobUtilResponseInfo} info Response informations.
  * @return {Promise<Array>}
  */
 function readArrayBuffer(resp, info):Promise<Array> {
@@ -166,7 +166,7 @@ function readArrayBuffer(resp, info):Promise<Array> {
 /**
  * Get response data as string.
  * @param  {FetchBlobResponse} resp Response data object from RNFB fetch call.
- * @param  {RNFetchBlobResponseInfo} info Response informations.
+ * @param  {ReactNativeBlobUtilResponseInfo} info Response informations.
  * @return {Promise<string>}
  */
 function readText(resp, info):Promise<string> {
@@ -185,9 +185,9 @@ function readText(resp, info):Promise<string> {
 
 
 /**
- * Get response data as RNFetchBlob Blob polyfill object.
+ * Get response data as ReactNativeBlobUtil Blob polyfill object.
  * @param  {FetchBlobResponse} resp Response data object from RNFB fetch call.
- * @param  {RNFetchBlobResponseInfo} info Response informations.
+ * @param  {ReactNativeBlobUtilResponseInfo} info Response informations.
  * @return {Promise<Blob>}
  */
 function readBlob(resp, info):Promise<Blob> {
@@ -198,7 +198,7 @@ function readBlob(resp, info):Promise<Blob> {
 /**
  * Get response data as JSON object.
  * @param  {FetchBlobResponse} resp Response data object from RNFB fetch call.
- * @param  {RNFetchBlobResponseInfo} info Response informations.
+ * @param  {ReactNativeBlobUtilResponseInfo} info Response informations.
  * @return {Promise<object>}
  */
 function readJSON(resp, info):Promise<object> {

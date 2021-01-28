@@ -3,16 +3,16 @@
 #include "pch.h"
 #include "AutolinkedNativeModules.g.h"
 
-// Includes from RNFetchBlob
-#include <winrt/RNFetchBlob.h>
+// Includes from ReactNativeBlobUtil
+#include <winrt/ReactNativeBlobUtil.h>
 
 namespace winrt::Microsoft::ReactNative
 {
 
 void RegisterAutolinkedNativeModulePackages(winrt::Windows::Foundation::Collections::IVector<winrt::Microsoft::ReactNative::IReactPackageProvider> const& packageProviders)
 { 
-    // IReactPackageProviders from RNFetchBlob
-    packageProviders.Append(winrt::RNFetchBlob::ReactPackageProvider());
+    // IReactPackageProviders from ReactNativeBlobUtil
+    packageProviders.Append(winrt::ReactNativeBlobUtil::ReactPackageProvider());
 }
 
 }

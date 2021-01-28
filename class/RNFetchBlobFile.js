@@ -9,9 +9,9 @@ import {
   NativeAppEventEmitter,
 } from 'react-native'
 
-const RNFetchBlob = NativeModules.RNFetchBlob
+const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil
 const emitter = DeviceEventEmitter
 
-export default class RNFetchBlobFile {
+export default class ReactNativeBlobUtilFile {
 
 }

@@ -3,7 +3,7 @@ export default {
   isFileURI : (uri:string):boolean => {
     if(typeof uri !== 'string')
       return false
-    return /^RNFetchBlob-file\:\/\//.test(uri)
+    return /^ReactNativeBlobUtil-file\:\/\//.test(uri)
   },
 
   isJSONStreamURI : (uri:string):boolean => {
@@ -22,7 +22,7 @@ export default {
   },
 
   unwrapFileURI : (uri:string):string => {
-    return String(uri).replace(/^RNFetchBlob-file\:\/\//, '')
+    return String(uri).replace(/^ReactNativeBlobUtil-file\:\/\//, '')
   }
 
 }

@@ -24,7 +24,7 @@ import {
   Colors,
 } from 'react-native/Libraries/NewAppScreen';
 
-import RNFetchBlob from 'rn-fetch-blob';
+import ReactNativeBlobUtil from 'react-native-blob-util';
 
 const App: () => React$Node = () => {
 
@@ -60,7 +60,7 @@ const App: () => React$Node = () => {
 // Methods ********************************************************************
   // exists()
   const existsCall = () => {
-    RNFetchBlob.fs.exists(RNFetchBlob.fs.dirs.DocumentDir + '/' + existsParam)
+    ReactNativeBlobUtil.fs.exists(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + existsParam)
     .then((result) => {
       Alert.alert('Exists: ' + result)
     })
@@ -70,7 +70,7 @@ const App: () => React$Node = () => {
   }
 
   const isDirCall = () => {
-    RNFetchBlob.fs.exists(RNFetchBlob.fs.dirs.DocumentDir + '/' + existsParam)
+    ReactNativeBlobUtil.fs.exists(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + existsParam)
     .then((result) => {
       Alert.alert('isDir: ' + result);
     })
@@ -81,7 +81,7 @@ const App: () => React$Node = () => {
 
   // df()
   const dfCall = () => {
-    RNFetchBlob.fs.df()
+    ReactNativeBlobUtil.fs.df()
     .then((result) => {
       Alert.alert('Free space: ' + result.free + ' bytes\nTotal space: ' + result.total + ' bytes');
     })
@@ -92,7 +92,7 @@ const App: () => React$Node = () => {
 
   // ls()
   const lsCall = () => {
-    RNFetchBlob.fs.ls(RNFetchBlob.fs.dirs.DocumentDir + '/' + lsParam)
+    ReactNativeBlobUtil.fs.ls(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + lsParam)
     .then((files) => {
         Alert.alert('Method finished: check debug console for results');
         console.log(files);
@@ -101,8 +101,8 @@ const App: () => React$Node = () => {
 
   // cp()
   const cpCall = () => {
-    RNFetchBlob.fs.cp(RNFetchBlob.fs.dirs.DocumentDir + '/' + cpSourceParam,
-    RNFetchBlob.fs.dirs.DocumentDir + '/' + cpDestParam)
+    ReactNativeBlobUtil.fs.cp(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + cpSourceParam,
+    ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + cpDestParam)
     .then(
       Alert.alert('File successfully copied')
     )
@@ -113,8 +113,8 @@ const App: () => React$Node = () => {
 
   // mv()
   const mvCall = () => {
-    RNFetchBlob.fs.mv(RNFetchBlob.fs.dirs.DocumentDir + '/' + cpSourceParam,
-    RNFetchBlob.fs.dirs.DocumentDir + '/' + cpDestParam)
+    ReactNativeBlobUtil.fs.mv(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + cpSourceParam,
+    ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + cpDestParam)
     .then(
       Alert.alert('File successfully moved')
     )
@@ -125,7 +125,7 @@ const App: () => React$Node = () => {
 
   // unlink()
   const unlinkCall = () => {
-    RNFetchBlob.fs.unlink(RNFetchBlob.fs.dirs.DocumentDir + '/' + unlinkParam)
+    ReactNativeBlobUtil.fs.unlink(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + unlinkParam)
     .then(
       Alert.alert('file/directory successfully unlinked')
     )
@@ -136,7 +136,7 @@ const App: () => React$Node = () => {
 
   // stat(), lstat()
   const statCall = () => {
-    RNFetchBlob.fs.stat(RNFetchBlob.fs.dirs.DocumentDir + '/' + statParam)
+    ReactNativeBlobUtil.fs.stat(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + statParam)
     .then((stats) => {
       console.log(stats);
       Alert.alert("stat() result (others logged in console)", 
@@ -152,7 +152,7 @@ const App: () => React$Node = () => {
   }
 
   const lstatCall = () => {
-    RNFetchBlob.fs.lstat(RNFetchBlob.fs.dirs.DocumentDir + '/' + statParam)
+    ReactNativeBlobUtil.fs.lstat(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + statParam)
     .then((stats) => {
       console.log(stats);
       Alert.alert("lstat() result (others logged in console)", "filename: " + stats[0].filename +
@@ -170,9 +170,9 @@ const App: () => React$Node = () => {
   const mkdirCall = () => {
     if(mkdirParam.length > 0)
       {
-      RNFetchBlob.fs.mkdir(RNFetchBlob.fs.dirs.DocumentDir + '/' + mkdirParam)
+      ReactNativeBlobUtil.fs.mkdir(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + mkdirParam)
       .then(() => {
-        Alert.alert('successfully created file:', RNFetchBlob.fs.dirs.DocumentDir + '/' + mkdirParam);
+        Alert.alert('successfully created file:', ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + mkdirParam);
       })
       .catch((err) => {
         Alert.alert(err.message);
@@ -185,38 +185,38 @@ const App: () => React$Node = () => {
 
   // createFile()
   const createFileUTF8Call = () => {
-    RNFetchBlob.fs.createFile(RNFetchBlob.fs.dirs.DocumentDir + '/' + mkdirParam, 'foo', 'utf8');
+    ReactNativeBlobUtil.fs.createFile(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + mkdirParam, 'foo', 'utf8');
   }
 
   const createFileASCIICall = () => {
-    RNFetchBlob.fs.createFile(RNFetchBlob.fs.dirs.DocumentDir + '/' + mkdirParam, [102, 111, 111], 'ascii');
+    ReactNativeBlobUtil.fs.createFile(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + mkdirParam, [102, 111, 111], 'ascii');
   }
 
   const createFileBase64Call = () => {
-    RNFetchBlob.fs.createFile(RNFetchBlob.fs.dirs.DocumentDir + '/' + mkdirParam, 'Zm9v', 'base64');
+    ReactNativeBlobUtil.fs.createFile(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + mkdirParam, 'Zm9v', 'base64');
   }
 
   const createFileURICall = () => {
-    RNFetchBlob.fs.createFile(RNFetchBlob.fs.dirs.DocumentDir + '/' + mkdirParam, RNFetchBlob.fs.dirs.DocumentDir + '/' + mkdirURIParam, 'uri');
+    ReactNativeBlobUtil.fs.createFile(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + mkdirParam, ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + mkdirURIParam, 'uri');
   }
 
   // readFile()
   const readFileUTF8Call = () => {
-    RNFetchBlob.fs.readFile(RNFetchBlob.fs.dirs.DocumentDir + '/' + readParam, 'utf8')
+    ReactNativeBlobUtil.fs.readFile(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + readParam, 'utf8')
     .then((data) => {
       Alert.alert('UTF8 result of ' + readParam, data);
     });
   }
 
   const readFileASCIICall = () => {
-    RNFetchBlob.fs.readFile(RNFetchBlob.fs.dirs.DocumentDir + '/' + readParam, 'ascii')
+    ReactNativeBlobUtil.fs.readFile(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + readParam, 'ascii')
     .then((data) => {
       Alert.alert('UTF8 result of ' + readParam, data);
     });
   }
 
   const readFileBase64Call = () => {
-    RNFetchBlob.fs.readFile(RNFetchBlob.fs.dirs.DocumentDir + '/' + readParam, 'base64')
+    ReactNativeBlobUtil.fs.readFile(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + readParam, 'base64')
     .then((data) => {
       Alert.alert('UTF8 result of ' + readParam, data);
     })
@@ -224,7 +224,7 @@ const App: () => React$Node = () => {
 
   // hash()
   const hashCall = () => {
-    RNFetchBlob.fs.hash(RNFetchBlob.fs.dirs.DocumentDir + '/' + hashPathParam, hashAlgValue)
+    ReactNativeBlobUtil.fs.hash(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + hashPathParam, hashAlgValue)
     .then((hash) => {
       Alert.alert(hashAlgValue, hash);
     })
@@ -239,8 +239,8 @@ const App: () => React$Node = () => {
     if(writeParam.length > 0) {
       if(writeEncodeParam === 'uri') {
         if(writeURIParam.length > 0) {
-          RNFetchBlob.fs.writeFile(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeParam, 
-            RNFetchBlob.fs.dirs.DocumentDir + '/' + writeURIParam,
+          ReactNativeBlobUtil.fs.writeFile(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + writeParam,
+            ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + writeURIParam,
             writeEncodeParam);
         }
         else {
@@ -248,10 +248,10 @@ const App: () => React$Node = () => {
         }
       }
       else if(writeEncodeParam === 'ascii') {
-        RNFetchBlob.fs.writeFile(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeParam, [102,111,111], writeEncodeParam);
+        ReactNativeBlobUtil.fs.writeFile(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + writeParam, [102,111,111], writeEncodeParam);
       }
       else {
-        RNFetchBlob.fs.writeFile(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeParam, 'foo', writeEncodeParam);
+        ReactNativeBlobUtil.fs.writeFile(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + writeParam, 'foo', writeEncodeParam);
       }
     }
   }
@@ -261,8 +261,8 @@ const App: () => React$Node = () => {
     if(writeParam.length > 0) {
       if(writeEncodeParam === 'uri') {
         if(writeURIParam.length > 0) {
-          RNFetchBlob.fs.appendFile(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeParam, 
-            RNFetchBlob.fs.dirs.DocumentDir + '/' + writeURIParam,
+          ReactNativeBlobUtil.fs.appendFile(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + writeParam,
+            ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + writeURIParam,
             writeEncodeParam);
         }
         else {
@@ -270,10 +270,10 @@ const App: () => React$Node = () => {
         }
       }
       else if(writeEncodeParam === 'ascii') {
-        RNFetchBlob.fs.appendFile(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeParam, [102,111,111], writeEncodeParam);
+        ReactNativeBlobUtil.fs.appendFile(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + writeParam, [102,111,111], writeEncodeParam);
       }
       else {
-        RNFetchBlob.fs.appendFile(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeParam, 'foo', writeEncodeParam);
+        ReactNativeBlobUtil.fs.appendFile(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + writeParam, 'foo', writeEncodeParam);
       }
     }
   }
@@ -281,7 +281,7 @@ const App: () => React$Node = () => {
   const writeStreamCall = () => {
     if(writeStreamParam.length > 0) {
       if(writeEncodeStreamParam === 'base64') {
-        RNFetchBlob.fs.writeStream(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeStreamParam, writeEncodeStreamParam, false)
+        ReactNativeBlobUtil.fs.writeStream(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + writeStreamParam, writeEncodeStreamParam, false)
         .then((stream) => {
             stream.write('Zm9vIChXcml0ZSBCYXNlNjQpMQ==');
             stream.write('Zm9vIChXcml0ZSBCYXNlNjQpMg==');
@@ -289,7 +289,7 @@ const App: () => React$Node = () => {
         });
       }
       else if(writeEncodeStreamParam=== 'ascii') {
-        RNFetchBlob.fs.writeStream(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeStreamParam, writeEncodeStreamParam, false)
+        ReactNativeBlobUtil.fs.writeStream(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + writeStreamParam, writeEncodeStreamParam, false)
         .then((stream) => {
             stream.write([102, 111, 111, 32, 40, 87, 114, 105, 116]);
             stream.write([ 101, 32, 97, 115, 99, 105, 105, 41]);
@@ -297,7 +297,7 @@ const App: () => React$Node = () => {
         });
       }
       else {
-        RNFetchBlob.fs.writeStream(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeStreamParam, writeEncodeStreamParam, false)
+        ReactNativeBlobUtil.fs.writeStream(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + writeStreamParam, writeEncodeStreamParam, false)
         .then((stream) => {
             stream.write('foo (Write utf8)1');
             stream.write('foo (Write utf8)2');
@@ -310,7 +310,7 @@ const App: () => React$Node = () => {
   const appendStreamCall = () => {
     if(writeStreamParam.length > 0) {
       if(writeEncodeStreamParam === 'base64') {
-        RNFetchBlob.fs.writeStream(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeStreamParam, writeEncodeStreamParam, true)
+        ReactNativeBlobUtil.fs.writeStream(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + writeStreamParam, writeEncodeStreamParam, true)
         .then((stream) => {
             stream.write('Zm9vIChBcHBlbmQgQmFzZTY0KTE=');
             stream.write('Zm9vIChBcHBlbmQgQmFzZTY0KTI=');
@@ -318,7 +318,7 @@ const App: () => React$Node = () => {
         });
       }
       else if(writeEncodeStreamParam=== 'ascii') {
-        RNFetchBlob.fs.writeStream(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeStreamParam, writeEncodeStreamParam, true)
+        ReactNativeBlobUtil.fs.writeStream(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + writeStreamParam, writeEncodeStreamParam, true)
         .then((stream) => {
             stream.write([102, 111, 111, 32, 40]);
             stream.write([65, 112, 112, 101, 110, 100, 32, 65, 83, 67, 73, 73, 41]);
@@ -326,7 +326,7 @@ const App: () => React$Node = () => {
         });
       }
       else {
-        RNFetchBlob.fs.writeStream(RNFetchBlob.fs.dirs.DocumentDir + '/' + writeStreamParam, writeEncodeStreamParam, true)
+        ReactNativeBlobUtil.fs.writeStream(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + writeStreamParam, writeEncodeStreamParam, true)
         .then((stream) => {
             stream.write('foo (Append utf8)1');
             stream.write('foo (Append utf8)2');
@@ -338,7 +338,7 @@ const App: () => React$Node = () => {
 
   // readStream
   const readStreamCall = () => {
-    RNFetchBlob.fs.readStream(RNFetchBlob.fs.dirs.DocumentDir + '/' + readStreamParam, readEncodeStreamParam, 4000, 200)
+    ReactNativeBlobUtil.fs.readStream(ReactNativeBlobUtil.fs.dirs.DocumentDir + '/' + readStreamParam, readEncodeStreamParam, 4000, 200)
     .then((stream) => {
       let data = '';
       stream.open();
@@ -353,7 +353,7 @@ const App: () => React$Node = () => {
 
   // fetchCall
   const fetchCall = () => {
-    RNFetchBlob.config({
+    ReactNativeBlobUtil.config({
     // add this option that makes response data to be stored as a file,
     // this is much more performant.
       fileCache : true,
@@ -370,7 +370,7 @@ const App: () => React$Node = () => {
 
     // uploadFileFromStorage
     const uploadFromStorageCall = () => {
-      RNFetchBlob.fetch('POST', 'https://enb954aqyumba.x.pipedream.net/', {
+      ReactNativeBlobUtil.fetch('POST', 'https://enb954aqyumba.x.pipedream.net/', {
       Authorization : "Bearer access-token...",
       'Dropbox-API-Arg': JSON.stringify({
         path : '/img-from-react-native.png',
@@ -382,7 +382,7 @@ const App: () => React$Node = () => {
       // here's the body you're going to send, should be a BASE64 encoded string
       // (you can use "base64"(refer to the library 'mathiasbynens/base64') APIs to make one).
       // The data will be converted to "byte array"(say, blob) before request sent.
-    }, RNFetchBlob.wrap(RNFetchBlob.fs.dirs.DocumentDir + '\\ImageToUpload.jpg'))
+    }, ReactNativeBlobUtil.wrap(ReactNativeBlobUtil.fs.dirs.DocumentDir + '\\ImageToUpload.jpg'))
     .then((res) => {
       console.log(res.text());
     })
@@ -393,7 +393,7 @@ const App: () => React$Node = () => {
 
   // uploadTextFromStorage
   const uploadTextFromCall = () => {
-    RNFetchBlob.fetch('POST', 'https://enb954aqyumba.x.pipedream.net/', {
+    ReactNativeBlobUtil.fetch('POST', 'https://enb954aqyumba.x.pipedream.net/', {
     Authorization : "Bearer access-token...",
     'Dropbox-API-Arg': JSON.stringify({
       path : '/img-from-react-native.png',
@@ -416,7 +416,7 @@ const App: () => React$Node = () => {
 
   // MultipartFileAndData
   const MultipartFileAndData = () => {
-    RNFetchBlob.fetch('POST', 'https://enb954aqyumba.x.pipedream.net/', {
+    ReactNativeBlobUtil.fetch('POST', 'https://enb954aqyumba.x.pipedream.net/', {
     Authorization : "Bearer access-token...",
     'Dropbox-API-Arg': JSON.stringify({
       path : '/img-from-react-native.png',
@@ -445,7 +445,7 @@ const App: () => React$Node = () => {
 
   // 
   const MakeRequestWithProgress = () => {
-    RNFetchBlob.config({
+    ReactNativeBlobUtil.config({
       // add this option that makes response data to be stored as a file,
       // this is much more performant.
         fileCache : true,
@@ -459,7 +459,7 @@ const App: () => React$Node = () => {
           // custom content type
           { name : 'avatar-png', filename : 'avatar-png.png', type:'image/png', data: "whaddup my pickles"},
           // part file from storage
-          { name : 'avatar-foo', filename : 'avatar-foo.png', type:'image/foo', data: RNFetchBlob.wrap(RNFetchBlob.fs.dirs.DocumentDir + '\\ImageToUpload.jpg')},
+          { name : 'avatar-foo', filename : 'avatar-foo.png', type:'image/foo', data: ReactNativeBlobUtil.wrap(ReactNativeBlobUtil.fs.dirs.DocumentDir + '\\ImageToUpload.jpg')},
           // elements without property `filename` will be sent as plain text
           { name : 'name', data : 'user'},
           { name : 'info', data : JSON.stringify({
@@ -497,16 +497,16 @@ const App: () => React$Node = () => {
             <View style={styles.sectionContainer}>
               <View style={styles.sectionDescription}>
                 <Text>
-                  {"DocumentDir: " + RNFetchBlob.fs.dirs.DocumentDir + '\n'}
-                  {"CacheDir: " + RNFetchBlob.fs.dirs.CacheDir + '\n'}
-                  {"PictureDir: " + RNFetchBlob.fs.dirs.PictureDir + '\n'}
-                  {"MusicDir: " + RNFetchBlob.fs.dirs.MusicDir + '\n'}
-                  {"DownloadDir: " + RNFetchBlob.fs.dirs.DownloadDir + '\n'}
-                  {"DCIMDir: " + RNFetchBlob.fs.dirs.DCIMDir + '\n'}
-                  {"SDCardDir: " + RNFetchBlob.fs.dirs.SDCardDir + '\n'}
-                  {"SDCardApplicationDir: " + RNFetchBlob.fs.dirs.SDCardApplicationDir + '\n'}
-                  {"MainBundleDir: " + RNFetchBlob.fs.dirs.MainBundleDir + '\n'}
-                  {"LibraryDir: " + RNFetchBlob.fs.dirs.LibraryDir + '\n'}
+                  {"DocumentDir: " + ReactNativeBlobUtil.fs.dirs.DocumentDir + '\n'}
+                  {"CacheDir: " + ReactNativeBlobUtil.fs.dirs.CacheDir + '\n'}
+                  {"PictureDir: " + ReactNativeBlobUtil.fs.dirs.PictureDir + '\n'}
+                  {"MusicDir: " + ReactNativeBlobUtil.fs.dirs.MusicDir + '\n'}
+                  {"DownloadDir: " + ReactNativeBlobUtil.fs.dirs.DownloadDir + '\n'}
+                  {"DCIMDir: " + ReactNativeBlobUtil.fs.dirs.DCIMDir + '\n'}
+                  {"SDCardDir: " + ReactNativeBlobUtil.fs.dirs.SDCardDir + '\n'}
+                  {"SDCardApplicationDir: " + ReactNativeBlobUtil.fs.dirs.SDCardApplicationDir + '\n'}
+                  {"MainBundleDir: " + ReactNativeBlobUtil.fs.dirs.MainBundleDir + '\n'}
+                  {"LibraryDir: " + ReactNativeBlobUtil.fs.dirs.LibraryDir + '\n'}
                 </Text>
               </View>
             </View>

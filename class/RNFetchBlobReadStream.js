@@ -9,10 +9,10 @@ import {
 } from 'react-native'
 import UUID from '../utils/uuid'
 
-const RNFetchBlob = NativeModules.RNFetchBlob
+const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil
 const emitter = DeviceEventEmitter
 
-export default class RNFetchBlobReadStream {
+export default class ReactNativeBlobUtilReadStream {
 
   path : string;
   encoding : 'utf8' | 'ascii' | 'base64';
@@ -22,7 +22,7 @@ export default class RNFetchBlobReadStream {
 
   constructor(path:string, encoding:string, bufferSize?:?number, tick:number) {
     if(!path)
-      throw Error('RNFetchBlob could not open file stream with empty `path`')
+      throw Error('ReactNativeBlobUtil could not open file stream with empty `path`')
     this.encoding = encoding || 'utf8'
     this.bufferSize = bufferSize
     this.path = path
@@ -62,7 +62,7 @@ export default class RNFetchBlobReadStream {
 
   open() {
     if(!this.closed)
-      RNFetchBlob.readStream(this.path, this.encoding, this.bufferSize || 10240 , this.tick || -1, this.streamId)
+      ReactNativeBlobUtil.readStream(this.path, this.encoding, this.bufferSize || 10240 , this.tick || -1, this.streamId)
     else
       throw new Error('Stream closed')
   }

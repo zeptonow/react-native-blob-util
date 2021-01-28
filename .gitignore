@@ -1,6 +1,6 @@
 .imdone
 testconfig
-RNFetchBlobTest/
+ReactNativeBlobUtilTest/
 test/test-server/public/*
 !test/test-server/public/github.png
 

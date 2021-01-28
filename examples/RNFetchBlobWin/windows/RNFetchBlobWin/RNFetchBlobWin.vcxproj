@@ -6,8 +6,8 @@
     <CppWinRTRootNamespaceAutoMerge>true</CppWinRTRootNamespaceAutoMerge>
     <MinimalCoreWin>true</MinimalCoreWin>
     <ProjectGuid>{15b116b3-7fd7-492e-a8f0-11135d797aa4}</ProjectGuid>
-    <ProjectName>RNFetchBlobWin</ProjectName>
-    <RootNamespace>RNFetchBlobWin</RootNamespace>
+    <ProjectName>ReactNativeBlobUtilWin</ProjectName>
+    <RootNamespace>ReactNativeBlobUtilWin</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>16.0</MinimumVisualStudioVersion>
     <AppContainerApplication>true</AppContainerApplication>
@@ -15,7 +15,7 @@
     <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
     <WindowsTargetPlatformVersion Condition=" '$(WindowsTargetPlatformVersion)' == '' ">10.0.18362.0</WindowsTargetPlatformVersion>
     <WindowsTargetPlatformMinVersion>10.0.16299.0</WindowsTargetPlatformMinVersion>
-    <PackageCertificateKeyFile>RNFetchBlobWin_TemporaryKey.pfx</PackageCertificateKeyFile>
+    <PackageCertificateKeyFile>ReactNativeBlobUtilWin_TemporaryKey.pfx</PackageCertificateKeyFile>
     <PackageCertificateThumbprint>86164DA8B9CE3CC7796EB2E118D02FFB7EAE053B</PackageCertificateThumbprint>
     <PackageCertificatePassword>password</PackageCertificatePassword>
   </PropertyGroup>

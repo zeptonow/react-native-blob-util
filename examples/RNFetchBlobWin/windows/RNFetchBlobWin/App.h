@@ -4,7 +4,7 @@
 
 namespace activation = winrt::Windows::ApplicationModel::Activation;
 
-namespace winrt::RNFetchBlobWin::implementation
+namespace winrt::ReactNativeBlobUtilWin::implementation
 {
     struct App : AppT<App>
     {
@@ -15,6 +15,6 @@ namespace winrt::RNFetchBlobWin::implementation
       private:
         using super = AppT<App>;
     };
-} // namespace winrt::RNFetchBlobWin::implementation
+} // namespace winrt::ReactNativeBlobUtilWin::implementation
 
 

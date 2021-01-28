@@ -8,11 +8,11 @@ import {
  NativeAppEventEmitter,
 } from 'react-native'
 
-const RNFetchBlob = NativeModules.RNFetchBlob
+const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil
 
 let sessions = {}
 
-export default class RNFetchBlobSession {
+export default class ReactNativeBlobUtilSession {
 
   name : string;
 
@@ -38,12 +38,12 @@ export default class RNFetchBlobSession {
     }
   }
 
-  add(path:string):RNFetchBlobSession {
+  add(path:string):ReactNativeBlobUtilSession {
     sessions[this.name].push(path)
     return this
   }
 
-  remove(path:string):RNFetchBlobSession {
+  remove(path:string):ReactNativeBlobUtilSession {
     let list = sessions[this.name]
     for(let i of list) {
       if(list[i] === path) {
@@ -60,7 +60,7 @@ export default class RNFetchBlobSession {
 
   dispose():Promise {
     return new Promise((resolve, reject) => {
-      RNFetchBlob.removeSession(sessions[this.name], (err) => {
+      ReactNativeBlobUtil.removeSession(sessions[this.name], (err) => {
         if(err)
           reject(new Error(err))
         else {

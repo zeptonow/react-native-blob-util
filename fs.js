@@ -2,28 +2,28 @@
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 
-// import type {RNFetchBlobConfig, RNFetchBlobNative, RNFetchBlobStream} from './types'
+// import type {ReactNativeBlobUtilConfig, ReactNativeBlobUtilNative, ReactNativeBlobUtilStream} from './types'
 
 import {NativeModules, Platform} from 'react-native'
-import RNFetchBlobSession from './class/RNFetchBlobSession'
-import RNFetchBlobWriteStream from './class/RNFetchBlobWriteStream'
-import RNFetchBlobReadStream from './class/RNFetchBlobReadStream'
-import RNFetchBlobFile from './class/RNFetchBlobFile'
+import ReactNativeBlobUtilSession from './class/ReactNativeBlobUtilSession'
+import ReactNativeBlobUtilWriteStream from './class/ReactNativeBlobUtilWriteStream'
+import ReactNativeBlobUtilReadStream from './class/ReactNativeBlobUtilReadStream'
+import ReactNativeBlobUtilFile from './class/ReactNativeBlobUtilFile'
 
-const RNFetchBlob: RNFetchBlobNative = NativeModules.RNFetchBlob
+const ReactNativeBlobUtil: ReactNativeBlobUtilNative = NativeModules.ReactNativeBlobUtil
 
 const dirs = {
-  DocumentDir :  RNFetchBlob.DocumentDir,
-  CacheDir : RNFetchBlob.CacheDir,
-  PictureDir : RNFetchBlob.PictureDir,
-  MusicDir : RNFetchBlob.MusicDir,
-  MovieDir : RNFetchBlob.MovieDir,
-  DownloadDir : RNFetchBlob.DownloadDir,
-  DCIMDir : RNFetchBlob.DCIMDir,
-  SDCardDir: RNFetchBlob.SDCardDir, // Depracated
-  SDCardApplicationDir: RNFetchBlob.SDCardApplicationDir, // Deprecated
-  MainBundleDir : RNFetchBlob.MainBundleDir,
-  LibraryDir : RNFetchBlob.LibraryDir
+  DocumentDir :  ReactNativeBlobUtil.DocumentDir,
+  CacheDir : ReactNativeBlobUtil.CacheDir,
+  PictureDir : ReactNativeBlobUtil.PictureDir,
+  MusicDir : ReactNativeBlobUtil.MusicDir,
+  MovieDir : ReactNativeBlobUtil.MovieDir,
+  DownloadDir : ReactNativeBlobUtil.DownloadDir,
+  DCIMDir : ReactNativeBlobUtil.DCIMDir,
+  SDCardDir: ReactNativeBlobUtil.SDCardDir, // Depracated
+  SDCardApplicationDir: ReactNativeBlobUtil.SDCardApplicationDir, // Deprecated
+  MainBundleDir : ReactNativeBlobUtil.MainBundleDir,
+  LibraryDir : ReactNativeBlobUtil.LibraryDir
 }
 
 function addCode(code: string, error: Error): Error {
@@ -34,15 +34,15 @@ function addCode(code: string, error: Error): Error {
 /**
  * Get a file cache session
  * @param  {string} name Stream ID
- * @return {RNFetchBlobSession}
+ * @return {ReactNativeBlobUtilSession}
  */
-function session(name: string): RNFetchBlobSession {
-  let s = RNFetchBlobSession.getSession(name)
+function session(name: string): ReactNativeBlobUtilSession {
+  let s = ReactNativeBlobUtilSession.getSession(name)
   if (s)
-    return new RNFetchBlobSession(name)
+    return new ReactNativeBlobUtilSession(name)
   else {
-    RNFetchBlobSession.setSession(name, [])
-    return new RNFetchBlobSession(name, [])
+    ReactNativeBlobUtilSession.setSession(name, [])
+    return new ReactNativeBlobUtilSession(name, [])
   }
 }
 
@@ -58,11 +58,11 @@ function asset(path: string): string {
 function createFile(path: string, data: string, encoding: 'base64' | 'ascii' | 'utf8' = 'utf8'): Promise<string> {
   if (encoding.toLowerCase() === 'ascii') {
     return Array.isArray(data) ?
-      RNFetchBlob.createFileASCII(path, data) :
+      ReactNativeBlobUtil.createFileASCII(path, data) :
       Promise.reject(addCode('EINVAL', new TypeError('`data` of ASCII file must be an array with 0..255 numbers')))
   }
   else {
-    return RNFetchBlob.createFile(path, data, encoding)
+    return ReactNativeBlobUtil.createFile(path, data, encoding)
   }
 }
 
@@ -71,25 +71,25 @@ function createFile(path: string, data: string, encoding: 'base64' | 'ascii' | '
  * @param  {string} path Target path of file stream.
  * @param  {string} encoding Encoding of input data.
  * @param  {boolean} [append]  A flag represent if data append to existing ones.
- * @return {Promise<RNFetchBlobWriteStream>} A promise resolves a `WriteStream` object.
+ * @return {Promise<ReactNativeBlobUtilWriteStream>} A promise resolves a `WriteStream` object.
  */
 function writeStream(
   path: string,
   encoding?: 'utf8' | 'ascii' | 'base64' = 'utf8',
   append?: boolean = false,
-): Promise<RNFetchBlobWriteStream> {
+): Promise<ReactNativeBlobUtilWriteStream> {
   if (typeof path !== 'string') {
     return Promise.reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
   }
   return new Promise((resolve, reject) => {
-    RNFetchBlob.writeStream(path, encoding, append, (errCode, errMsg, streamId: string) => {
+    ReactNativeBlobUtil.writeStream(path, encoding, append, (errCode, errMsg, streamId: string) => {
       if (errMsg) {
         const err = new Error(errMsg)
         err.code = errCode
         reject(err)
       }
       else
-        resolve(new RNFetchBlobWriteStream(streamId, encoding))
+        resolve(new ReactNativeBlobUtilWriteStream(streamId, encoding))
     })
   })
 }
@@ -100,18 +100,18 @@ function writeStream(
  * @param  {string} encoding Data encoding, should be one of `base64`, `utf8`, `ascii`
  * @param  {boolean} bufferSize Size of stream buffer.
  * @param  {number} [tick=10] Interval in milliseconds between reading chunks of data
- * @return {RNFetchBlobStream} RNFetchBlobStream stream instance.
+ * @return {ReactNativeBlobUtilStream} ReactNativeBlobUtilStream stream instance.
  */
 function readStream(
   path: string,
   encoding: 'utf8' | 'ascii' | 'base64' = 'utf8',
   bufferSize?: number,
   tick?: number = 10
-): Promise<RNFetchBlobReadStream> {
+): Promise<ReactNativeBlobUtilReadStream> {
   if (typeof path !== 'string') {
     return Promise.reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
   }
-  return Promise.resolve(new RNFetchBlobReadStream(path, encoding, bufferSize, tick))
+  return Promise.resolve(new ReactNativeBlobUtilReadStream(path, encoding, bufferSize, tick))
 }
 
 /**
@@ -123,7 +123,7 @@ function mkdir(path: string): Promise {
   if (typeof path !== 'string') {
     return Promise.reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
   }
-  return RNFetchBlob.mkdir(path)
+  return ReactNativeBlobUtil.mkdir(path)
 }
 
 /**
@@ -132,7 +132,7 @@ function mkdir(path: string): Promise {
  * @return {Promise}
  */
 function pathForAppGroup(groupName: string): Promise {
-  return RNFetchBlob.pathForAppGroup(groupName)
+  return ReactNativeBlobUtil.pathForAppGroup(groupName)
 }
 
 /**
@@ -142,7 +142,7 @@ function pathForAppGroup(groupName: string): Promise {
  */
 function syncPathAppGroup(groupName: string): string {
   if (Platform.OS === 'ios') {
-    return RNFetchBlob.syncPathAppGroup(groupName);
+    return ReactNativeBlobUtil.syncPathAppGroup(groupName);
   } else {
     return '';
   }
@@ -158,7 +158,7 @@ function readFile(path: string, encoding: string = 'utf8'): Promise<any> {
   if (typeof path !== 'string') {
     return Promise.reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
   }
-  return RNFetchBlob.readFile(path, encoding)
+  return ReactNativeBlobUtil.readFile(path, encoding)
 }
 
 /**
@@ -177,14 +177,14 @@ function writeFile(path: string, data: string | Array<number>, encoding: ?string
       return Promise.reject(addCode('EINVAL', new TypeError('"data" must be an Array when encoding is "ascii"')))
     }
     else
-      return RNFetchBlob.writeFileArray(path, data, false)
+      return ReactNativeBlobUtil.writeFileArray(path, data, false)
   }
   else {
     if (typeof data !== 'string') {
       return Promise.reject(addCode('EINVAL', new TypeError(`"data" must be a String when encoding is "utf8" or "base64", but it is "${typeof data}"`)))
     }
     else
-      return RNFetchBlob.writeFile(path, encoding, data, false)
+      return ReactNativeBlobUtil.writeFile(path, encoding, data, false)
   }
 }
 
@@ -197,28 +197,28 @@ function appendFile(path: string, data: string | Array<number>, encoding?: strin
       return Promise.reject(addCode('EINVAL', new TypeError('`data` of ASCII file must be an array with 0..255 numbers')))
     }
     else
-      return RNFetchBlob.writeFileArray(path, data, true)
+      return ReactNativeBlobUtil.writeFileArray(path, data, true)
   }
   else {
     if (typeof data !== 'string') {
       return Promise.reject(addCode('EINVAL'), new TypeError(`"data" must be a String when encoding is "utf8" or "base64", but it is "${typeof data}"`))
     }
     else
-      return RNFetchBlob.writeFile(path, encoding, data, true)
+      return ReactNativeBlobUtil.writeFile(path, encoding, data, true)
   }
 }
 
 /**
  * Show statistic data of a path.
  * @param  {string} path Target path
- * @return {RNFetchBlobFile}
+ * @return {ReactNativeBlobUtilFile}
  */
-function stat(path: string): Promise<RNFetchBlobFile> {
+function stat(path: string): Promise<ReactNativeBlobUtilFile> {
   return new Promise((resolve, reject) => {
     if (typeof path !== 'string') {
       return reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
     }
-    RNFetchBlob.stat(path, (err, stat) => {
+    ReactNativeBlobUtil.stat(path, (err, stat) => {
       if (err)
         reject(new Error(err))
       else {
@@ -242,7 +242,7 @@ function scanFile(pairs: any): Promise {
     if (pairs === undefined) {
       return reject(addCode('EINVAL', new TypeError('Missing argument')))
     }
-    RNFetchBlob.scanFile(pairs, (err) => {
+    ReactNativeBlobUtil.scanFile(pairs, (err) => {
       if (err)
         reject(addCode('EUNSPECIFIED', new Error(err)))
       else
@@ -255,7 +255,7 @@ function hash(path: string, algorithm: string): Promise<string> {
   if (typeof path !== 'string' || typeof algorithm !== 'string') {
     return Promise.reject(addCode('EINVAL', new TypeError('Missing argument "path" and/or "algorithm"')))
   }
-  return RNFetchBlob.hash(path, algorithm)
+  return ReactNativeBlobUtil.hash(path, algorithm)
 }
 
 function cp(path: string, dest: string): Promise<boolean> {
@@ -263,7 +263,7 @@ function cp(path: string, dest: string): Promise<boolean> {
     if (typeof path !== 'string' || typeof dest !== 'string') {
       return reject(addCode('EINVAL', new TypeError('Missing argument "path" and/or "destination"')))
     }
-    RNFetchBlob.cp(path, dest, (err, res) => {
+    ReactNativeBlobUtil.cp(path, dest, (err, res) => {
       if (err)
         reject(addCode('EUNSPECIFIED', new Error(err)))
       else
@@ -277,7 +277,7 @@ function mv(path: string, dest: string): Promise<boolean> {
     if (typeof path !== 'string' || typeof dest !== 'string') {
       return reject(addCode('EINVAL', new TypeError('Missing argument "path" and/or "destination"')))
     }
-    RNFetchBlob.mv(path, dest, (err, res) => {
+    ReactNativeBlobUtil.mv(path, dest, (err, res) => {
       if (err)
         reject(addCode('EUNSPECIFIED', new Error(err)))
       else
@@ -286,12 +286,12 @@ function mv(path: string, dest: string): Promise<boolean> {
   })
 }
 
-function lstat(path: string): Promise<Array<RNFetchBlobFile>> {
+function lstat(path: string): Promise<Array<ReactNativeBlobUtilFile>> {
   return new Promise((resolve, reject) => {
     if (typeof path !== 'string') {
       return reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
     }
-    RNFetchBlob.lstat(path, (err, stat) => {
+    ReactNativeBlobUtil.lstat(path, (err, stat) => {
       if (err)
         reject(addCode('EUNSPECIFIED', new Error(err)))
       else
@@ -304,7 +304,7 @@ function ls(path: string): Promise<Array<String>> {
   if (typeof path !== 'string') {
     return Promise.reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
   }
-  return RNFetchBlob.ls(path)
+  return ReactNativeBlobUtil.ls(path)
 }
 
 /**
@@ -317,7 +317,7 @@ function unlink(path: string): Promise {
     if (typeof path !== 'string') {
       return reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
     }
-    RNFetchBlob.unlink(path, (err) => {
+    ReactNativeBlobUtil.unlink(path, (err) => {
       if (err) {
         reject(addCode('EUNSPECIFIED', new Error(err)))
       }
@@ -338,7 +338,7 @@ function exists(path: string): Promise<boolean> {
       return reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
     }
     try {
-      RNFetchBlob.exists(path, (exist) => {
+      ReactNativeBlobUtil.exists(path, (exist) => {
         resolve(exist)
       })
     }catch (err){
@@ -372,7 +372,7 @@ function slice(src: string, dest: string, start: number, end: number): Promise {
         end = normalize(end, size)
       })
   }
-  return p.then(() => RNFetchBlob.slice(src, dest, start, end))
+  return p.then(() => ReactNativeBlobUtil.slice(src, dest, start, end))
 }
 
 function isDir(path: string): Promise<bool> {
@@ -381,7 +381,7 @@ function isDir(path: string): Promise<bool> {
       return reject(addCode('EINVAL', new TypeError('Missing argument "path" ')))
     }
     try {
-      RNFetchBlob.exists(path, (exist, isDir) => {
+      ReactNativeBlobUtil.exists(path, (exist, isDir) => {
         resolve(isDir)
       })
     }catch (err){
@@ -393,7 +393,7 @@ function isDir(path: string): Promise<bool> {
 
 function df(): Promise<{ free: number, total: number }> {
   return new Promise((resolve, reject) => {
-    RNFetchBlob.df((err, stat) => {
+    ReactNativeBlobUtil.df((err, stat) => {
       if (err)
         reject(addCode('EUNSPECIFIED', new Error(err)))
       else
@@ -403,7 +403,7 @@ function df(): Promise<{ free: number, total: number }> {
 }
 
 export default {
-  RNFetchBlobSession,
+  ReactNativeBlobUtilSession,
   unlink,
   mkdir,
   session,
