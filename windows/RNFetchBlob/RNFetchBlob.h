@@ -60,7 +60,7 @@ struct RNFetchBlobState
 	*/
 	std::string state;
 	winrt::Microsoft::ReactNative::JSValueObject headers;
-	std::vector<std::string> redirects;
+	winrt::Microsoft::ReactNative::JSValueArray redirects;
 	std::string respType;
 	int status = 0;
 
