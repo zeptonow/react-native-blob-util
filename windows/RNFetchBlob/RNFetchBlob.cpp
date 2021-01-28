@@ -1060,6 +1060,7 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 	{
 		filter.IgnorableServerCertificateErrors().Append(Cryptography::Certificates::ChainValidationResult::Untrusted);
 	}
+	RNFetchBlobState eventState;
 
 	winrt::Windows::Web::Http::HttpClient httpClient{ filter };
 
@@ -1186,11 +1187,9 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 		}
 	}
 
-	RNFetchBlobState eventState;
-
 	co_await m_tasks.Add(taskId, ProcessRequestAsync(taskId, filter, requestMessage, config, callback, eventState));
 
-	m_tasks.Cancel(taskId);
+ 	m_tasks.Cancel(taskId);
 	{
 		std::scoped_lock lock{ m_mutex };
 		uploadProgressMap.extract(taskId);
@@ -1375,19 +1374,6 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 			}
 		}
 	}
-
-	// TODO, set a timeout for cancellation
-	
-	//Create EVENT_STATE_CHANGE
-	/*
-		taskId, // DO NOT STORE
-                @"state": @"2", // store
-                @"headers": headers, // store
-                @"redirects": redirects, //check how to track
-                @"respType" : respType, // store
-                @"timeout" : @NO, // do not store
-                @"status": [NSNumber numberWithInteger:statusCode] // store
-	*/
 	
 	RNFetchBlobState eventState;
 
@@ -1505,13 +1491,36 @@ try
 	if (config.followRedirect) {
 		while (status >= 300 && status < 400) {
 			auto redirect{ response.Headers().Location().ToString() };
-			eventState.redirects.push_back(winrt::to_string(redirect));
+			eventState.redirects.push_back(Microsoft::ReactNative::JSValue(winrt::to_string(redirect)));
 			httpRequestMessage.RequestUri(Uri{ redirect });
 			response = co_await httpClient.SendRequestAsync(httpRequestMessage, winrt::Windows::Web::Http::HttpCompletionOption::ResponseHeadersRead);
 			status = static_cast<int>(response.StatusCode());
 		}
 	}
 	
+	eventState.status = static_cast<int>(response.StatusCode());
+
+	for (const auto header : response.Content().Headers().GetView()) {
+		eventState.headers[winrt::to_string(header.Key())] = winrt::to_string(header.Value());
+	}
+
+	if (response.Content().Headers().ContentType() != nullptr) {
+		eventState.respType = winrt::to_string(response.Content().Headers().ContentType().ToString());
+	}
+
+	eventState.state = winrt::to_string(response.ReasonPhrase());
+
+	m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"RNFetchBlobState",
+		Microsoft::ReactNative::JSValueObject{
+			{ "taskId", taskId },
+			{ "state", eventState.state },
+			{ "headers", std::move(eventState.headers) },
+			{ "redirects", std::move(eventState.redirects) },
+			{ "respType", eventState.respType },
+			{ "status", eventState.status },
+			{ "timeout", false },
+		});
+
 	IReference<uint64_t> contentLength{ response.Content().Headers().ContentLength() };
 
 	IOutputStream outputStream;
@@ -1604,18 +1613,6 @@ try
 			}
 		}
 	}
-	
-	eventState.status = static_cast<int>(response.StatusCode());
-
-	for (const auto header : response.Content().Headers().GetView()) {
-		eventState.headers[winrt::to_string(header.Key())] = winrt::to_string(header.Value());
-	}
-	
-	if (response.Content().Headers().ContentType() != nullptr) {
-		eventState.respType = winrt::to_string(response.Content().Headers().ContentType().ToString());
-	}
-
-	eventState.state = winrt::to_string(response.ReasonPhrase());
 
 	if (writeToFile) {
 		callback("", "path", config.path);
