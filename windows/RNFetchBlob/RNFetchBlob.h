@@ -112,7 +112,7 @@ public:
 
 
 REACT_MODULE(RNFetchBlob, L"RNFetchBlob");
-struct RNFetchBlob
+struct RNFetchBlob : std::enable_shared_from_this<RNFetchBlob>
 {
 public:
 	using StreamId = std::string;
@@ -337,7 +337,7 @@ private:
 		winrt::Windows::Web::Http::HttpRequestMessage& httpRequestMessage,
 		RNFetchBlobConfig& config,
 		std::function<void(std::string, std::string, std::string)> callback,
-		RNFetchBlobState& eventState) noexcept;
+		std::string& error) noexcept;
 
 	const std::map<std::string, std::function<CryptographyCore::HashAlgorithmProvider()>> availableHashes{
 		{"md5", []() { return CryptographyCore::HashAlgorithmProvider::OpenAlgorithm(CryptographyCore::HashAlgorithmNames::Md5()); } },

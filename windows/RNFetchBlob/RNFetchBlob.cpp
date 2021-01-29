@@ -1044,6 +1044,10 @@ catch (...)
 }
 
 
+IAsyncAction setTimeout(std::chrono::seconds time) {
+	co_await time;
+}
+
 winrt::fire_and_forget RNFetchBlob::fetchBlob(
 	winrt::Microsoft::ReactNative::JSValueObject options,
 	std::string taskId,
@@ -1186,9 +1190,38 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 			}
 		}
 	}
+	
+	std::string error;
+	auto cancellationTimer{ setTimeout(config.timeout) };
+	cancellationTimer.Completed([weak_this = weak_from_this(), taskId, error](IAsyncAction const& action, AsyncStatus status) {
+		if (status == AsyncStatus::Completed) {
+			auto strong_this{ weak_this.lock() };
+			if (strong_this) {
+				strong_this->m_tasks.Cancel(taskId);
+				{
+					std::scoped_lock lock{ strong_this->m_mutex };
+					strong_this->uploadProgressMap.extract(taskId);
+					strong_this->downloadProgressMap.extract(taskId);
+				}
+			}
+		}
+	});
+	try {
+		co_await m_tasks.Add(taskId, ProcessRequestAsync(taskId, filter, requestMessage, config, callback, error));
+	}
+	catch (...) {
+	
+	}
+	if (!error.empty()) {
+		if (cancellationTimer.Status() != AsyncStatus::Completed) {
+			callback(error, "error", "");
+		}
+		else {
+			callback("RNFetchBlob request timed out", "error", "");
+		}
+	}
 
-	co_await m_tasks.Add(taskId, ProcessRequestAsync(taskId, filter, requestMessage, config, callback, eventState));
-
+	cancellationTimer.Cancel();
  	m_tasks.Cancel(taskId);
 	{
 		std::scoped_lock lock{ m_mutex };
@@ -1211,14 +1244,7 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 
 	RNFetchBlobConfig config{ options };
 
-	if (config.followRedirect == true)
-	{
-		filter.AllowAutoRedirect(true);
-	}
-	else
-	{
-		filter.AllowAutoRedirect(false);
-	}
+	filter.AllowAutoRedirect(false);
 
 	if (config.trusty)
 	{
@@ -1375,11 +1401,37 @@ winrt::fire_and_forget RNFetchBlob::fetchBlobForm(
 		}
 	}
 	
-	RNFetchBlobState eventState;
+	std::string error;
+	auto cancellationTimer{ setTimeout(config.timeout) };
+	cancellationTimer.Completed([weak_this = weak_from_this(), taskId, error](IAsyncAction const& action, AsyncStatus status) {
+		if (status == AsyncStatus::Completed) {
+			auto strong_this{ weak_this.lock() };
+			if (strong_this) {
+				strong_this->m_tasks.Cancel(taskId);
+				{
+					std::scoped_lock lock{ strong_this->m_mutex };
+					strong_this->uploadProgressMap.extract(taskId);
+					strong_this->downloadProgressMap.extract(taskId);
+				}
+			}
+		}
+	});
+	try {
+		co_await m_tasks.Add(taskId, ProcessRequestAsync(taskId, filter, requestMessage, config, callback, error));
+	}
+	catch (...) {
 
-	co_await m_tasks.Add(taskId, ProcessRequestAsync(taskId, filter, requestMessage, config, callback, eventState));
+	}
+	if (!error.empty()) {
+		if (cancellationTimer.Status() != AsyncStatus::Completed) {
+			callback(error, "error", "");
+		}
+		else {
+			callback("RNFetchBlob request timed out", "error", "");
+		}
+	}
 
-
+	cancellationTimer.Cancel();
 	m_tasks.Cancel(taskId);
 	{
 		std::scoped_lock lock{ m_mutex };
@@ -1480,13 +1532,15 @@ winrt::Windows::Foundation::IAsyncAction RNFetchBlob::ProcessRequestAsync(
 	winrt::Windows::Web::Http::HttpRequestMessage& httpRequestMessage,
 	RNFetchBlobConfig& config,
 	std::function<void(std::string, std::string, std::string)> callback,
-	RNFetchBlobState& eventState) noexcept
+	std::string& error) noexcept
 try
 {
 	winrt::Windows::Web::Http::HttpClient httpClient{filter};
-	
+
 	winrt::Windows::Web::Http::HttpResponseMessage response{ co_await httpClient.SendRequestAsync(httpRequestMessage, winrt::Windows::Web::Http::HttpCompletionOption::ResponseHeadersRead) };
 	
+	RNFetchBlobState eventState;
+
 	auto status{ static_cast<int>(response.StatusCode()) };
 	if (config.followRedirect) {
 		while (status >= 300 && status < 400) {
@@ -1620,11 +1674,11 @@ try
 	else {
 		callback("", "result", resultOutput.str());
 	}
-	//	callback("RNFetchBlob request timed out", "error", "");
 }
 catch (const hresult_error& ex)
 {
-	callback(winrt::to_string(ex.message().c_str()), "error", "");
+	error = winrt::to_string(ex.message().c_str());
+	//callback(winrt::to_string(ex.message().c_str()), "error", "");
 }
 catch (...) {
 	co_return;
