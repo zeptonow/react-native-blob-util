@@ -1044,7 +1044,11 @@ catch (...)
 }
 
 
-winrt::fire_and_forget ReactNativeBlobUtil::fetchBlob(
+IAsyncAction setTimeout(std::chrono::seconds time) {
+	co_await time;
+}
+
+winrt::fire_and_forget RNFetchBlob::fetchBlob(
 	winrt::Microsoft::ReactNative::JSValueObject options,
 	std::string taskId,
 	std::string method,
@@ -1060,6 +1064,7 @@ winrt::fire_and_forget ReactNativeBlobUtil::fetchBlob(
 	{
 		filter.IgnorableServerCertificateErrors().Append(Cryptography::Certificates::ChainValidationResult::Untrusted);
 	}
+	RNFetchBlobState eventState;
 
 	winrt::Windows::Web::Http::HttpClient httpClient{ filter };
 
@@ -1185,12 +1190,39 @@ winrt::fire_and_forget ReactNativeBlobUtil::fetchBlob(
 			}
 		}
 	}
+	
+	std::string error;
+	auto cancellationTimer{ setTimeout(config.timeout) };
+	cancellationTimer.Completed([weak_this = weak_from_this(), taskId, error](IAsyncAction const& action, AsyncStatus status) {
+		if (status == AsyncStatus::Completed) {
+			auto strong_this{ weak_this.lock() };
+			if (strong_this) {
+				strong_this->m_tasks.Cancel(taskId);
+				{
+					std::scoped_lock lock{ strong_this->m_mutex };
+					strong_this->uploadProgressMap.extract(taskId);
+					strong_this->downloadProgressMap.extract(taskId);
+				}
+			}
+		}
+	});
+	try {
+		co_await m_tasks.Add(taskId, ProcessRequestAsync(taskId, filter, requestMessage, config, callback, error));
+	}
+	catch (...) {
+	
+	}
+	if (!error.empty()) {
+		if (cancellationTimer.Status() != AsyncStatus::Completed) {
+			callback(error, "error", "");
+		}
+		else {
+			callback("RNFetchBlob request timed out", "error", "");
+		}
+	}
 
-	ReactNativeBlobUtilState eventState;
-
-	co_await m_tasks.Add(taskId, ProcessRequestAsync(taskId, filter, requestMessage, config, callback, eventState));
-
-	m_tasks.Cancel(taskId);
+	cancellationTimer.Cancel();
+ 	m_tasks.Cancel(taskId);
 	{
 		std::scoped_lock lock{ m_mutex };
 		uploadProgressMap.extract(taskId);
@@ -1212,14 +1244,7 @@ winrt::fire_and_forget ReactNativeBlobUtil::fetchBlobForm(
 
 	ReactNativeBlobUtilConfig config{ options };
 
-	if (config.followRedirect == true)
-	{
-		filter.AllowAutoRedirect(true);
-	}
-	else
-	{
-		filter.AllowAutoRedirect(false);
-	}
+	filter.AllowAutoRedirect(false);
 
 	if (config.trusty)
 	{
@@ -1375,25 +1400,38 @@ winrt::fire_and_forget ReactNativeBlobUtil::fetchBlobForm(
 			}
 		}
 	}
-
-	// TODO, set a timeout for cancellation
 	
-	//Create EVENT_STATE_CHANGE
-	/*
-		taskId, // DO NOT STORE
-                @"state": @"2", // store
-                @"headers": headers, // store
-                @"redirects": redirects, //check how to track
-                @"respType" : respType, // store
-                @"timeout" : @NO, // do not store
-                @"status": [NSNumber numberWithInteger:statusCode] // store
-	*/
-	
-	ReactNativeBlobUtilState eventState;
+	std::string error;
+	auto cancellationTimer{ setTimeout(config.timeout) };
+	cancellationTimer.Completed([weak_this = weak_from_this(), taskId, error](IAsyncAction const& action, AsyncStatus status) {
+		if (status == AsyncStatus::Completed) {
+			auto strong_this{ weak_this.lock() };
+			if (strong_this) {
+				strong_this->m_tasks.Cancel(taskId);
+				{
+					std::scoped_lock lock{ strong_this->m_mutex };
+					strong_this->uploadProgressMap.extract(taskId);
+					strong_this->downloadProgressMap.extract(taskId);
+				}
+			}
+		}
+	});
+	try {
+		co_await m_tasks.Add(taskId, ProcessRequestAsync(taskId, filter, requestMessage, config, callback, error));
+	}
+	catch (...) {
 
-	co_await m_tasks.Add(taskId, ProcessRequestAsync(taskId, filter, requestMessage, config, callback, eventState));
+	}
+	if (!error.empty()) {
+		if (cancellationTimer.Status() != AsyncStatus::Completed) {
+			callback(error, "error", "");
+		}
+		else {
+			callback("ReactNativeBlobUtil request timed out", "error", "");
+		}
+	}
 
-
+	cancellationTimer.Cancel();
 	m_tasks.Cancel(taskId);
 	{
 		std::scoped_lock lock{ m_mutex };
@@ -1494,24 +1532,49 @@ winrt::Windows::Foundation::IAsyncAction ReactNativeBlobUtil::ProcessRequestAsyn
 	winrt::Windows::Web::Http::HttpRequestMessage& httpRequestMessage,
 	ReactNativeBlobUtilConfig& config,
 	std::function<void(std::string, std::string, std::string)> callback,
-	ReactNativeBlobUtilState& eventState) noexcept
+	std::string& error) noexcept
 try
 {
 	winrt::Windows::Web::Http::HttpClient httpClient{filter};
-	
+
 	winrt::Windows::Web::Http::HttpResponseMessage response{ co_await httpClient.SendRequestAsync(httpRequestMessage, winrt::Windows::Web::Http::HttpCompletionOption::ResponseHeadersRead) };
 	
+	RNFetchBlobState eventState;
+
 	auto status{ static_cast<int>(response.StatusCode()) };
 	if (config.followRedirect) {
 		while (status >= 300 && status < 400) {
 			auto redirect{ response.Headers().Location().ToString() };
-			eventState.redirects.push_back(winrt::to_string(redirect));
+			eventState.redirects.push_back(Microsoft::ReactNative::JSValue(winrt::to_string(redirect)));
 			httpRequestMessage.RequestUri(Uri{ redirect });
 			response = co_await httpClient.SendRequestAsync(httpRequestMessage, winrt::Windows::Web::Http::HttpCompletionOption::ResponseHeadersRead);
 			status = static_cast<int>(response.StatusCode());
 		}
 	}
 	
+	eventState.status = static_cast<int>(response.StatusCode());
+
+	for (const auto header : response.Content().Headers().GetView()) {
+		eventState.headers[winrt::to_string(header.Key())] = winrt::to_string(header.Value());
+	}
+
+	if (response.Content().Headers().ContentType() != nullptr) {
+		eventState.respType = winrt::to_string(response.Content().Headers().ContentType().ToString());
+	}
+
+	eventState.state = winrt::to_string(response.ReasonPhrase());
+
+	m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"RNFetchBlobState",
+		Microsoft::ReactNative::JSValueObject{
+			{ "taskId", taskId },
+			{ "state", eventState.state },
+			{ "headers", std::move(eventState.headers) },
+			{ "redirects", std::move(eventState.redirects) },
+			{ "respType", eventState.respType },
+			{ "status", eventState.status },
+			{ "timeout", false },
+		});
+
 	IReference<uint64_t> contentLength{ response.Content().Headers().ContentLength() };
 
 	IOutputStream outputStream;
@@ -1604,18 +1667,6 @@ try
 			}
 		}
 	}
-	
-	eventState.status = static_cast<int>(response.StatusCode());
-
-	for (const auto header : response.Content().Headers().GetView()) {
-		eventState.headers[winrt::to_string(header.Key())] = winrt::to_string(header.Value());
-	}
-	
-	if (response.Content().Headers().ContentType() != nullptr) {
-		eventState.respType = winrt::to_string(response.Content().Headers().ContentType().ToString());
-	}
-
-	eventState.state = winrt::to_string(response.ReasonPhrase());
 
 	if (writeToFile) {
 		callback("", "path", config.path);
@@ -1623,11 +1674,11 @@ try
 	else {
 		callback("", "result", resultOutput.str());
 	}
-	//	callback("ReactNativeBlobUtil request timed out", "error", "");
 }
 catch (const hresult_error& ex)
 {
-	callback(winrt::to_string(ex.message().c_str()), "error", "");
+	error = winrt::to_string(ex.message().c_str());
+	//callback(winrt::to_string(ex.message().c_str()), "error", "");
 }
 catch (...) {
 	co_return;

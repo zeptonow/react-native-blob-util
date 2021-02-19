@@ -60,7 +60,7 @@ struct ReactNativeBlobUtilState
 	*/
 	std::string state;
 	winrt::Microsoft::ReactNative::JSValueObject headers;
-	std::vector<std::string> redirects;
+	winrt::Microsoft::ReactNative::JSValueArray redirects;
 	std::string respType;
 	int status = 0;
 
@@ -112,7 +112,7 @@ public:
 
 
 REACT_MODULE(ReactNativeBlobUtil, L"ReactNativeBlobUtil");
-struct ReactNativeBlobUtil
+struct ReactNativeBlobUtil : std::enable_shared_from_this<ReactNativeBlobUtil>
 {
 public:
 	using StreamId = std::string;
@@ -337,7 +337,7 @@ private:
 		winrt::Windows::Web::Http::HttpRequestMessage& httpRequestMessage,
 		ReactNativeBlobUtilConfig& config,
 		std::function<void(std::string, std::string, std::string)> callback,
-		ReactNativeBlobUtilState& eventState) noexcept;
+		std::string& error) noexcept;
 
 	const std::map<std::string, std::function<CryptographyCore::HashAlgorithmProvider()>> availableHashes{
 		{"md5", []() { return CryptographyCore::HashAlgorithmProvider::OpenAlgorithm(CryptographyCore::HashAlgorithmNames::Md5()); } },
