@@ -8,8 +8,8 @@ Pod::Spec.new do |s|
   s.requires_arc = true
   s.license      = 'MIT'
   s.homepage     = 'n/a'
-  s.source       = { :git => "https://github.com/joltup/react-native-blob-util" }
-  s.author       = 'Joltup'
+  s.source       = { :git => "https://github.com/RonRadtke/react-native-blob-util" }
+  s.author       = 'RonRadtke'
   s.source_files = 'ios/**/*.{h,m}'
   s.platform     = :ios, "8.0"
   s.dependency 'React-Core'
