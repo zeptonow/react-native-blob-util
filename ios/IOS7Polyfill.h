@@ -1,6 +1,6 @@
 //
 //  IOS7Polyfill.h
-//  RNFetchBlob
+//  ReactNativeBlobUtil
 //
 //  Created by Ben Hsieh on 2016/9/6.
 //  Copyright © 2016年 wkh237.github.io. All rights reserved.

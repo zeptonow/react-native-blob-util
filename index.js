@@ -9,11 +9,11 @@ import {
   Platform,
   AppState,
 } from 'react-native'
-import type {
-  RNFetchBlobNative,
-  RNFetchBlobConfig,
-  RNFetchBlobStream,
-  RNFetchBlobResponseInfo
+import type ,{
+  ReactNativeBlobUtilNative,
+  ReactNativeBlobUtilConfig,
+  ReactNativeBlobUtilStream,
+  ReactNativeBlobUtilResponseInfo
 } from './types'
 import URIUtil from './utils/uri'
 //import StatefulPromise from './class/StatefulPromise.js'
@@ -25,7 +25,7 @@ import android from './android'
 import ios from './ios'
 import JSONStream from './json-stream'
 const {
-  RNFetchBlobSession,
+  ReactNativeBlobUtilSession,
   readStream,
   createFile,
   unlink,
@@ -42,19 +42,19 @@ const {
 
 const Blob = polyfill.Blob
 const emitter = DeviceEventEmitter
-const RNFetchBlob = NativeModules.RNFetchBlob
+const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil
 
 // when app resumes, check if there's any expired network task and trigger
 // their .expire event
 if(Platform.OS === 'ios') {
   AppState.addEventListener('change', (e) => {
     if(e === 'active')
-      RNFetchBlob.emitExpiredEvent(()=>{})
+      ReactNativeBlobUtil.emitExpiredEvent(()=>{})
   })
 }
 
 // register message channel event handler.
-emitter.addListener("RNFetchBlobMessage", (e) => {
+emitter.addListener("ReactNativeBlobUtilMessage", (e) => {
 
   if(e.event === 'warn') {
     console.warn(e.detail)
@@ -63,27 +63,27 @@ emitter.addListener("RNFetchBlobMessage", (e) => {
     throw e.detail
   }
   else {
-    console.log("RNFetchBlob native message", e.detail)
+    console.log("ReactNativeBlobUtil native message", e.detail)
   }
 })
 
 // Show warning if native module not detected
-if(!RNFetchBlob || !RNFetchBlob.fetchBlobForm || !RNFetchBlob.fetchBlob) {
+if(!ReactNativeBlobUtil || !ReactNativeBlobUtil.fetchBlobForm || !ReactNativeBlobUtil.fetchBlob) {
   console.warn(
-    'rn-fetch-blob could not find valid native module.',
+    'react-native-blob-util could not find valid native module.',
     'please make sure you have linked native modules using `rnpm link`,',
     'and restart RN packager or manually compile IOS/Android project.'
   )
 }
 
 function wrap(path:string):string {
-  const prefix = path.startsWith('content://') ? 'RNFetchBlob-content://' : 'RNFetchBlob-file://'
+  const prefix = path.startsWith('content://') ? 'ReactNativeBlobUtil-content://' : 'ReactNativeBlobUtil-file://'
   return prefix + path
 }
 
 /**
  * Calling this method will inject configurations into followed `fetch` method.
- * @param  {RNFetchBlobConfig} options
+ * @param  {ReactNativeBlobUtilConfig} options
  *         Fetch API configurations, contains the following options :
  *         @property {boolean} fileCache
  *                   When fileCache is `true`, response data will be saved in
@@ -95,7 +95,7 @@ function wrap(path:string):string {
  *         @property {string} path
  *                   If this property has a valid string format, resonse data
  *                   will be saved to specific file path. Default string format
- *                   is : `RNFetchBlob-file://path-to-file`
+ *                   is : `ReactNativeBlobUtil-file://path-to-file`
  *         @property {string} key
  *                   If this property is set, it will be converted to md5, to
  *                   check if a file with this name exists.
@@ -113,13 +113,13 @@ function wrap(path:string):string {
  *
  * @return {function} This method returns a `fetch` method instance.
  */
-function config (options:RNFetchBlobConfig) {
+function config (options:ReactNativeBlobUtilConfig) {
   return { fetch : fetch.bind(options) }
 }
 
 /**
  * Fetch from file system, use the same interface as RNFB.fetch
- * @param  {RNFetchBlobConfig} [options={}] Fetch configurations
+ * @param  {ReactNativeBlobUtilConfig} [options={}] Fetch configurations
  * @param  {string} method     Should be one of `get`, `post`, `put`
  * @param  {string} url        A file URI string
  * @param  {string} headers    Arguments of file system API
@@ -201,13 +201,13 @@ function fetchFile(options = {}, method, url, headers = {}, body):Promise {
 }
 
 /**
- * Create a HTTP request by settings, the `this` context is a `RNFetchBlobConfig` object.
+ * Create a HTTP request by settings, the `this` context is a `ReactNativeBlobUtilConfig` object.
  * @param  {string} method HTTP method, should be `GET`, `POST`, `PUT`, `DELETE`
  * @param  {string} url Request target url string.
  * @param  {object} headers HTTP request headers.
  * @param  {string} body
  *         Request body, can be either a BASE64 encoded data string,
- *         or a file path with prefix `RNFetchBlob-file://` (can be changed)
+ *         or a file path with prefix `ReactNativeBlobUtil-file://` (can be changed)
  * @return {Promise}
  *         This promise instance also contains a Customized method `progress`for
  *         register progress event handler.
@@ -244,31 +244,31 @@ function fetch(...args:any):Promise {
     let nativeMethodName = Array.isArray(body) ? 'fetchBlobForm' : 'fetchBlob'
 
     // on progress event listener
-    subscription = emitter.addListener('RNFetchBlobProgress', (e) => {
+    subscription = emitter.addListener('ReactNativeBlobUtilProgress', (e) => {
       if(e.taskId === taskId && promise.onProgress) {
         promise.onProgress(e.written, e.total, e.chunk)
       }
     })
 
-    subscriptionUpload = emitter.addListener('RNFetchBlobProgress-upload', (e) => {
+    subscriptionUpload = emitter.addListener('ReactNativeBlobUtilProgress-upload', (e) => {
       if(e.taskId === taskId && promise.onUploadProgress) {
         promise.onUploadProgress(e.written, e.total)
       }
     })
 
-    stateEvent = emitter.addListener('RNFetchBlobState', (e) => {
+    stateEvent = emitter.addListener('ReactNativeBlobUtilState', (e) => {
       if(e.taskId === taskId)
         respInfo = e
       promise.onStateChange && promise.onStateChange(e)
     })
 
-    subscription = emitter.addListener('RNFetchBlobExpire', (e) => {
+    subscription = emitter.addListener('ReactNativeBlobUtilExpire', (e) => {
       if(e.taskId === taskId && promise.onExpire) {
         promise.onExpire(e)
       }
     })
 
-    partEvent = emitter.addListener('RNFetchBlobServerPush', (e) => {
+    partEvent = emitter.addListener('ReactNativeBlobUtilServerPush', (e) => {
       if(e.taskId === taskId && promise.onPartData) {
         promise.onPartData(e.chunk)
       }
@@ -276,11 +276,11 @@ function fetch(...args:any):Promise {
 
     // When the request body comes from Blob polyfill, we should use special its ref
     // as the request body
-    if( body instanceof Blob && body.isRNFetchBlobPolyfill) {
-      body = body.getRNFetchBlobRef()
+    if( body instanceof Blob && body.isReactNativeBlobUtilPolyfill) {
+      body = body.getReactNativeBlobUtilRef()
     }
 
-    let req = RNFetchBlob[nativeMethodName]
+    let req = ReactNativeBlobUtil[nativeMethodName]
 
     /**
      * Send request via native module, the response callback accepts three arguments
@@ -344,7 +344,7 @@ function fetch(...args:any):Promise {
       fn = args[0]
     }
     promise.onProgress = fn
-    RNFetchBlob.enableProgressReport(taskId, interval, count)
+    ReactNativeBlobUtil.enableProgressReport(taskId, interval, count)
     return promise
   }
   promise.uploadProgress = (...args) => {
@@ -360,7 +360,7 @@ function fetch(...args:any):Promise {
       fn = args[0]
     }
     promise.onUploadProgress = fn
-    RNFetchBlob.enableUploadProgressReport(taskId, interval, count)
+    ReactNativeBlobUtil.enableUploadProgressReport(taskId, interval, count)
     return promise
   }
   promise.part = (fn) => {
@@ -380,7 +380,7 @@ function fetch(...args:any):Promise {
     subscription.remove()
     subscriptionUpload.remove()
     stateEvent.remove()
-    RNFetchBlob.cancelRequest(taskId, fn)
+    ReactNativeBlobUtil.cancelRequest(taskId, fn)
     promiseReject(new Error("canceled"))
   }
   promise.taskId = taskId
@@ -390,7 +390,7 @@ function fetch(...args:any):Promise {
 }
 
 /**
- * RNFetchBlob response object class.
+ * ReactNativeBlobUtil response object class.
  */
 class FetchBlobResponse {
 
@@ -403,20 +403,20 @@ class FetchBlobResponse {
   json : () => any;
   base64 : () => any;
   flush : () => void;
-  respInfo : RNFetchBlobResponseInfo;
-  session : (name:string) => RNFetchBlobSession | null;
+  respInfo : ReactNativeBlobUtilResponseInfo;
+  session : (name:string) => ReactNativeBlobUtilSession | null;
   readFile : (encode: 'base64' | 'utf8' | 'ascii') => ?Promise<any>;
   readStream : (
     encode: 'utf8' | 'ascii' | 'base64',
-  ) => RNFetchBlobStream | null;
+  ) => ReactNativeBlobUtilStream | null;
 
-  constructor(taskId:string, info:RNFetchBlobResponseInfo, data:any) {
+  constructor(taskId:string, info:ReactNativeBlobUtilResponseInfo, data:any) {
     this.data = data
     this.taskId = taskId
     this.type = info.rnfbEncode
     this.respInfo = info
 
-    this.info = ():RNFetchBlobResponseInfo => {
+    this.info = ():ReactNativeBlobUtilResponseInfo => {
       return this.respInfo
     }
 
@@ -438,7 +438,7 @@ class FetchBlobResponse {
     }
 
     /**
-     * Convert result to javascript RNFetchBlob object.
+     * Convert result to javascript ReactNativeBlobUtil object.
      * @return {Promise<Blob>} Return a promise resolves Blob object.
      */
     this.blob = ():Promise<Blob> => {
@@ -522,7 +522,7 @@ class FetchBlobResponse {
       return null
     }
 
-    this.session = (name:string):RNFetchBlobSession | null => {
+    this.session = (name:string):ReactNativeBlobUtilSession | null => {
       if(this.type === 'path')
         return session(name).add(this.data)
       else {
@@ -535,12 +535,12 @@ class FetchBlobResponse {
      * @param  {String} encoding Encode type, should be one of `base64`, `ascii`, `utf8`.
      * @return {void}
      */
-    this.readStream = (encoding: 'base64' | 'utf8' | 'ascii'):RNFetchBlobStream | null => {
+    this.readStream = (encoding: 'base64' | 'utf8' | 'ascii'):ReactNativeBlobUtilStream | null => {
       if(this.type === 'path') {
         return readStream(this.data, encoding)
       }
       else {
-        console.warn('RNFetchblob', 'this response data does not contains any available stream')
+        console.warn('ReactNativeBlobUtil', 'this response data does not contains any available stream')
         return null
       }
     }
@@ -555,7 +555,7 @@ class FetchBlobResponse {
         return readFile(this.data, encoding)
       }
       else {
-        console.warn('RNFetchblob', 'this response does not contains a readable file')
+        console.warn('ReactNativeBlobUtil', 'this response does not contains a readable file')
         return null
       }
     }

@@ -9,7 +9,7 @@ import Blob from './Blob.js'
 import ProgressEvent from './ProgressEvent.js'
 import URIUtil from '../utils/uri'
 
-const RNFetchBlob = NativeModules.RNFetchBlob
+const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil
 const log = new Log('XMLHttpRequest')
 
 log.disable()
@@ -47,8 +47,8 @@ export default class XMLHttpRequest extends XMLHttpRequestEventTarget{
   _uploadStarted : boolean = false;
   _increment : boolean = false;
 
-  // RNFetchBlob compatible data structure
-  _config : RNFetchBlobConfig = {};
+  // ReactNativeBlobUtil compatible data structure
+  _config : ReactNativeBlobUtilConfig = {};
   _url : any;
   _method : string;
   _headers: any = {
@@ -57,7 +57,7 @@ export default class XMLHttpRequest extends XMLHttpRequestEventTarget{
   _cleanUp : () => void = null;
   _body: any;
 
-  // RNFetchBlob promise object, which has `progress`, `uploadProgress`, and
+  // ReactNativeBlobUtil promise object, which has `progress`, `uploadProgress`, and
   // `cancel` methods.
   _task: any;
 
@@ -141,7 +141,7 @@ export default class XMLHttpRequest extends XMLHttpRequestEventTarget{
 
   /**
    * Invoke this function to send HTTP request, and set body.
-   * @param  {any} body Body in RNfetchblob flavor
+   * @param  {any} body Body in ReactNativeBlobUtil flavor
    */
   send(body) {
 
@@ -168,7 +168,7 @@ export default class XMLHttpRequest extends XMLHttpRequestEventTarget{
               }
             }
             log.debug('body created send request')
-            body = RNFetchBlob.wrap(blob.getRNFetchBlobRef())
+            body = ReactNativeBlobUtil.wrap(blob.getReactNativeBlobUtilRef())
             resolve()
           })
         })
@@ -188,7 +188,7 @@ export default class XMLHttpRequest extends XMLHttpRequestEventTarget{
         _headers[h] = _headers[h].toString()
       }
 
-      this._task = RNFetchBlob
+      this._task = ReactNativeBlobUtil
                     .config({
                       auto: true,
                       timeout : this._timeout,

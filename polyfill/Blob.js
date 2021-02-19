@@ -8,23 +8,23 @@ import getUUID from '../utils/uuid'
 import Log from '../utils/log.js'
 import EventTarget from './EventTarget'
 
-const RNFetchBlob = NativeModules.RNFetchBlob
+const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil
 const log = new Log('Blob')
-const blobCacheDir = fs.dirs.DocumentDir + '/RNFetchBlob-blobs/'
+const blobCacheDir = fs.dirs.DocumentDir + '/ReactNativeBlobUtil-blobs/'
 
 log.disable()
 // log.level(3)
 
 /**
- * A RNFetchBlob style Blob polyfill class, this is a Blob which compatible to
- * Response object attain fron RNFetchBlob.fetch.
+ * A ReactNativeBlobUtil style Blob polyfill class, this is a Blob which compatible to
+ * Response object attain fron ReactNativeBlobUtil.fetch.
  */
 export default class Blob extends EventTarget {
 
   cacheName:string;
   type:string;
   size:number;
-  isRNFetchBlobPolyfill:boolean = true;
+  isReactNativeBlobUtilPolyfill:boolean = true;
   multipartBoundary:string = null;
 
   _ref:string = null;
@@ -59,7 +59,7 @@ export default class Blob extends EventTarget {
   }
 
   /**
-   * RNFetchBlob Blob polyfill, create a Blob directly from file path, BASE64
+   * ReactNativeBlobUtil Blob polyfill, create a Blob directly from file path, BASE64
    * encoded data, and string. The conversion is done implicitly according to
    * given `mime`. However, the blob creation is asynchronously, to register
    * event `onCreated` is need to ensure the Blob is creadted.
@@ -73,7 +73,7 @@ export default class Blob extends EventTarget {
     super()
     cType = cType || {}
     this.cacheName = getBlobName()
-    this.isRNFetchBlobPolyfill = true
+    this.isReactNativeBlobUtilPolyfill = true
     this.isDerived = defer
     this.type = cType.type || 'text/plain'
     log.verbose('Blob constructor called', 'mime', this.type, 'type', typeof data, 'length', data?  data.length:0)
@@ -81,10 +81,10 @@ export default class Blob extends EventTarget {
     let p = null
     if(!data)
       data = ''
-    if(data.isRNFetchBlobPolyfill) {
+    if(data.isReactNativeBlobUtilPolyfill) {
       log.verbose('create Blob cache file from Blob object')
       let size = 0
-      this._ref = String(data.getRNFetchBlobRef())
+      this._ref = String(data.getReactNativeBlobUtilRef())
       let orgPath = this._ref
 
       p = fs.exists(orgPath)
@@ -93,7 +93,7 @@ export default class Blob extends EventTarget {
                 return fs.writeFile(orgPath, data, 'uri')
                          .then((size) => Promise.resolve(size))
                          .catch((err) => {
-                           throw `RNFetchBlob Blob file creation error, ${err}`
+                           throw `ReactNativeBlobUtil Blob file creation error, ${err}`
                          })
               else
                 throw `could not create Blob from path ${orgPath}, file not exists`
@@ -102,7 +102,7 @@ export default class Blob extends EventTarget {
     // process FormData
     else if(data instanceof FormData) {
       log.verbose('create Blob cache file from FormData', data)
-      let boundary = `RNFetchBlob-${this.cacheName}-${Date.now()}`
+      let boundary = `ReactNativeBlobUtil-${this.cacheName}-${Date.now()}`
       this.multipartBoundary = boundary
       let parts = data.getParts()
       let formArray = []
@@ -117,7 +117,7 @@ export default class Blob extends EventTarget {
             formArray.push(j + ': ' +part.headers[j] + '\r\n')
           }
           formArray.push('\r\n')
-          if(part.isRNFetchBlobPolyfill)
+          if(part.isReactNativeBlobUtilPolyfill)
             formArray.push(part)
           else
             formArray.push(part.string)
@@ -127,13 +127,13 @@ export default class Blob extends EventTarget {
         p = createMixedBlobData(this._ref, formArray)
       }
     }
-    // if the data is a string starts with `RNFetchBlob-file://`, append the
+    // if the data is a string starts with `ReactNativeBlobUtil-file://`, append the
     // Blob data from file path
-    else if(typeof data === 'string' && data.startsWith('RNFetchBlob-file://')) {
+    else if(typeof data === 'string' && data.startsWith('ReactNativeBlobUtil-file://')) {
       log.verbose('create Blob cache file from file path', data)
       // set this flag so that we know this blob is a wrapper of an existing file
       this._isReference = true
-      this._ref = String(data).replace('RNFetchBlob-file://', '')
+      this._ref = String(data).replace('ReactNativeBlobUtil-file://', '')
       let orgPath = this._ref
       if(defer)
         return
@@ -148,7 +148,7 @@ export default class Blob extends EventTarget {
     else if(typeof data === 'string') {
       let encoding = 'utf8'
       let mime = String(this.type)
-      // when content type contains application/octet* or *;base64, RNFetchBlob
+      // when content type contains application/octet* or *;base64, ReactNativeBlobUtil
       // fs will treat it as BASE64 encoded string binary data
       if(/(application\/octet|\;base64)/i.test(mime))
         encoding = 'base64'
@@ -182,7 +182,7 @@ export default class Blob extends EventTarget {
       this._invokeOnCreateEvent()
     })
     .catch((err) => {
-      log.error('RNFetchBlob could not create Blob : '+ this._ref, err)
+      log.error('ReactNativeBlobUtil could not create Blob : '+ this._ref, err)
     })
 
   }
@@ -215,9 +215,9 @@ export default class Blob extends EventTarget {
   /**
    * Get file reference of the Blob object.
    * @nonstandard
-   * @return {string} Blob file reference which can be consumed by RNFetchBlob fs
+   * @return {string} Blob file reference which can be consumed by ReactNativeBlobUtil fs
    */
-  getRNFetchBlobRef() {
+  getReactNativeBlobUtilRef() {
     return this._ref
   }
 
@@ -237,7 +237,7 @@ export default class Blob extends EventTarget {
     let resPath = blobCacheDir + getBlobName()
     let pass = false
     log.debug('fs.slice new blob will at', resPath)
-    let result = new Blob(RNFetchBlob.wrap(resPath), { type : contentType }, true)
+    let result = new Blob(ReactNativeBlobUtil.wrap(resPath), { type : contentType }, true)
     fs.exists(blobCacheDir)
     .then((exist) => {
       if(exist)
@@ -337,7 +337,7 @@ function createMixedBlobData(ref, dataArray) {
     let part = dataArray[i]
     if(!part)
       continue
-    if(part.isRNFetchBlobPolyfill) {
+    if(part.isReactNativeBlobUtilPolyfill) {
       args.push([ref, part._ref, 'uri'])
     }
     else if(typeof part === 'string')

@@ -10,7 +10,7 @@ const OboeExtended = (arg: string | Object) => {
   if(!window.XMLHttpRequest.isRNFBPolyfill ) {
     window.XMLHttpRequest = XMLHttpRequest
     console.warn(
-        'Use JSONStream will automatically replace window.XMLHttpRequest with RNFetchBlob.polyfill.XMLHttpRequest. ' +
+        'Use JSONStream will automatically replace window.XMLHttpRequest with ReactNativeBlobUtil.polyfill.XMLHttpRequest. ' +
         'You are seeing this warning because you did not replace it manually.'
     )
   }
