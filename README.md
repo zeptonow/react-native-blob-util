@@ -3,11 +3,11 @@
 
 A project committed to making file access and data transfer easier and more efficient for React Native developers.
 # I forked this project to continue working on it.
-I will soon publish it on npm. So far Android 10 support is added and some other fixes.
-Also, changes are made for feedback (rejected promise) if there is no app to open the given file.
+This project is a fork of https://www.npmjs.com/package/rn-fetch-blob which on the other hand is a fork of https://github.com/wkh237/react-native-fetch-blob.
+Both the original repository and its first fork are not maintianed anymore.
 
+The project will be continnued in this repository. React-Native-Blob-Util is fully compatible to RN-Featch-Blob and React-Native-Fetch-Blob. If you want to support the project feel free to contact me or create a pull request with your feature.
 # Version Compatibility Warning
-
 react-native-blob-util version 0.10.16 is only compatible with react native 0.60 and up. It should have been a major version bump, we apologize for the mistake. If you are not yet upgraded to react native 0.60 or above, you should remain on  react-native-blob-util version 0.10.15
 
 ## Features
@@ -18,6 +18,15 @@ react-native-blob-util version 0.10.16 is only compatible with react native 0.60
 - Blob, File, XMLHttpRequest polyfills that make browser-based library available in RN (experimental)
 - JSON stream supported base on [Oboe.js](https://github.com/jimhigson/oboe.js/) @jimhigson
 
+## Andorid 10 & 11
+Android 10 introduced scoped storage for apps. Apps no longer can create own directories directly on the external storage or access files outside of the apps own directories.
+This currently limits the library to create files in its own directory. This directory is not accessible by other apps.
+If you want to open the files with another app (e.g. images) you can save it to the downloadDir and then open the file with actionViewIntent.
+
+This is leading to the problem that all files are deleted when the app is being removed.
+The best and recommanded option to address this issue is, moving the files to a media collection (e.g. galery or downloads). The possibility to do this will be implemented in a future release.
+
+For more information see: https://developer.android.com/training/data-storage
 ## TOC (visit [Wiki](https://github.com/joltup/react-native-blob-util/wiki) to get the complete documentation)
 * [About](#user-content-about)
 * [Installation](#user-content-installation)
