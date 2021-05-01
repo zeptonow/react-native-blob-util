@@ -29,7 +29,9 @@ public class PathResolver {
                 final String type = split[0];
 
                 if ("primary".equalsIgnoreCase(type)) {
-                    return context.getExternalFilesDir(null) + "/" + split[1];
+                    File dir = context.getExternalFilesDir(null);
+                    if (dir != null) return dir + "/" + split[1];
+                    return "";
                 }
 
                 // TODO handle non-primary volumes
