@@ -252,20 +252,20 @@ class ReactNativeBlobUtilFS {
 
         res.put("DocumentDir", ctx.getFilesDir().getAbsolutePath());
         res.put("CacheDir", ctx.getCacheDir().getAbsolutePath());
-        res.put("DCIMDir", ctx.getExternalFilesDir(Environment.DIRECTORY_DCIM).getAbsolutePath());
-        res.put("PictureDir", ctx.getExternalFilesDir(Environment.DIRECTORY_PICTURES).getAbsolutePath());
-        res.put("MusicDir", ctx.getExternalFilesDir(Environment.DIRECTORY_MUSIC).getAbsolutePath());
-        res.put("DownloadDir", ctx.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath());
-        res.put("MovieDir", ctx.getExternalFilesDir(Environment.DIRECTORY_MOVIES).getAbsolutePath());
-        res.put("RingtoneDir", ctx.getExternalFilesDir(Environment.DIRECTORY_RINGTONES).getAbsolutePath());
-        String state;
-        state = Environment.getExternalStorageState();
+        res.put("DCIMDir", getExternalFilesDirPath(ctx, Environment.DIRECTORY_DCIM));
+        res.put("PictureDir", getExternalFilesDirPath(ctx, Environment.DIRECTORY_PICTURES));
+        res.put("MusicDir", getExternalFilesDirPath(ctx, Environment.DIRECTORY_MUSIC));
+        res.put("DownloadDir", getExternalFilesDirPath(ctx, Environment.DIRECTORY_DOWNLOADS));
+        res.put("MovieDir", getExternalFilesDirPath(ctx, Environment.DIRECTORY_MOVIES));
+        res.put("RingtoneDir", getExternalFilesDirPath(ctx, Environment.DIRECTORY_RINGTONES));
+        
+        String state = Environment.getExternalStorageState();
         if (state.equals(Environment.MEDIA_MOUNTED)) {
-            res.put("SDCardDir", ctx.getExternalFilesDir(null).getAbsolutePath());
+            res.put("SDCardDir", getExternalFilesDirPath(ctx, null));
 
             File externalDirectory = ctx.getExternalFilesDir(null);
 
-            if (externalDirectory != null) {
+            if (externalDirectory != null && externalDirectory.getParentFile() != null) {
                 res.put("SDCardApplicationDir", externalDirectory.getParentFile().getAbsolutePath());
             } else {
               res.put("SDCardApplicationDir", "");
@@ -276,9 +276,20 @@ class ReactNativeBlobUtilFS {
         return res;
     }
 
+    static String getExternalFilesDirPath(ReactApplicationContext ctx, String type) {
+        File dir = ctx.getExternalFilesDir(type);
+        if (dir != null) return dir.getAbsolutePath();
+        return "";
+    }
+
     static public void getSDCardDir(ReactApplicationContext ctx, Promise promise) {
         if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
-            promise.resolve(ctx.getExternalFilesDir(null).getAbsolutePath());
+            try {
+                final String path = ctx.getExternalFilesDir(null).getAbsolutePath();
+                promise.resolve(path);
+            } catch (Exception e) {
+                promise.reject("ReactNativeBlobUtil.getSDCardDir", e.getLocalizedMessage());
+            }
         } else {
             promise.reject("ReactNativeBlobUtil.getSDCardDir", "External storage not mounted");
         }
@@ -992,12 +1003,17 @@ class ReactNativeBlobUtilFS {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
             args.putString("internal_free", String.valueOf(stat.getFreeBytes()));
             args.putString("internal_total", String.valueOf(stat.getTotalBytes()));
-            StatFs statEx = new StatFs(ctx.getExternalFilesDir(null).getPath());
-            args.putString("external_free", String.valueOf(statEx.getFreeBytes()));
-            args.putString("external_total", String.valueOf(statEx.getTotalBytes()));
-
+            File dir = ctx.getExternalFilesDir(null);
+            if (dir != null) {
+                StatFs statEx = new StatFs(dir.getPath());
+                args.putString("external_free", String.valueOf(statEx.getFreeBytes()));
+                args.putString("external_total", String.valueOf(statEx.getTotalBytes()));
+            } else {
+                args.putString("external_free", "-1");
+                args.putString("external_total", "-1");
+            }
         }
-        callback.invoke(null ,args);
+        callback.invoke(null, args);
     }
 
     /**
