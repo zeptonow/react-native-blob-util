@@ -8,7 +8,7 @@ Both the original repository and its first fork are not maintianed anymore.
 
 The project will be continnued in this repository. React-Native-Blob-Util is fully compatible to RN-Featch-Blob and React-Native-Fetch-Blob. If you want to support the project feel free to contact me or create a pull request with your feature.
 # Version Compatibility Warning
-react-native-blob-util version 0.10.16 is only compatible with react native 0.60 and up. It should have been a major version bump, we apologize for the mistake. If you are not yet upgraded to react native 0.60 or above, you should remain on  react-native-blob-util version 0.10.15
+react-native-blob-util version 0.10.16 and up is only compatible with react native 0.60 and up.
 
 ## Features
 - Transfer data directly from/to storage without BASE64 bridging

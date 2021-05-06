@@ -56,10 +56,9 @@ android {
 
 dependencies {
     implementation "com.facebook.react:react-native:${safeExtGet('reactNativeVersion', '+')}"
-    implementation 'com.squareup.okhttp3:okhttp:+'
-    implementation 'com.squareup.okhttp3:logging-interceptor:+'
-    implementation 'com.squareup.okhttp3:okhttp-urlconnection:+'
-//    {ReactNativeBlobUtil_PRE_0.28_DEPDENDENCY}
+    implementation 'com.squareup.okhttp3:okhttp:3.12.+'
+    implementation 'com.squareup.okhttp3:logging-interceptor:3.12.+'
+    implementation 'com.squareup.okhttp3:okhttp-urlconnection:3.12.+'
 }
 
 def configureReactNativePom(def pom) {
