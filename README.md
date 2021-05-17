@@ -18,7 +18,7 @@ react-native-blob-util version 0.10.16 and up is only compatible with react nati
 - Blob, File, XMLHttpRequest polyfills that make browser-based library available in RN (experimental)
 - JSON stream supported base on [Oboe.js](https://github.com/jimhigson/oboe.js/) @jimhigson
 
-## Andorid 10 & 11
+## Android 10 & 11
 Android 10 introduced scoped storage for apps. Apps no longer can create own directories directly on the external storage or access files outside of the apps own directories.
 This currently limits the library to create files in its own directory. This directory is not accessible by other apps.
 If you want to open the files with another app (e.g. images) you can save it to the downloadDir and then open the file with actionViewIntent.
