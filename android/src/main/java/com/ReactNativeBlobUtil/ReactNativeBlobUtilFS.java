@@ -250,8 +250,8 @@ class ReactNativeBlobUtilFS {
     static Map<String, Object> getSystemfolders(ReactApplicationContext ctx) {
         Map<String, Object> res = new HashMap<>();
 
-        res.put("DocumentDir", ctx.getFilesDir().getAbsolutePath());
-        res.put("CacheDir", ctx.getCacheDir().getAbsolutePath());
+        res.put("DocumentDir", getFilesDirPath(ctx));
+        res.put("CacheDir", getCacheDirPath(ctx));
         res.put("DCIMDir", getExternalFilesDirPath(ctx, Environment.DIRECTORY_DCIM));
         res.put("PictureDir", getExternalFilesDirPath(ctx, Environment.DIRECTORY_PICTURES));
         res.put("MusicDir", getExternalFilesDirPath(ctx, Environment.DIRECTORY_MUSIC));
@@ -278,6 +278,18 @@ class ReactNativeBlobUtilFS {
 
     static String getExternalFilesDirPath(ReactApplicationContext ctx, String type) {
         File dir = ctx.getExternalFilesDir(type);
+        if (dir != null) return dir.getAbsolutePath();
+        return "";
+    }
+
+    static String getFilesDirPath(ReactApplicationContext ctx) {
+        File dir = ctx.getFilesDir();
+        if (dir != null) return dir.getAbsolutePath();
+        return "";
+    }
+
+    static String getCacheDirPath(ReactApplicationContext ctx) {
+        File dir = ctx.getCacheDir();
         if (dir != null) return dir.getAbsolutePath();
         return "";
     }
