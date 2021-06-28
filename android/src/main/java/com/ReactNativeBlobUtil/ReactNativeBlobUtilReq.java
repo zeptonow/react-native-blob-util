@@ -46,7 +46,7 @@ import java.net.Proxy;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CharsetDecoder;
 import java.security.KeyStore;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -558,26 +558,23 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                     }
                     // response data directly pass to JS context as string.
                     else {
-                        // #73 Check if the response data contains valid UTF8 string, since BASE64
-                        // encoding will somehow break the UTF8 string format, to encode UTF8
-                        // string correctly, we should do URL encoding before BASE64.
                         byte[] b = resp.body().bytes();
-                        CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
                         if(responseFormat == ResponseFormat.BASE64) {
                             callback.invoke(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_BASE64, android.util.Base64.encodeToString(b, Base64.NO_WRAP));
                             return;
                         }
                         try {
-                            encoder.encode(ByteBuffer.wrap(b).asCharBuffer());
-                            // if the data contains invalid characters the following lines will be
-                            // skipped.
-                            String utf8 = new String(b);
+                            // Attempt to decode the incoming response data to determine whether it contains a valid UTF8 string
+                            Charset charSet = Charset.forName("UTF-8");
+                            CharsetDecoder decoder = charSet.newDecoder();
+                            decoder.decode(ByteBuffer.wrap(b));
+                            // If the data contains invalid characters the following lines will be skipped.
+                            String utf8 = new String(b, charSet);
                             callback.invoke(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_UTF8, utf8);
                         }
-                        // This usually mean the data is contains invalid unicode characters but still valid data,
+                        // This usually means the data contains invalid unicode characters but still valid data,
                         // it's binary data, so send it as a normal string
                         catch(CharacterCodingException ignored) {
-
                             if(responseFormat == ResponseFormat.UTF8) {
                                 String utf8 = new String(b);
                                 callback.invoke(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_UTF8, utf8);
