@@ -1048,7 +1048,7 @@ IAsyncAction setTimeout(std::chrono::seconds time) {
 	co_await time;
 }
 
-winrt::fire_and_forget ReactNativeBlobUtilState::fetchBlob(
+winrt::fire_and_forget ReactNativeBlobUtil::fetchBlob(
 	winrt::Microsoft::ReactNative::JSValueObject options,
 	std::string taskId,
 	std::string method,
