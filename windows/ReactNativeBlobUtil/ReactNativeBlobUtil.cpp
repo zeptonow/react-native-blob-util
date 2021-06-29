@@ -1048,7 +1048,7 @@ IAsyncAction setTimeout(std::chrono::seconds time) {
 	co_await time;
 }
 
-winrt::fire_and_forget RNFetchBlob::fetchBlob(
+winrt::fire_and_forget ReactNativeBlobUtilState::fetchBlob(
 	winrt::Microsoft::ReactNative::JSValueObject options,
 	std::string taskId,
 	std::string method,
@@ -1064,7 +1064,7 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 	{
 		filter.IgnorableServerCertificateErrors().Append(Cryptography::Certificates::ChainValidationResult::Untrusted);
 	}
-	RNFetchBlobState eventState;
+	ReactNativeBlobUtilState eventState;
 
 	winrt::Windows::Web::Http::HttpClient httpClient{ filter };
 
@@ -1217,7 +1217,7 @@ winrt::fire_and_forget RNFetchBlob::fetchBlob(
 			callback(error, "error", "");
 		}
 		else {
-			callback("RNFetchBlob request timed out", "error", "");
+			callback("React-native-blobl-util request timed out", "error", "");
 		}
 	}
 
@@ -1539,7 +1539,7 @@ try
 
 	winrt::Windows::Web::Http::HttpResponseMessage response{ co_await httpClient.SendRequestAsync(httpRequestMessage, winrt::Windows::Web::Http::HttpCompletionOption::ResponseHeadersRead) };
 	
-	RNFetchBlobState eventState;
+	ReactNativeBlobUtilState eventState;
 
 	auto status{ static_cast<int>(response.StatusCode()) };
 	if (config.followRedirect) {
@@ -1564,7 +1564,7 @@ try
 
 	eventState.state = winrt::to_string(response.ReasonPhrase());
 
-	m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"RNFetchBlobState",
+	m_reactContext.CallJSFunction(L"RCTDeviceEventEmitter", L"emit", L"ReactNativeBlobUtilState",
 		Microsoft::ReactNative::JSValueObject{
 			{ "taskId", taskId },
 			{ "state", eventState.state },
