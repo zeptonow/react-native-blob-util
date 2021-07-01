@@ -396,7 +396,10 @@ NSMutableDictionary *fileStreams = nil;
             [fileHandle closeFile];
         }
         else {
-            [content writeToFile:path atomically:YES];
+            if (![content writeToFile:path atomically:YES]) {
+                fm = nil;
+                return reject(@"EUNSPECIFIED", [NSString stringWithFormat:@"File '%@' could not be written.", path], nil);
+            }
         }
         fm = nil;
 
@@ -460,7 +463,11 @@ NSMutableDictionary *fileStreams = nil;
                 [fileHandle closeFile];
             }
             else {
-                [fileContent writeToFile:path atomically:YES];
+                if (![fileContent writeToFile:path atomically:YES]) {
+                    free(bytes);
+                    fm = nil;
+                    return reject(@"EUNSPECIFIED", [NSString stringWithFormat:@"File '%@' could not be written.", path], nil);
+                }
             }
         }
         free(bytes);
