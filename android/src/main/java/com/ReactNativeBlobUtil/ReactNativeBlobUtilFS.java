@@ -648,22 +648,23 @@ class ReactNativeBlobUtilFS {
         }
 
         try {
-            InputStream in = new FileInputStream(path);
-            OutputStream out = new FileOutputStream(dest);
-
-            //read source path to byte buffer. Write from input to output stream
-            byte[] buffer = new byte[1024];
-            int read;
-            while ((read = in.read(buffer)) != -1) { //read is successful
-                out.write(buffer, 0, read);
+            // mv should fail if the destination directory does not exist.
+            File destFile = new File(dest);
+            File parentDir = destFile.getParentFile();
+            if (parentDir != null && !parentDir.exists()) {
+               callback.invoke("mv failed because the destination directory doesn't exist");
+               return;
             }
-            in.close();
-            out.flush();
-
-            src.delete(); //remove original file
-        } catch (FileNotFoundException exception) {
-            callback.invoke("Source file not found.");
-            return;
+            // mv overwrites files, so delete any existing file.
+            if (destFile.exists()) {
+                destFile.delete();
+            }
+            // mv by renaming the file.
+            boolean result = src.renameTo(destFile);
+            if (!result) {
+                callback.invoke("mv failed for unknown reasons");
+                return;
+            }
         } catch (Exception e) {
             callback.invoke(e.toString());
             return;
