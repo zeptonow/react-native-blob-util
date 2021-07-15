@@ -70,7 +70,7 @@ public class ReactNativeBlobUtilUtils {
                     return new java.security.cert.X509Certificate[]{};
                 }
             };
-            final TrustManager[] trustAllCerts = new TrustManager[]{ x509TrustManager };
+            final TrustManager[] trustAllCerts = new TrustManager[]{x509TrustManager};
 
             // Install the all-trusting trust manager
             final SSLContext sslContext = SSLContext.getInstance("SSL");

@@ -12,6 +12,7 @@ import javax.net.ssl.SSLSocketFactory;
  * Enables TLS v1.2 when creating SSLSockets.
  * For some reason, android supports TLS v1.2 from API 16, but enables it by
  * default only from API 20.
+ *
  * @see <a href='https://developer.android.com/reference/javax/net/ssl/SSLSocket.html'>Reference on SSLSocket</a>
  * @see SSLSocketFactory
  */

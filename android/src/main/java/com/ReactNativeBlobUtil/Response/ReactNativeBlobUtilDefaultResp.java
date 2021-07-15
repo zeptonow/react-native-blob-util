@@ -63,19 +63,18 @@ public class ReactNativeBlobUtilDefaultResp extends ResponseBody {
         @Override
         public long read(Buffer sink, long byteCount) throws IOException {
 
-            long read =  mOriginalSource.read(sink, byteCount);
+            long read = mOriginalSource.read(sink, byteCount);
             bytesRead += read > 0 ? read : 0;
             ReactNativeBlobUtilProgressConfig reportConfig = ReactNativeBlobUtilReq.getReportProgress(mTaskId);
             long cLen = contentLength();
-            if(reportConfig != null && cLen != 0 && reportConfig.shouldReport(bytesRead/contentLength())) {
+            if (reportConfig != null && cLen != 0 && reportConfig.shouldReport(bytesRead / contentLength())) {
                 WritableMap args = Arguments.createMap();
                 args.putString("taskId", mTaskId);
                 args.putString("written", String.valueOf(bytesRead));
                 args.putString("total", String.valueOf(contentLength()));
-                if(isIncrement) {
+                if (isIncrement) {
                     args.putString("chunk", sink.readString(Charset.defaultCharset()));
-                }
-                else {
+                } else {
                     args.putString("chunk", "");
                 }
 

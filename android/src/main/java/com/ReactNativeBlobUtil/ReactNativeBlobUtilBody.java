@@ -1,6 +1,7 @@
 package com.ReactNativeBlobUtil;
 
 import androidx.annotation.NonNull;
+
 import android.util.Base64;
 
 import com.facebook.react.bridge.Arguments;
@@ -19,11 +20,12 @@ import java.io.InputStream;
 import java.util.ArrayList;
 
 import android.net.Uri;
+
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
 import okio.BufferedSink;
 
-class ReactNativeBlobUtilBody extends RequestBody{
+class ReactNativeBlobUtilBody extends RequestBody {
 
     private InputStream requestStream;
     private long contentLength = 0;
@@ -57,12 +59,13 @@ class ReactNativeBlobUtilBody extends RequestBody{
 
     /**
      * Set request body
+     *
      * @param body A string represents the request body
      * @return object itself
      */
     ReactNativeBlobUtilBody setBody(String body) {
         this.rawBody = body;
-        if(rawBody == null) {
+        if (rawBody == null) {
             this.rawBody = "";
             requestType = ReactNativeBlobUtilReq.RequestType.AsIs;
         }
@@ -79,7 +82,7 @@ class ReactNativeBlobUtilBody extends RequestBody{
                 case Others:
                     break;
             }
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
             ReactNativeBlobUtilUtils.emitWarningEvent("ReactNativeBlobUtil failed to create single content request body :" + ex.getLocalizedMessage() + "\r\n");
         }
@@ -88,6 +91,7 @@ class ReactNativeBlobUtilBody extends RequestBody{
 
     /**
      * Set request body (Array)
+     *
      * @param body A Readable array contains form data
      * @return object itself
      */
@@ -97,7 +101,7 @@ class ReactNativeBlobUtilBody extends RequestBody{
             bodyCache = createMultipartBodyCache();
             requestStream = new FileInputStream(bodyCache);
             contentLength = bodyCache.length();
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
             ReactNativeBlobUtilUtils.emitWarningEvent("ReactNativeBlobUtil failed to create request multipart body :" + ex.getLocalizedMessage());
         }
@@ -118,7 +122,7 @@ class ReactNativeBlobUtilBody extends RequestBody{
     public void writeTo(@NonNull BufferedSink sink) {
         try {
             pipeStreamToSink(requestStream, sink);
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             ReactNativeBlobUtilUtils.emitWarningEvent(ex.getLocalizedMessage());
             ex.printStackTrace();
         }
@@ -129,7 +133,7 @@ class ReactNativeBlobUtilBody extends RequestBody{
             if (bodyCache != null && bodyCache.exists()) {
                 bodyCache.delete();
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             ReactNativeBlobUtilUtils.emitWarningEvent(e.getLocalizedMessage());
             return false;
         }
@@ -148,16 +152,16 @@ class ReactNativeBlobUtilBody extends RequestBody{
                     String assetName = orgPath.replace(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET, "");
                     return ReactNativeBlobUtil.RCTContext.getAssets().open(assetName);
                 } catch (Exception e) {
-                    throw new Exception("error when getting request stream from asset : " +e.getLocalizedMessage());
+                    throw new Exception("error when getting request stream from asset : " + e.getLocalizedMessage());
                 }
             } else {
                 File f = new File(ReactNativeBlobUtilFS.normalizePath(orgPath));
                 try {
-                    if(!f.exists())
+                    if (!f.exists())
                         f.createNewFile();
                     return new FileInputStream(f);
                 } catch (Exception e) {
-                    throw new Exception("error when getting request stream: " +e.getLocalizedMessage());
+                    throw new Exception("error when getting request stream: " + e.getLocalizedMessage());
                 }
             }
         } else if (rawBody.startsWith(ReactNativeBlobUtilConst.CONTENT_PREFIX)) {
@@ -172,8 +176,8 @@ class ReactNativeBlobUtilBody extends RequestBody{
         else {
             try {
                 byte[] bytes = Base64.decode(rawBody, 0);
-                return  new ByteArrayInputStream(bytes);
-            } catch(Exception ex) {
+                return new ByteArrayInputStream(bytes);
+            } catch (Exception ex) {
                 throw new Exception("error when getting request stream: " + ex.getLocalizedMessage());
             }
         }
@@ -181,6 +185,7 @@ class ReactNativeBlobUtilBody extends RequestBody{
 
     /**
      * Create a temp file that contains content of multipart form data content
+     *
      * @return The cache file object
      * @throws IOException
      */
@@ -194,11 +199,11 @@ class ReactNativeBlobUtilBody extends RequestBody{
         ArrayList<FormField> fields = countFormDataLength();
         ReactApplicationContext ctx = ReactNativeBlobUtil.RCTContext;
 
-        for(FormField field : fields) {
+        for (FormField field : fields) {
             String data = field.data;
             String name = field.name;
             // skip invalid fields
-            if(name == null || data == null)
+            if (name == null || data == null)
                 continue;
             // form begin
             String header = "--" + boundary + "\r\n";
@@ -218,17 +223,16 @@ class ReactNativeBlobUtilBody extends RequestBody{
                             InputStream in = ctx.getAssets().open(assetName);
                             pipeStreamToFileStream(in, os);
                         } catch (IOException e) {
-                            ReactNativeBlobUtilUtils.emitWarningEvent("Failed to create form data asset :" + orgPath + ", " + e.getLocalizedMessage() );
+                            ReactNativeBlobUtilUtils.emitWarningEvent("Failed to create form data asset :" + orgPath + ", " + e.getLocalizedMessage());
                         }
                     }
                     // data from normal files
                     else {
                         File file = new File(ReactNativeBlobUtilFS.normalizePath(orgPath));
-                        if(file.exists()) {
+                        if (file.exists()) {
                             FileInputStream fs = new FileInputStream(file);
                             pipeStreamToFileStream(fs, os);
-                        }
-                        else {
+                        } else {
                             ReactNativeBlobUtilUtils.emitWarningEvent("Failed to create form data from path :" + orgPath + ", file not exists.");
                         }
                     }
@@ -238,7 +242,7 @@ class ReactNativeBlobUtilBody extends RequestBody{
                     try {
                         is = ctx.getContentResolver().openInputStream(Uri.parse(contentURI));
                         pipeStreamToFileStream(is, os);
-                    } catch(Exception e) {
+                    } catch (Exception e) {
                         ReactNativeBlobUtilUtils.emitWarningEvent(
                                 "Failed to create form data from content URI:" + contentURI + ", " + e.getLocalizedMessage());
                     } finally {
@@ -275,15 +279,16 @@ class ReactNativeBlobUtilBody extends RequestBody{
 
     /**
      * Pipe input stream to request body output stream
-     * @param stream    The input stream
-     * @param sink      The request body buffer sink
+     *
+     * @param stream The input stream
+     * @param sink   The request body buffer sink
      * @throws IOException
      */
     private void pipeStreamToSink(InputStream stream, BufferedSink sink) throws IOException {
         byte[] chunk = new byte[10240];
         long totalWritten = 0;
         int read;
-        while((read = stream.read(chunk, 0, 10240)) > 0) {
+        while ((read = stream.read(chunk, 0, 10240)) > 0) {
             sink.write(chunk, 0, read);
             totalWritten += read;
             emitUploadProgress(totalWritten);
@@ -293,8 +298,9 @@ class ReactNativeBlobUtilBody extends RequestBody{
 
     /**
      * Pipe input stream to a file
-     * @param is    The input stream
-     * @param os    The output stream to a file
+     *
+     * @param is The input stream
+     * @param os The output stream to a file
      * @throws IOException
      */
     private void pipeStreamToFileStream(InputStream is, FileOutputStream os) throws IOException {
@@ -309,19 +315,19 @@ class ReactNativeBlobUtilBody extends RequestBody{
 
     /**
      * Compute approximate content length for form data
+     *
      * @return ArrayList<FormField>
      */
     private ArrayList<FormField> countFormDataLength() throws IOException {
         long total = 0;
         ArrayList<FormField> list = new ArrayList<>();
         ReactApplicationContext ctx = ReactNativeBlobUtil.RCTContext;
-        for(int i = 0;i < form.size(); i++) {
+        for (int i = 0; i < form.size(); i++) {
             FormField field = new FormField(form.getMap(i));
             list.add(field);
-            if(field.data == null) {
-                ReactNativeBlobUtilUtils.emitWarningEvent("ReactNativeBlobUtil multipart request builder has found a field without `data` property, the field `"+ field.name +"` will be removed implicitly.");
-            }
-            else if (field.filename != null) {
+            if (field.data == null) {
+                ReactNativeBlobUtilUtils.emitWarningEvent("ReactNativeBlobUtil multipart request builder has found a field without `data` property, the field `" + field.name + "` will be removed implicitly.");
+            } else if (field.filename != null) {
                 String data = field.data;
                 // upload from storage
                 if (data.startsWith(ReactNativeBlobUtilConst.FILE_PREFIX)) {
@@ -349,7 +355,7 @@ class ReactNativeBlobUtilBody extends RequestBody{
                         is = ctx.getContentResolver().openInputStream(Uri.parse(contentURI));
                         long length = is.available();
                         total += length;
-                    } catch(Exception e) {
+                    } catch (Exception e) {
                         ReactNativeBlobUtilUtils.emitWarningEvent(
                                 "Failed to estimate form data length from content URI:" + contentURI + ", " + e.getLocalizedMessage());
                     } finally {
@@ -384,16 +390,16 @@ class ReactNativeBlobUtilBody extends RequestBody{
         public String data;
 
         FormField(ReadableMap rawData) {
-            if(rawData.hasKey("name"))
+            if (rawData.hasKey("name"))
                 name = rawData.getString("name");
-            if(rawData.hasKey("filename"))
+            if (rawData.hasKey("filename"))
                 filename = rawData.getString("filename");
-            if(rawData.hasKey("type"))
+            if (rawData.hasKey("type"))
                 mime = rawData.getString("type");
             else {
                 mime = filename == null ? "text/plain" : "application/octet-stream";
             }
-            if(rawData.hasKey("data")) {
+            if (rawData.hasKey("data")) {
                 data = rawData.getString("data");
             }
         }
@@ -401,11 +407,12 @@ class ReactNativeBlobUtilBody extends RequestBody{
 
     /**
      * Emit progress event
-     * @param written  Integer
+     *
+     * @param written Integer
      */
     private void emitUploadProgress(long written) {
         ReactNativeBlobUtilProgressConfig config = ReactNativeBlobUtilReq.getReportUploadProgress(mTaskId);
-        if(config != null && contentLength != 0 && config.shouldReport((float)written/contentLength)) {
+        if (config != null && contentLength != 0 && config.shouldReport((float) written / contentLength)) {
             WritableMap args = Arguments.createMap();
             args.putString("taskId", mTaskId);
             args.putString("written", String.valueOf(written));
