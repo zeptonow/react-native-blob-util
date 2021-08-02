@@ -6,27 +6,27 @@ import Event from './Event'
 
 export default class ProgressEvent extends Event {
 
-  _lengthComputable : boolean = false;
-  _loaded : number = -1;
-  _total : numver = -1;
+    _lengthComputable: boolean = false;
+    _loaded: number = -1;
+    _total: numver = -1;
 
-  constructor(lengthComputable, loaded, total) {
-    super()
-    this._lengthComputable = lengthComputable;
-    this._loaded = loaded
-    this._total = total
-  }
+    constructor(lengthComputable, loaded, total) {
+        super()
+        this._lengthComputable = lengthComputable;
+        this._loaded = loaded
+        this._total = total
+    }
 
-  get lengthComputable() {
-    return this._lengthComputable
-  }
+    get lengthComputable() {
+        return this._lengthComputable
+    }
 
-  get loaded() {
-    return this._loaded
-  }
+    get loaded() {
+        return this._loaded
+    }
 
-  get total() {
-    return this._total
-  }
+    get total() {
+        return this._total
+    }
 
 }
