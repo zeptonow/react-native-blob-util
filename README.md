@@ -6,7 +6,7 @@ A project committed to making file access and data transfer easier and more effi
 This project is a fork of https://www.npmjs.com/package/rn-fetch-blob which on the other hand is a fork of https://github.com/wkh237/react-native-fetch-blob.
 Both the original repository and its first fork are not maintained anymore.
 
-The project will be continnued in this repository. React-Native-Blob-Util is fully compatible with RN-Featch-Blob and React-Native-Fetch-Blob. If you want to support the project feel free to contact me or create a pull request with your feature.
+The project will be continued in this repository. React-Native-Blob-Util is fully compatible with RN-Fetch-Blob and React-Native-Fetch-Blob. If you want to support the project feel free to contact me or create a pull request with your feature.
 # Version Compatibility Warning
 react-native-blob-util version 0.10.16 and up is only compatible with react native 0.60 and up.
 
