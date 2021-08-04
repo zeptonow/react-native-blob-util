@@ -4,8 +4,8 @@
 
 export default class Event {
 
-  constructor() {
+    constructor() {
 
-  }
+    }
 
 }
