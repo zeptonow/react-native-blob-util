@@ -50,11 +50,11 @@ public class ReactNativeBlobUtilFileResp extends ResponseBody {
             File f = new File(path);
 
             File parent = f.getParentFile();
-            if(parent != null && !parent.exists() && !parent.mkdirs()){
+            if (parent != null && !parent.exists() && !parent.mkdirs()) {
                 throw new IllegalStateException("Couldn't create dir: " + parent);
             }
 
-            if(!f.exists())
+            if (!f.exists())
                 f.createNewFile();
             ofStream = new FileOutputStream(new File(path), appendToExistingFile);
         }
@@ -100,7 +100,7 @@ public class ReactNativeBlobUtilFileResp extends ResponseBody {
 
                     // For non-chunked download, progress is received / total
                     // For chunked download, progress can be either 0 (started) or 1 (ended)
-                    float progress = (contentLength() != -1) ? bytesDownloaded / contentLength() : ( ( isEndMarkerReceived ) ? 1 : 0 );
+                    float progress = (contentLength() != -1) ? bytesDownloaded / contentLength() : ((isEndMarkerReceived) ? 1 : 0);
 
                     if (reportConfig != null && reportConfig.shouldReport(progress /* progress */)) {
                         if (contentLength() != -1) {
@@ -110,7 +110,7 @@ public class ReactNativeBlobUtilFileResp extends ResponseBody {
                             // For chunked downloads
                             if (!isEndMarkerReceived) {
                                 reportProgress(mTaskId, 0, contentLength());
-                            } else{
+                            } else {
                                 reportProgress(mTaskId, bytesDownloaded, bytesDownloaded);
                             }
                         }
@@ -119,7 +119,7 @@ public class ReactNativeBlobUtilFileResp extends ResponseBody {
                 }
 
                 return read;
-            } catch(Exception ex) {
+            } catch (Exception ex) {
                 return -1;
             }
         }

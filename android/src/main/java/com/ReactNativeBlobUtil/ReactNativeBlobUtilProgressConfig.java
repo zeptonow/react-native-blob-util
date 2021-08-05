@@ -8,7 +8,7 @@ public class ReactNativeBlobUtilProgressConfig {
     enum ReportType {
         Upload,
         Download
-    };
+    }
 
     private long lastTick = 0;
     private int tick = 0;
@@ -26,10 +26,10 @@ public class ReactNativeBlobUtilProgressConfig {
 
     public boolean shouldReport(float progress) {
         boolean checkCount = true;
-        if(count > 0 && progress > 0)
-            checkCount = Math.floor(progress*count)> tick;
-        boolean result = (System.currentTimeMillis() - lastTick> interval) && enable && checkCount;
-        if(result) {
+        if (count > 0 && progress > 0)
+            checkCount = Math.floor(progress * count) > tick;
+        boolean result = (System.currentTimeMillis() - lastTick > interval) && enable && checkCount;
+        if (result) {
             tick++;
             lastTick = System.currentTimeMillis();
         }

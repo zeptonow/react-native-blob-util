@@ -9,7 +9,9 @@ import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.content.ContentUris;
 import android.content.ContentResolver;
+
 import com.ReactNativeBlobUtil.ReactNativeBlobUtilUtils;
+
 import java.io.File;
 import java.io.InputStream;
 import java.io.FileOutputStream;
@@ -47,7 +49,7 @@ public class PathResolver {
                         String path = rawuri.getPath();
                         return path;
                     }
-                    
+
                     Long docId = null;
                     //Since Android 10, uri can start with msf scheme like "msf:12345"
                     if (id != null && id.startsWith("msf:")) {
@@ -56,16 +58,15 @@ public class PathResolver {
                     } else {
                         docId = Long.valueOf(id);
                     }
-                    
+
                     final Uri contentUri = ContentUris.withAppendedId(
                             Uri.parse("content://downloads/public_downloads"), docId);
                     return getDataColumn(context, contentUri, null, null);
-                }
-                catch (Exception ex) {
+                } catch (Exception ex) {
                     //something went wrong, but android should still be able to handle the original uri by returning null here (see readFile(...))
                     return null;
                 }
-                
+
             }
             // MediaProvider
             else if (isMediaDocument(uri)) {
@@ -83,13 +84,12 @@ public class PathResolver {
                 }
 
                 final String selection = "_id=?";
-                final String[] selectionArgs = new String[] {
+                final String[] selectionArgs = new String[]{
                         split[1]
                 };
 
                 return getDataColumn(context, contentUri, selection, selectionArgs);
-            }
-            else if ("content".equalsIgnoreCase(uri.getScheme())) {
+            } else if ("content".equalsIgnoreCase(uri.getScheme())) {
 
                 // Return the remote address
                 if (isGooglePhotosUri(uri))
@@ -98,7 +98,7 @@ public class PathResolver {
                 return getDataColumn(context, uri, null, null);
             }
             // Other Providers
-            else{
+            else {
                 try {
                     InputStream attachment = context.getContentResolver().openInputStream(uri);
                     if (attachment != null) {
@@ -154,9 +154,9 @@ public class PathResolver {
      * Get the value of the data column for this Uri. This is useful for
      * MediaStore Uris, and other file-based ContentProviders.
      *
-     * @param context The context.
-     * @param uri The Uri to query.
-     * @param selection (Optional) Filter used in the query.
+     * @param context       The context.
+     * @param uri           The Uri to query.
+     * @param selection     (Optional) Filter used in the query.
      * @param selectionArgs (Optional) Selection arguments used in the query.
      * @return The value of the _data column, which is typically a file path.
      */
@@ -177,12 +177,10 @@ public class PathResolver {
                 final int index = cursor.getColumnIndexOrThrow(column);
                 result = cursor.getString(index);
             }
-        }
-        catch (Exception ex) {
+        } catch (Exception ex) {
             ex.printStackTrace();
             return null;
-        }
-        finally {
+        } finally {
             if (cursor != null)
                 cursor.close();
         }

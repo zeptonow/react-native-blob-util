@@ -6,7 +6,9 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
+
 import androidx.core.content.FileProvider;
+
 import android.util.SparseArray;
 import android.content.ActivityNotFoundException;
 
@@ -30,6 +32,7 @@ import okhttp3.JavaNetCookieJar;
 import okhttp3.OkHttpClient;
 
 import javax.annotation.Nullable;
+
 import java.io.File;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -44,12 +47,12 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
     private final OkHttpClient mClient;
 
     static ReactApplicationContext RCTContext;
-    private static LinkedBlockingQueue<Runnable> taskQueue = new LinkedBlockingQueue<>();
-    private static ThreadPoolExecutor threadPool = new ThreadPoolExecutor(5, 10, 5000, TimeUnit.MILLISECONDS, taskQueue);
+    private static final LinkedBlockingQueue<Runnable> taskQueue = new LinkedBlockingQueue<>();
+    private static final ThreadPoolExecutor threadPool = new ThreadPoolExecutor(5, 10, 5000, TimeUnit.MILLISECONDS, taskQueue);
     static LinkedBlockingQueue<Runnable> fsTaskQueue = new LinkedBlockingQueue<>();
-    private static ThreadPoolExecutor fsThreadPool = new ThreadPoolExecutor(2, 10, 5000, TimeUnit.MILLISECONDS, taskQueue);
+    private static final ThreadPoolExecutor fsThreadPool = new ThreadPoolExecutor(2, 10, 5000, TimeUnit.MILLISECONDS, taskQueue);
     private static boolean ActionViewVisible = false;
-    private static SparseArray<Promise> promiseTable = new SparseArray<>();
+    private static final SparseArray<Promise> promiseTable = new SparseArray<>();
 
     public ReactNativeBlobUtil(ReactApplicationContext reactContext) {
 
@@ -64,7 +67,7 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
         reactContext.addActivityEventListener(new ActivityEventListener() {
             @Override
             public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
-                if(requestCode == GET_CONTENT_INTENT && resultCode == RESULT_OK) {
+                if (requestCode == GET_CONTENT_INTENT && resultCode == RESULT_OK) {
                     Uri d = data.getData();
                     promiseTable.get(GET_CONTENT_INTENT).resolve(d.toString());
                     promiseTable.remove(GET_CONTENT_INTENT);
@@ -142,7 +145,7 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
                 try {
                     this.getReactApplicationContext().startActivity(intent);
                     promise.resolve(true);
-                } catch(ActivityNotFoundException ex) {
+                } catch (ActivityNotFoundException ex) {
                     promise.reject("ENOAPP", "No app installed for " + mime);
                 }
             }
@@ -152,7 +155,7 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
 
                 @Override
                 public void onHostResume() {
-                    if(ActionViewVisible)
+                    if (ActionViewVisible)
                         promise.resolve(null);
                     RCTContext.removeLifecycleEventListener(this);
                 }
@@ -168,7 +171,7 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
                 }
             };
             RCTContext.addLifecycleEventListener(listener);
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             promise.reject("EUNSPECIFIED", ex.getLocalizedMessage());
         }
     }
@@ -280,13 +283,13 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
             @Override
             public void run() {
                 int size = pairs.size();
-                String [] p = new String[size];
-                String [] m = new String[size];
-                for(int i=0;i<size;i++) {
+                String[] p = new String[size];
+                String[] m = new String[size];
+                for (int i = 0; i < size; i++) {
                     ReadableMap pair = pairs.getMap(i);
-                    if(pair.hasKey("path")) {
+                    if (pair.hasKey("path")) {
                         p[i] = pair.getString("path");
-                        if(pair.hasKey("mime"))
+                        if (pair.hasKey("mime"))
                             m[i] = pair.getString("mime");
                         else
                             m[i] = null;
@@ -308,8 +311,8 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
     }
 
     /**
-     * @param path Stream file path
-     * @param encoding Stream encoding, should be one of `base64`, `ascii`, and `utf8`
+     * @param path       Stream file path
+     * @param encoding   Stream encoding, should be one of `base64`, `ascii`, and `utf8`
      * @param bufferSize Stream buffer size, default to 4096 or 4095(base64).
      */
     @ReactMethod
@@ -375,7 +378,7 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
     @ReactMethod
     public void getContentIntent(String mime, Promise promise) {
         Intent i = new Intent(Intent.ACTION_GET_CONTENT);
-        if(mime != null)
+        if (mime != null)
             i.setType(mime);
         else
             i.setType("*/*");
@@ -385,15 +388,14 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void addCompleteDownload (ReadableMap config, Promise promise) {
+    public void addCompleteDownload(ReadableMap config, Promise promise) {
         DownloadManager dm = (DownloadManager) RCTContext.getSystemService(RCTContext.DOWNLOAD_SERVICE);
-        if (config == null || !config.hasKey("path"))
-        {
+        if (config == null || !config.hasKey("path")) {
             promise.reject("EINVAL", "ReactNativeBlobUtil.addCompleteDownload config or path missing.");
             return;
         }
         String path = ReactNativeBlobUtilFS.normalizePath(config.getString("path"));
-        if(path == null) {
+        if (path == null) {
             promise.reject("EINVAL", "ReactNativeBlobUtil.addCompleteDownload can not resolve URI:" + config.getString("path"));
             return;
         }
@@ -409,8 +411,7 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
                     config.hasKey("showNotification") && config.getBoolean("showNotification")
             );
             promise.resolve(null);
-        }
-        catch(Exception ex) {
+        } catch (Exception ex) {
             promise.reject("EUNSPECIFIED", ex.getLocalizedMessage());
         }
 
