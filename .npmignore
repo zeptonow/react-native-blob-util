@@ -24,9 +24,6 @@ jsconfig.json
 .eslintignore
 codecov.yml
 
-# Scripts
-scripts/
-
 # Example
 img/
 example/
