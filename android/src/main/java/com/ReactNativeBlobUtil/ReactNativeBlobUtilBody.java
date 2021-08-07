@@ -1,8 +1,9 @@
 package com.ReactNativeBlobUtil;
 
-import androidx.annotation.NonNull;
-
+import android.net.Uri;
 import android.util.Base64;
+
+import androidx.annotation.NonNull;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -18,8 +19,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-
-import android.net.Uri;
 
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
@@ -187,7 +186,7 @@ class ReactNativeBlobUtilBody extends RequestBody {
      * Create a temp file that contains content of multipart form data content
      *
      * @return The cache file object
-     * @throws IOException
+     * @throws IOException .
      */
     private File createMultipartBodyCache() throws IOException {
         String boundary = "ReactNativeBlobUtil-" + mTaskId;
@@ -282,7 +281,7 @@ class ReactNativeBlobUtilBody extends RequestBody {
      *
      * @param stream The input stream
      * @param sink   The request body buffer sink
-     * @throws IOException
+     * @throws IOException .
      */
     private void pipeStreamToSink(InputStream stream, BufferedSink sink) throws IOException {
         byte[] chunk = new byte[10240];

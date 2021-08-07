@@ -23,11 +23,11 @@ class ReactNativeBlobUtilConfig {
     ReactNativeBlobUtilConfig(ReadableMap options) {
         if (options == null)
             return;
-        this.fileCache = options.hasKey("fileCache") ? options.getBoolean("fileCache") : false;
+        this.fileCache = options.hasKey("fileCache") && options.getBoolean("fileCache");
         this.path = options.hasKey("path") ? options.getString("path") : null;
         this.appendExt = options.hasKey("appendExt") ? options.getString("appendExt") : "";
-        this.trusty = options.hasKey("trusty") ? options.getBoolean("trusty") : false;
-        this.wifiOnly = options.hasKey("wifiOnly") ? options.getBoolean("wifiOnly") : false;
+        this.trusty = options.hasKey("trusty") && options.getBoolean("trusty");
+        this.wifiOnly = options.hasKey("wifiOnly") && options.getBoolean("wifiOnly");
         if (options.hasKey("addAndroidDownloads")) {
             this.addAndroidDownloads = options.getMap("addAndroidDownloads");
         }
@@ -43,8 +43,8 @@ class ReactNativeBlobUtilConfig {
         }
         this.key = options.hasKey("key") ? options.getString("key") : null;
         this.mime = options.hasKey("contentType") ? options.getString("contentType") : null;
-        this.increment = options.hasKey("increment") ? options.getBoolean("increment") : false;
-        this.auto = options.hasKey("auto") ? options.getBoolean("auto") : false;
+        this.increment = options.hasKey("increment") && options.getBoolean("increment");
+        this.auto = options.hasKey("auto") && options.getBoolean("auto");
         if (options.hasKey("timeout")) {
             this.timeout = options.getInt("timeout");
         }

@@ -30,33 +30,25 @@ import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
-import javax.net.ssl.SSLContext;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.net.Proxy;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URL;
-import java.net.Proxy;
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
-import java.security.KeyStore;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.HashMap;
-
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.SSLContext;
 
 import okhttp3.Call;
 import okhttp3.ConnectionPool;
@@ -196,7 +188,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                     req.addRequestHeader(key, headers.getString(key));
                 }
                 // Attempt to add cookie, if it exists
-                URL urlObj = null;
+                URL urlObj;
                 try {
                     urlObj = new URL(url);
                     String baseUrl = urlObj.getProtocol() + "://" + urlObj.getHost();
@@ -388,14 +380,16 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
             // #156 fix cookie issue
             final Request req = builder.build();
             clientBuilder.addNetworkInterceptor(new Interceptor() {
+                @NonNull
                 @Override
-                public Response intercept(Chain chain) throws IOException {
+                public Response intercept(@NonNull Chain chain) throws IOException {
                     redirects.add(chain.request().url().toString());
                     return chain.proceed(chain.request());
                 }
             });
             // Add request interceptor for upload progress event
             clientBuilder.addInterceptor(new Interceptor() {
+                @NonNull
                 @Override
                 public Response intercept(@NonNull Chain chain) throws IOException {
                     try {
@@ -431,7 +425,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                     } catch (SocketTimeoutException e) {
                         timeout = true;
                         //ReactNativeBlobUtilUtils.emitWarningEvent("ReactNativeBlobUtil error when sending request : " + e.getLocalizedMessage());
-                    } catch (Exception ex) {
+                    } catch (Exception ignored) {
 
                     }
                     return chain.proceed(chain.request());
@@ -457,7 +451,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
             call.enqueue(new okhttp3.Callback() {
 
                 @Override
-                public void onFailure(@NonNull Call call, IOException e) {
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
                     cancelTask(taskId);
                     if (respInfo == null) {
                         respInfo = Arguments.createMap();

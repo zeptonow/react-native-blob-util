@@ -218,14 +218,11 @@ class ReactNativeBlobUtilFS {
                 case "ascii":
                     WritableArray asciiResult = Arguments.createArray();
                     for (byte b : bytes) {
-                        asciiResult.pushInt((int) b);
+                        asciiResult.pushInt(b);
                     }
                     promise.resolve(asciiResult);
                     break;
-                case "utf8":
-                    promise.resolve(new String(bytes));
-                    break;
-                default:
+                default: // also used for utf-8
                     promise.resolve(new String(bytes));
                     break;
             }
@@ -361,7 +358,7 @@ class ReactNativeBlobUtilFS {
             }
 
             byte[] buffer = new byte[chunkSize];
-            int cursor = 0;
+            int cursor;
             boolean error = false;
 
             if (encoding.equalsIgnoreCase("utf8")) {
@@ -377,7 +374,7 @@ class ReactNativeBlobUtilFS {
                 while ((cursor = fs.read(buffer)) != -1) {
                     WritableArray chunk = Arguments.createArray();
                     for (int i = 0; i < cursor; i++) {
-                        chunk.pushInt((int) buffer[i]);
+                        chunk.pushInt(buffer[i]);
                     }
                     emitStreamEvent(streamId, "data", chunk);
                     if (tick > 0)
@@ -407,7 +404,6 @@ class ReactNativeBlobUtilFS {
             if (!error)
                 emitStreamEvent(streamId, "end", "");
             fs.close();
-            buffer = null;
         } catch (FileNotFoundException err) {
             emitStreamEvent(
                     streamId,
@@ -475,6 +471,7 @@ class ReactNativeBlobUtilFS {
      */
     static void writeChunk(String streamId, String data, Callback callback) {
         ReactNativeBlobUtilFS fs = fileStreams.get(streamId);
+        assert fs != null;
         OutputStream stream = fs.writeStreamInstance;
         byte[] chunk = ReactNativeBlobUtilFS.stringToBytes(data, fs.encoding);
         try {
@@ -495,6 +492,7 @@ class ReactNativeBlobUtilFS {
     static void writeArrayChunk(String streamId, ReadableArray data, Callback callback) {
         try {
             ReactNativeBlobUtilFS fs = fileStreams.get(streamId);
+            assert fs != null;
             OutputStream stream = fs.writeStreamInstance;
             byte[] chunk = new byte[data.size()];
             for (int i = 0; i < data.size(); i++) {
@@ -516,6 +514,7 @@ class ReactNativeBlobUtilFS {
     static void closeStream(String streamId, Callback callback) {
         try {
             ReactNativeBlobUtilFS fs = fileStreams.get(streamId);
+            assert fs != null;
             OutputStream stream = fs.writeStreamInstance;
             fileStreams.remove(streamId);
             stream.close();
@@ -633,7 +632,7 @@ class ReactNativeBlobUtilFS {
         }
         // Only call the callback once to prevent the app from crashing
         // with an 'Illegal callback invocation from native module' exception.
-        if (message != "") {
+        if (!message.equals("")) {
             callback.invoke(message);
         } else {
             callback.invoke();
@@ -711,7 +710,7 @@ class ReactNativeBlobUtilFS {
      * List content of folder
      *
      * @param path     Target folder
-     * @param callback JS context callback
+     * @param promise JS promise
      */
     static void ls(String path, Promise promise) {
         try {
@@ -778,7 +777,7 @@ class ReactNativeBlobUtilFS {
                 if (read <= 0) {
                     break;
                 }
-                out.write(buffer, 0, (int) Math.min(remain, read));
+                out.write(buffer, 0, Math.min(remain, read));
                 now += read;
             }
             in.close();

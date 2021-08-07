@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 
+import androidx.annotation.NonNull;
 import androidx.core.content.FileProvider;
 
 import android.util.SparseArray;
@@ -81,6 +82,7 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
         });
     }
 
+    @NonNull
     @Override
     public String getName() {
         return "ReactNativeBlobUtil";
