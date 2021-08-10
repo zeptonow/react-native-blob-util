@@ -2,16 +2,15 @@ package com.ReactNativeBlobUtil;
 
 import android.app.Activity;
 import android.app.DownloadManager;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
+import android.util.SparseArray;
 
 import androidx.annotation.NonNull;
 import androidx.core.content.FileProvider;
-
-import android.util.SparseArray;
-import android.content.ActivityNotFoundException;
 
 import com.facebook.react.bridge.ActivityEventListener;
 import com.facebook.react.bridge.Callback;
@@ -22,23 +21,21 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
-
-// Cookies
 import com.facebook.react.bridge.WritableMap;
-import com.facebook.react.modules.network.ForwardingCookieHandler;
 import com.facebook.react.modules.network.CookieJarContainer;
+import com.facebook.react.modules.network.ForwardingCookieHandler;
 import com.facebook.react.modules.network.OkHttpClientProvider;
-
-import okhttp3.JavaNetCookieJar;
-import okhttp3.OkHttpClient;
-
-import javax.annotation.Nullable;
 
 import java.io.File;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import javax.annotation.Nullable;
+
+import okhttp3.JavaNetCookieJar;
+import okhttp3.OkHttpClient;
 
 import static android.app.Activity.RESULT_OK;
 import static com.ReactNativeBlobUtil.ReactNativeBlobUtilConst.GET_CONTENT_INTENT;
@@ -180,7 +177,7 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void writeArrayChunk(final String streamId, final ReadableArray dataArray, final Callback callback) {
-        ReactNativeBlobUtilFS.writeArrayChunk(streamId, dataArray, callback);
+        ReactNativeBlobUtilStream.writeArrayChunk(streamId, dataArray, callback);
     }
 
     @ReactMethod
@@ -220,17 +217,17 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void writeStream(String path, String encode, boolean append, Callback callback) {
-        new ReactNativeBlobUtilFS(this.getReactApplicationContext()).writeStream(path, encode, append, callback);
+        new ReactNativeBlobUtilStream(this.getReactApplicationContext()).writeStream(path, encode, append, callback);
     }
 
     @ReactMethod
     public void writeChunk(String streamId, String data, Callback callback) {
-        ReactNativeBlobUtilFS.writeChunk(streamId, data, callback);
+        ReactNativeBlobUtilStream.writeChunk(streamId, data, callback);
     }
 
     @ReactMethod
     public void closeStream(String streamId, Callback callback) {
-        ReactNativeBlobUtilFS.closeStream(streamId, callback);
+        ReactNativeBlobUtilStream.closeStream(streamId, callback);
     }
 
     @ReactMethod
@@ -323,7 +320,7 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
         fsThreadPool.execute(new Runnable() {
             @Override
             public void run() {
-                ReactNativeBlobUtilFS fs = new ReactNativeBlobUtilFS(ctx);
+                ReactNativeBlobUtilStream fs = new ReactNativeBlobUtilStream(ctx);
                 fs.readStream(path, encoding, bufferSize, tick, streamId);
             }
         });
@@ -396,7 +393,7 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
             promise.reject("EINVAL", "ReactNativeBlobUtil.addCompleteDownload config or path missing.");
             return;
         }
-        String path = ReactNativeBlobUtilFS.normalizePath(config.getString("path"));
+        String path = ReactNativeBlobUtilUtils.normalizePath(config.getString("path"));
         if (path == null) {
             promise.reject("EINVAL", "ReactNativeBlobUtil.addCompleteDownload can not resolve URI:" + config.getString("path"));
             return;
@@ -428,4 +425,5 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
     public void getSDCardApplicationDir(Promise promise) {
         ReactNativeBlobUtilFS.getSDCardApplicationDir(this.getReactApplicationContext(), promise);
     }
+
 }

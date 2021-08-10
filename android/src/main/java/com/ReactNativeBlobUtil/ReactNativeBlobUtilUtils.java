@@ -1,9 +1,14 @@
 package com.ReactNativeBlobUtil;
 
+import android.net.Uri;
+import android.util.Base64;
+
+import com.ReactNativeBlobUtil.Utils.PathResolver;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.cert.CertificateException;
 
@@ -91,5 +96,50 @@ public class ReactNativeBlobUtilUtils {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * String to byte converter method
+     *
+     * @param data     Raw data in string format
+     * @param encoding Decoder name
+     * @return Converted data byte array
+     */
+    public static byte[] stringToBytes(String data, String encoding) {
+        if (encoding.equalsIgnoreCase("ascii")) {
+            return data.getBytes(Charset.forName("US-ASCII"));
+        } else if (encoding.toLowerCase().contains("base64")) {
+            return Base64.decode(data, Base64.NO_WRAP);
+
+        } else if (encoding.equalsIgnoreCase("utf8")) {
+            return data.getBytes(Charset.forName("UTF-8"));
+        }
+        return data.getBytes(Charset.forName("US-ASCII"));
+    }
+
+    /**
+     * Normalize the path, remove URI scheme (xxx://) so that we can handle it.
+     *
+     * @param path URI string.
+     * @return Normalized string
+     */
+    public static String normalizePath(String path) {
+        if (path == null)
+            return null;
+        if (!path.matches("\\w+\\:.*"))
+            return path;
+        if (path.startsWith("file://")) {
+            return path.replace("file://", "");
+        }
+
+        Uri uri = Uri.parse(path);
+        if (path.startsWith(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET)) {
+            return path;
+        } else
+            return PathResolver.getRealPathFromURI(ReactNativeBlobUtil.RCTContext, uri);
+    }
+
+    public static boolean isAsset(String path) {
+        return path != null && path.startsWith(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET);
     }
 }
