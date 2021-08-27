@@ -6,69 +6,69 @@ import {
  NativeModules,
  DeviceEventEmitter,
  NativeAppEventEmitter,
-} from 'react-native'
+} from 'react-native';
 
-const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil
+const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil;
 
-let sessions = {}
+let sessions = {};
 
 export default class ReactNativeBlobUtilSession {
 
   name : string;
 
   static getSession(name:string):any {
-    return sessions[name]
+    return sessions[name];
   }
 
   static setSession(name:string, val:any) {
-    sessions[name] = val
+    sessions[name] = val;
   }
 
   static removeSession(name:string) {
-    delete sessions[name]
+    delete sessions[name];
   }
 
   constructor(name:string, list:Array<string>) {
-    this.name = name
+    this.name = name;
     if(!sessions[name]) {
       if(Array.isArray(list))
-      sessions[name] = list
+      sessions[name] = list;
       else
-      sessions[name] = []
+      sessions[name] = [];
     }
   }
 
   add(path:string):ReactNativeBlobUtilSession {
-    sessions[this.name].push(path)
-    return this
+    sessions[this.name].push(path);
+    return this;
   }
 
   remove(path:string):ReactNativeBlobUtilSession {
-    let list = sessions[this.name]
+    let list = sessions[this.name];
     for(let i of list) {
       if(list[i] === path) {
-        sessions[this.name].splice(i, 1)
+        sessions[this.name].splice(i, 1);
         break;
       }
     }
-    return this
+    return this;
   }
 
   list():Array<string> {
-    return sessions[this.name]
+    return sessions[this.name];
   }
 
   dispose():Promise {
     return new Promise((resolve, reject) => {
       ReactNativeBlobUtil.removeSession(sessions[this.name], (err) => {
         if(err)
-          reject(new Error(err))
+          reject(new Error(err));
         else {
-          delete sessions[this.name]
-          resolve()
+          delete sessions[this.name];
+          resolve();
         }
-      })
-    })
+      });
+    });
   }
 
 }
