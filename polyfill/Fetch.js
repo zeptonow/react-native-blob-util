@@ -1,6 +1,6 @@
 import Log from '../utils/log.js';
 import Blob from './Blob';
-import {wrap, config as RNconfig} from "../fetch";
+import {config as RNconfig, wrap} from "../fetch";
 import type {ReactNativeBlobUtilConfig} from "../types";
 
 const log = new Log('FetchPolyfill');

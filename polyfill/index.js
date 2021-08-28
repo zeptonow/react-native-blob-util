@@ -7,5 +7,5 @@ import FileReader from './FileReader';
 import Fetch from './Fetch';
 
 export default {
-  Blob, File, XMLHttpRequest, ProgressEvent, Event, FileReader, Fetch
+    Blob, File, XMLHttpRequest, ProgressEvent, Event, FileReader, Fetch
 };
