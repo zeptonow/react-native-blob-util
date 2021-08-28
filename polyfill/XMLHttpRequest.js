@@ -7,6 +7,7 @@ import Log from '../utils/log.js';
 import Blob from './Blob.js';
 import ProgressEvent from './ProgressEvent.js';
 import URIUtil from '../utils/uri';
+import {NativeModules} from "react-native";
 
 const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil;
 const log = new Log('XMLHttpRequest');
