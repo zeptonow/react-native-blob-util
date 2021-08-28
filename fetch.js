@@ -1,7 +1,26 @@
-import {ReactNativeBlobUtilConfig} from "types";
-import URIUtil from "utils/uri";
-import fs from "fs";
-import getUUID from "utils/uuid";
+import {ReactNativeBlobUtilConfig} from "./types";
+import URIUtil from "./utils/uri";
+import fs from "./fs";
+import getUUID from "./utils/uuid";
+import {DeviceEventEmitter, NativeModules} from "react-native";
+import {FetchBlobResponse} from "./class/ReactnativeBlobUtilBlobResponse";
+
+const emitter = DeviceEventEmitter;
+const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil;
+
+// register message channel event handler.
+emitter.addListener("ReactNativeBlobUtilMessage", (e) => {
+
+    if (e.event === 'warn') {
+        console.warn(e.detail);
+    }
+    else if (e.event === 'error') {
+        throw e.detail;
+    }
+    else {
+        console.log("ReactNativeBlobUtil native message", e.detail);
+    }
+});
 
 export function wrap(path: string): string {
     const prefix = path.startsWith('content://') ? 'ReactNativeBlobUtil-content://' : 'ReactNativeBlobUtil-file://';

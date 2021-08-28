@@ -43,20 +43,6 @@ if (Platform.OS === 'ios') {
     });
 }
 
-// register message channel event handler.
-emitter.addListener("ReactNativeBlobUtilMessage", (e) => {
-
-    if (e.event === 'warn') {
-        console.warn(e.detail);
-    }
-    else if (e.event === 'error') {
-        throw e.detail;
-    }
-    else {
-        console.log("ReactNativeBlobUtil native message", e.detail);
-    }
-});
-
 // Show warning if native module not detected
 if (!ReactNativeBlobUtil || !ReactNativeBlobUtil.fetchBlobForm || !ReactNativeBlobUtil.fetchBlob) {
     console.warn(
@@ -67,7 +53,7 @@ if (!ReactNativeBlobUtil || !ReactNativeBlobUtil.fetchBlobForm || !ReactNativeBl
 }
 export {ReactNativeBlobUtilConfig, ReactNativeBlobUtilResponseInfo, ReactNativeBlobUtilStream} from './types';
 export URIUtil from './utils/uri';
-export {FetchBlobResponse} from './blobResponse';
+export {FetchBlobResponse} from './class/ReactnativeBlobUtilBlobResponse';
 export getUUID from './utils/uuid';
 export default {
     fetch,

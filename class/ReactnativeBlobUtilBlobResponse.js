@@ -1,6 +1,6 @@
-import {ReactNativeBlobUtilResponseInfo, ReactNativeBlobUtilStream} from "types";
-import fs from "fs";
-import polyfill from "polyfill";
+import {ReactNativeBlobUtilResponseInfo, ReactNativeBlobUtilStream} from "../types";
+import fs from "../fs";
+import polyfill from "../polyfill";
 
 /**
  * ReactNativeBlobUtil response object class.

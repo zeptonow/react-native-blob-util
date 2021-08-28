@@ -1,8 +1,7 @@
 import Log from '../utils/log.js';
 import Blob from './Blob';
-import {NativeModules} from "react-native";
-
-const ReactNativeBlobUtil: ReactNativeBlobUtilNative = NativeModules.ReactNativeBlobUtil;
+import {wrap, config as RNconfig} from "../fetch";
+import type {ReactNativeBlobUtilConfig} from "../types";
 
 const log = new Log('FetchPolyfill');
 
@@ -40,12 +39,12 @@ class ReactNativeBlobUtilFetchPolyfill {
                     promise = Blob.build(body).then((b) => {
                         blobCache = b;
                         options.headers['Content-Type'] = 'multipart/form-data;boundary=' + b.multipartBoundary;
-                        return Promise.resolve(ReactNativeBlobUtil.wrap(b._ref));
+                        return Promise.resolve(wrap(b._ref));
                     });
                 }
                 // When request body is a Blob, use file URI of the Blob as request body.
                 else if (body.isReactNativeBlobUtilPolyfill)
-                    promise = Promise.resolve(ReactNativeBlobUtil.wrap(body.blobPath));
+                    promise = Promise.resolve(wrap(body.blobPath));
                 else if (typeof body !== 'object' && options.headers['Content-Type'] !== 'application/json')
                     promise = Promise.resolve(JSON.stringify(body));
                 else if (typeof body !== 'string')
@@ -60,7 +59,7 @@ class ReactNativeBlobUtilFetchPolyfill {
             let progressHandler, uploadHandler, cancelHandler;
             let statefulPromise = promise
                 .then((body) => {
-                    let task = ReactNativeBlobUtil.config(config)
+                    let task = RNconfig(config)
                         .fetch(options.method, url, options.headers, body);
                     if (progressHandler)
                         task.progress(progressHandler);
