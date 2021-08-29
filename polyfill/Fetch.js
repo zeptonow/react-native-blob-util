@@ -2,6 +2,7 @@ import Log from '../utils/log.js';
 import Blob from './Blob';
 import {config as RNconfig, wrap} from "../fetch";
 import type {ReactNativeBlobUtilConfig} from "../types";
+import {FetchBlobResponse} from "../class/ReactNativeBlobUtilBlobResponse";
 
 const log = new Log('FetchPolyfill');
 

@@ -1,6 +1,8 @@
 import {ReactNativeBlobUtilResponseInfo, ReactNativeBlobUtilStream} from "../types";
 import fs from "../fs";
-import polyfill from "../polyfill";
+import Blob from "../polyfill/Blob";
+import ReactNativeBlobUtilSession from "./ReactNativeBlobUtilSession";
+import URIUtil from "../utils/uri";
 
 /**
  * ReactNativeBlobUtil response object class.
@@ -55,7 +57,6 @@ export class FetchBlobResponse {
          * @return {Promise<Blob>} Return a promise resolves Blob object.
          */
         this.blob = (): Promise<Blob> => {
-            let Blob = polyfill.Blob;
             let cType = info.headers['Content-Type'] || info.headers['content-type'];
             return new Promise((resolve, reject) => {
                 switch (this.type) {
@@ -63,10 +64,10 @@ export class FetchBlobResponse {
                         Blob.build(this.data, {type: cType + ';BASE64'}).then(resolve);
                         break;
                     case 'path':
-                        polyfill.Blob.build(wrap(this.data), {type: cType}).then(resolve);
+                        Blob.build(URIUtil.wrap(this.data), {type: cType}).then(resolve);
                         break;
                     default:
-                        polyfill.Blob.build(this.data, {type: 'text/plain'}).then(resolve);
+                        Blob.build(this.data, {type: 'text/plain'}).then(resolve);
                         break;
                 }
             });
@@ -76,7 +77,6 @@ export class FetchBlobResponse {
          * @return {string} Decoded base64 string.
          */
         this.text = (): string | Promise<any> => {
-            let res = this.data;
             switch (this.type) {
                 case 'base64':
                     return base64.decode(this.data);
@@ -123,7 +123,7 @@ export class FetchBlobResponse {
             let path = this.path();
             if (!path || this.type !== 'path')
                 return;
-            return unlink(path);
+            return fs.unlink(path);
         };
         /**
          * get path of response temp file
@@ -137,7 +137,7 @@ export class FetchBlobResponse {
 
         this.session = (name: string): ReactNativeBlobUtilSession | null => {
             if (this.type === 'path')
-                return session(name).add(this.data);
+                return fs.session(name).add(this.data);
             else {
                 console.warn('only file paths can be add into session.');
                 return null;
@@ -150,7 +150,7 @@ export class FetchBlobResponse {
          */
         this.readStream = (encoding: 'base64' | 'utf8' | 'ascii'): ReactNativeBlobUtilStream | null => {
             if (this.type === 'path') {
-                return readStream(this.data, encoding);
+                return fs.readStream(this.data, encoding);
             }
             else {
                 console.warn('ReactNativeBlobUtil', 'this response data does not contains any available stream');
@@ -165,7 +165,7 @@ export class FetchBlobResponse {
          */
         this.readFile = (encoding: 'base64' | 'utf8' | 'ascii') => {
             if (this.type === 'path') {
-                return readFile(this.data, encoding);
+                return fs.readFile(this.data, encoding);
             }
             else {
                 console.warn('ReactNativeBlobUtil', 'this response does not contains a readable file');

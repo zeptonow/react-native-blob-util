@@ -5,9 +5,8 @@
 import fs from '../fs.js';
 import getUUID from '../utils/uuid';
 import Log from '../utils/log.js';
+import URIUtil from "../utils/uri";
 import EventTarget from './EventTarget';
-
-import {wrap} from "../fetch";
 
 const log = new Log('Blob');
 const blobCacheDir = fs.dirs.DocumentDir + '/ReactNativeBlobUtil-blobs/';
@@ -237,7 +236,7 @@ export default class Blob extends EventTarget {
         let resPath = blobCacheDir + getBlobName();
         let pass = false;
         log.debug('fs.slice new blob will at', resPath);
-        let result = new Blob(wrap(resPath), {type: contentType}, true);
+        let result = new Blob(URIUtil.wrap(resPath), {type: contentType}, true);
         fs.exists(blobCacheDir)
             .then((exist) => {
                 if (exist)

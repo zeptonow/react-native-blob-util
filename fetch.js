@@ -3,7 +3,7 @@ import URIUtil from "./utils/uri";
 import fs from "./fs";
 import getUUID from "./utils/uuid";
 import {DeviceEventEmitter, NativeModules} from "react-native";
-import {FetchBlobResponse} from "./class/ReactnativeBlobUtilBlobResponse";
+import {FetchBlobResponse} from "./class/ReactNativeBlobUtilBlobResponse";
 
 const emitter = DeviceEventEmitter;
 const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil;
@@ -21,11 +21,6 @@ emitter.addListener("ReactNativeBlobUtilMessage", (e) => {
         console.log("ReactNativeBlobUtil native message", e.detail);
     }
 });
-
-export function wrap(path: string): string {
-    const prefix = path.startsWith('content://') ? 'ReactNativeBlobUtil-content://' : 'ReactNativeBlobUtil-file://';
-    return prefix + path;
-}
 
 /**
  * Calling this method will inject configurations into followed `fetch` method.

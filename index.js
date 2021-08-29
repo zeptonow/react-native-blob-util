@@ -11,7 +11,8 @@ import polyfill from './polyfill';
 import android from './android';
 import ios from './ios';
 import JSONStream from './json-stream';
-import {config, fetch, wrap} from './fetch';
+import {config, fetch} from './fetch';
+import URIUtil from "./utils/uri";
 
 const {
     ReactNativeBlobUtilSession,
@@ -32,6 +33,7 @@ const {
 const Blob = polyfill.Blob;
 const emitter = DeviceEventEmitter;
 const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil;
+const wrap = URIUtil.wrap;
 
 // when app resumes, check if there's any expired network task and trigger
 // their .expire event
@@ -51,9 +53,10 @@ if (!ReactNativeBlobUtil || !ReactNativeBlobUtil.fetchBlobForm || !ReactNativeBl
         'and restart RN packager or manually compile IOS/Android project.'
     );
 }
+
 export {ReactNativeBlobUtilConfig, ReactNativeBlobUtilResponseInfo, ReactNativeBlobUtilStream} from './types';
 export URIUtil from './utils/uri';
-export {FetchBlobResponse} from './class/ReactnativeBlobUtilBlobResponse';
+export {FetchBlobResponse} from './class/ReactNativeBlobUtilBlobResponse';
 export getUUID from './utils/uuid';
 export default {
     fetch,
@@ -65,5 +68,5 @@ export default {
     fs,
     wrap,
     polyfill,
-    JSONStream
+    JSONStream,
 };
