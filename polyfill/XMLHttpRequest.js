@@ -6,10 +6,9 @@ import XMLHttpRequestEventTarget from './XMLHttpRequestEventTarget.js';
 import Log from '../utils/log.js';
 import Blob from './Blob.js';
 import ProgressEvent from './ProgressEvent.js';
-import URIUtil from '../utils/uri';
-import {NativeModules} from "react-native";
+import URIUtil from "../utils/uri";
+import {config} from "../fetch";
 
-const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil;
 const log = new Log('XMLHttpRequest');
 
 
@@ -183,7 +182,7 @@ export default class XMLHttpRequest extends XMLHttpRequestEventTarget {
                         };
                     }
                     log.debug('body created send request');
-                    body = ReactNativeBlobUtil.wrap(blob.getReactNativeBlobUtilRef());
+                    body = URIUtil.wrap(blob.getReactNativeBlobUtilRef());
                     resolve();
                 });
             });
@@ -203,13 +202,12 @@ export default class XMLHttpRequest extends XMLHttpRequestEventTarget {
                 _headers[h] = _headers[h].toString();
             }
 
-            this._task = ReactNativeBlobUtil
-                .config({
-                    auto: true,
-                    timeout: this._timeout,
-                    increment: this._increment,
-                    binaryContentTypes: XMLHttpRequest.binaryContentTypes
-                })
+            this._task = config({
+                auto: true,
+                timeout: this._timeout,
+                increment: this._increment,
+                binaryContentTypes: XMLHttpRequest.binaryContentTypes
+            })
                 .fetch(_method, _url, _headers, body);
             this._task
                 .stateChange(this._headerReceived)

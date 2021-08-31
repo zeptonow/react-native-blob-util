@@ -1,7 +1,8 @@
 import Log from '../utils/log.js';
 import Blob from './Blob';
-import {config as RNconfig, wrap} from "../fetch";
+import {config as RNconfig} from "../fetch";
 import type {ReactNativeBlobUtilConfig} from "../types";
+import URIUtil from "../utils/uri";
 import {FetchBlobResponse} from "../class/ReactNativeBlobUtilBlobResponse";
 
 const log = new Log('FetchPolyfill');
@@ -40,12 +41,12 @@ class ReactNativeBlobUtilFetchPolyfill {
                     promise = Blob.build(body).then((b) => {
                         blobCache = b;
                         options.headers['Content-Type'] = 'multipart/form-data;boundary=' + b.multipartBoundary;
-                        return Promise.resolve(wrap(b._ref));
+                        return Promise.resolve(URIUtil.wrap(b._ref));
                     });
                 }
                 // When request body is a Blob, use file URI of the Blob as request body.
                 else if (body.isReactNativeBlobUtilPolyfill)
-                    promise = Promise.resolve(wrap(body.blobPath));
+                    promise = Promise.resolve(URIUtil.wrap(body.blobPath));
                 else if (typeof body !== 'object' && options.headers['Content-Type'] !== 'application/json')
                     promise = Promise.resolve(JSON.stringify(body));
                 else if (typeof body !== 'string')
