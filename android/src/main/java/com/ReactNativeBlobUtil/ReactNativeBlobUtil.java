@@ -12,6 +12,7 @@ import android.util.SparseArray;
 import androidx.annotation.NonNull;
 import androidx.core.content.FileProvider;
 
+import com.ReactNativeBlobUtil.Utils.FileDescription;
 import com.facebook.react.bridge.ActivityEventListener;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.LifecycleEventListener;
@@ -424,6 +425,16 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
     @ReactMethod
     public void getSDCardApplicationDir(Promise promise) {
         ReactNativeBlobUtilFS.getSDCardApplicationDir(this.getReactApplicationContext(), promise);
+    }
+
+    @ReactMethod
+    public void createMediaFile(ReadableMap filedata, ReactNativeBlobUtilMediaCollection.MediaType mt, Promise promise) {
+        if (!(filedata.hasKey("name") || filedata.hasKey("partentFolder") || filedata.hasKey("mimeType"))) promise.reject("ReactNativeBlobUtil.createMediaFile", "invalid filedata");
+
+        FileDescription file = new FileDescription(filedata.getString("name"), filedata.getString("partentFolder"), filedata.getString("mimeType"));
+        Uri res = ReactNativeBlobUtilMediaCollection.createNewMediaFile(file, mt);
+        if (res != null) promise.resolve(res);
+        else promise.reject("ReactNativeBlobUtil.createMediaFile", "File could not be created");
     }
 
 }

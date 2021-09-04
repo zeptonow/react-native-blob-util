@@ -21,7 +21,7 @@ public class ReactNativeBlobUtilMediaCollection {
         Download
     }
 
-    private Uri getMediaUri(MediaType mt) {
+    private static Uri getMediaUri(MediaType mt) {
         Uri res = null;
         if (mt == MediaType.Audio) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -50,7 +50,7 @@ public class ReactNativeBlobUtilMediaCollection {
         return res;
     }
 
-    private String getRelativePath(MediaType mt) {
+    private static String getRelativePath(MediaType mt) {
         if (mt == MediaType.Audio) return Environment.DIRECTORY_MUSIC;
         if (mt == MediaType.Video) return Environment.DIRECTORY_MOVIES;
         if (mt == MediaType.Image) return Environment.DIRECTORY_PICTURES;
@@ -58,7 +58,7 @@ public class ReactNativeBlobUtilMediaCollection {
         return Environment.DIRECTORY_DOWNLOADS;
     }
 
-    public Uri createNewMediaFile(FileDescription file, MediaType mt) {
+    public static Uri createNewMediaFile(FileDescription file, MediaType mt) {
         // Add a specific media item.
         Context appCtx = ReactNativeBlobUtil.RCTContext.getApplicationContext();
         ContentResolver resolver = appCtx.getContentResolver();
@@ -76,14 +76,18 @@ public class ReactNativeBlobUtilMediaCollection {
 
             Uri mediauri = getMediaUri(mt);
 
-            // Keeps a handle to the new song's URI in case we need to modify it later.
+            // Keeps a handle to the new file's URI in case we need to modify it later.
             return resolver.insert(mediauri, fileDetails);
-        }
-        else{
-           File directory = Environment.getExternalStoragePublicDirectory(relativePath);
-           if(directory.canWrite()){
-               File f = new File(relativePath + '/' + file.getFullPath());
-           }
+        } else {
+            File directory = Environment.getExternalStoragePublicDirectory(relativePath);
+            if (directory.canWrite()) {
+                File f = new File(relativePath + '/' + file.getFullPath());
+                if (!f.exists()) {
+                    boolean result = f.mkdirs();
+                    if (result) return Uri.fromFile(f);
+                }
+
+            }
         }
 
         return null;

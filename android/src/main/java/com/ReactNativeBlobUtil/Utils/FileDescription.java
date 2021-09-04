@@ -7,7 +7,7 @@ public class FileDescription {
     public String partentFolder;
     public String mimeType;
 
-    FileDescription(String n, String mT, String pF) {
+    public FileDescription(String n, String mT, String pF) {
         name = n;
         partentFolder = pF != null ? pF : "";
         mimeType = mT;

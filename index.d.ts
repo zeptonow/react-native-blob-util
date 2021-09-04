@@ -10,13 +10,19 @@ export default ReactNativeBlobUtil;
 interface ReactNativeBlobUtilStatic {
     fetch(method: Methods, url: string, headers?: { [key: string]: string }, body?: any
         | null): StatefulPromise<FetchBlobResponse>;
+
     base64: { encode(input: string): string; decode(input: string): string };
     android: AndroidApi;
     ios: IOSApi;
+
     config(options: ReactNativeBlobUtilConfig): ReactNativeBlobUtilStatic;
+
     session(name: string): ReactNativeBlobUtilSession;
+
     fs: FS;
+
     wrap(path: string): string;
+
     net: Net;
     polyfill: Polyfill;
     // this require external module https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/oboe
@@ -45,10 +51,15 @@ export declare class ReactNativeBlobUtilFetchPolyfill {
 
 export interface ReactNativeBlobUtilFetchRepsonse {
     arrayBuffer(): Promise<any[]>;
+
     blob(): Promise<PolyfillBlob>;
+
     json(): Promise<any>;
+
     rawResp(): Promise<FetchBlobResponse>;
+
     text(): Promise<string>;
+
     bodyUsed: boolean;
     headers: any;
     ok: boolean;
@@ -64,46 +75,58 @@ export interface ReactNativeBlobUtilFetchRepsonse {
  */
 export interface FetchBlobResponse {
     taskId: string;
+
     /**
      * get path of response temp file
      * @return File path of temp file.
      */
     path(): string;
+
     type: "base64" | "path" | "utf8";
     data: any;
+
     /**
      * Convert result to javascript ReactNativeBlobUtil object.
      * @return Return a promise resolves Blob object.
      */
     blob(contentType: string, sliceSize: number): Promise<PolyfillBlob>;
+
     /**
      * Convert result to text.
      * @return Decoded base64 string.
      */
     text(): string | Promise<any>;
+
     /**
      * Convert result to JSON object.
      * @return Parsed javascript object.
      */
     json(): any;
+
     /**
      * Return BASE64 string directly.
      * @return BASE64 string of response body.
      */
     base64(): any;
+
     /**
      * Remove cahced file
      */
     flush(): void;
+
     respInfo: ReactNativeBlobUtilResponseInfo;
+
     info(): ReactNativeBlobUtilResponseInfo;
+
     session(name: string): ReactNativeBlobUtilSession | null;
+
     /**
      * Read file content with given encoding, if the response does not contains
      * a file path, show warning message
      * @param  encode Encode type, should be one of `base64`, `ascrii`, `utf8`.
      */
     readFile(encode: Encoding): Promise<any> | null;
+
     /**
      * Start read stream from cached file
      * @param  encode Encode type, should be one of `base64`, `ascrii`, `utf8`.
@@ -113,17 +136,27 @@ export interface FetchBlobResponse {
 
 export interface PolyfillFileReader extends EventTarget {
     isRNFBPolyFill: boolean;
+
     onloadstart(e: Event): void;
+
     onprogress(e: Event): void;
+
     onload(e: Event): void;
+
     onabort(e: Event): void;
+
     onerror(e: Event): void;
+
     onloadend(e: Event): void;
 
     abort(): void;
+
     readAsArrayBuffer(b: PolyfillBlob): void;
+
     readAsBinaryString(b: PolyfillBlob): void;
+
     readAsText(b: PolyfillBlob, label?: string): void;
+
     readAsDataURL(b: PolyfillBlob): void;
 
     readyState: number;
@@ -242,6 +275,7 @@ export interface PolyfillXMLHttpRequest extends PolyfillXMLHttpRequestEventTarge
     getAllResponseHeaders(): string | null;
 
     onreadystatechange(e: Event): void;
+
     readyState: number;
     status: number;
     statusText: string;
@@ -270,11 +304,17 @@ export declare namespace PolyfillXMLHttpRequest {
 
 export interface PolyfillXMLHttpRequestEventTarget extends EventTarget {
     onabort(e: Event): void;
+
     onerror(e: Event): void;
+
     onload(e: Event): void;
+
     onloadstart(e: Event): void;
+
     onprogress(e: Event): void;
+
     ontimeout(e: Event): void;
+
     onloadend(e: Event): void;
 }
 
@@ -295,6 +335,7 @@ export interface Net {
 }
 
 type HashAlgorithm = "md5" | "sha1" | "sha224" | "sha256" | "sha384" | "sha512";
+
 export interface FS {
     ReactNativeBlobUtilSession: ReactNativeBlobUtilSession;
 
@@ -364,6 +405,7 @@ export interface FS {
      * @param  encoding Encoding of read stream.
      */
     readFile(path: string, encoding: Encoding, bufferSize?: number): Promise<any>;
+
     /**
      * Check if file exists and if it is a folder.
      * @param  path Path to check
@@ -391,7 +433,9 @@ export interface FS {
     dirs: Dirs;
 
     slice(src: string, dest: string, start: number, end: number): Promise<void>;
+
     asset(path: string): string;
+
     df(): Promise<{ free: number, total: number }>;
 }
 
@@ -414,6 +458,7 @@ export interface ReactNativeBlobUtilWriteStream {
     append: boolean;
 
     write(data: string): Promise<void>;
+
     close(): void;
 }
 
@@ -512,7 +557,7 @@ export interface AndroidApi {
     actionViewIntent(path: string, mime: string, chooserTitle?: string): Promise<any>;
 
     /**
-     * 
+     *
      * This method brings up OS default file picker and resolves a file URI when the user selected a file.
      * However, it does not resolve or reject when user dismiss the file picker via pressing hardware back button,
      * but you can still handle this behavior via AppState.
@@ -703,7 +748,9 @@ export interface ReactNativeBlobUtilResponseInfo {
 
 export interface ReactNativeBlobUtilStream {
     onData(): void;
+
     onError(): void;
+
     onEnd(): void;
 }
 
@@ -716,4 +763,14 @@ export declare class ReactNativeBlobUtilStat {
     type: "directory" | "file";
     path: string;
     filename: string;
+}
+
+export type Mediatype = "Audio" | "Image" | "Video" | "Download";
+export interface MediaCollection {
+    /**
+     * Creates a new File in the collection.
+     * @param filedata
+     * @param mediatype
+     */
+    createMediafile(filedata: { path: string, parentFolder: string, mimeType: string }, mediatype: Mediatype): Promise<string>;
 }
