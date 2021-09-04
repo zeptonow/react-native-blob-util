@@ -12,16 +12,16 @@ import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetEncoder;
 import java.util.HashMap;
 import java.util.UUID;
 
@@ -64,30 +64,36 @@ public class ReactNativeBlobUtilStream {
                 fs = new FileInputStream(new File(path));
             }
 
-            byte[] buffer = new byte[chunkSize];
-            int cursor;
+            int cursor = 0;
             boolean error = false;
 
             if (encoding.equalsIgnoreCase("utf8")) {
-                CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
-                while ((cursor = fs.read(buffer)) != -1) {
-                    encoder.encode(ByteBuffer.wrap(buffer).asCharBuffer());
-                    String chunk = new String(buffer, 0, cursor);
+                InputStreamReader isr = new InputStreamReader(fs, Charset.forName("UTF-8"));
+                BufferedReader reader = new BufferedReader(isr, chunkSize);
+                char[] buffer = new char[chunkSize];
+                // read chunks of the string
+                while (reader.read(buffer, 0, chunkSize) != -1) {
+                    String chunk = new String(buffer);
                     emitStreamEvent(streamId, "data", chunk);
                     if (tick > 0)
                         SystemClock.sleep(tick);
                 }
+
+                reader.close();
+                isr.close();
             } else if (encoding.equalsIgnoreCase("ascii")) {
+                byte[] buffer = new byte[chunkSize];
                 while ((cursor = fs.read(buffer)) != -1) {
                     WritableArray chunk = Arguments.createArray();
                     for (int i = 0; i < cursor; i++) {
-                        chunk.pushInt(buffer[i]);
+                        chunk.pushInt((int) buffer[i]);
                     }
                     emitStreamEvent(streamId, "data", chunk);
                     if (tick > 0)
                         SystemClock.sleep(tick);
                 }
             } else if (encoding.equalsIgnoreCase("base64")) {
+                byte[] buffer = new byte[chunkSize];
                 while ((cursor = fs.read(buffer)) != -1) {
                     if (cursor < chunkSize) {
                         byte[] copy = new byte[cursor];
@@ -111,6 +117,7 @@ public class ReactNativeBlobUtilStream {
             if (!error)
                 emitStreamEvent(streamId, "end", "");
             fs.close();
+
         } catch (FileNotFoundException err) {
             emitStreamEvent(
                     streamId,

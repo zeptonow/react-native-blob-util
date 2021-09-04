@@ -7,10 +7,10 @@ import {
   NativeModules,
   DeviceEventEmitter,
   NativeAppEventEmitter,
-} from 'react-native'
+} from 'react-native';
 
-const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil
-const emitter = DeviceEventEmitter
+const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil;
+const emitter = DeviceEventEmitter;
 
 export default class ReactNativeBlobUtilFile {
 

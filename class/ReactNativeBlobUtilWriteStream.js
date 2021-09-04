@@ -6,9 +6,9 @@ import {
  NativeModules,
  DeviceEventEmitter,
  NativeAppEventEmitter,
-} from 'react-native'
+} from 'react-native';
 
-const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil
+const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil;
 
 export default class ReactNativeBlobUtilWriteStream {
 
@@ -17,41 +17,41 @@ export default class ReactNativeBlobUtilWriteStream {
   append : boolean;
 
   constructor(streamId:string, encoding:string, append:boolean) {
-    this.id = streamId
-    this.encoding = encoding
-    this.append = append
+    this.id = streamId;
+    this.encoding = encoding;
+    this.append = append;
   }
 
   write(data:string): Promise<ReactNativeBlobUtilWriteStream> {
     return new Promise((resolve, reject) => {
       try {
-        let method = this.encoding === 'ascii' ? 'writeArrayChunk' : 'writeChunk'
+        let method = this.encoding === 'ascii' ? 'writeArrayChunk' : 'writeChunk';
         if(this.encoding.toLocaleLowerCase() === 'ascii' && !Array.isArray(data)) {
-            reject(new Error('ascii input data must be an Array'))
-            return
+            reject(new Error('ascii input data must be an Array'));
+            return;
         }
         ReactNativeBlobUtil[method](this.id, data, (error) => {
           if(error)
-            reject(new Error(error))
+            reject(new Error(error));
           else
-            resolve(this)
-        })
+            resolve(this);
+        });
       } catch(err) {
-        reject(new Error(err))
+        reject(new Error(err));
       }
-    })
+    });
   }
 
   close() {
     return new Promise((resolve, reject) => {
       try {
         ReactNativeBlobUtil.closeStream(this.id, () => {
-          resolve()
-        })
+          resolve();
+        });
       } catch (err) {
-        reject(new Error(err))
+        reject(new Error(err));
       }
-    })
+    });
   }
 
 }

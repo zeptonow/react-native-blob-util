@@ -2,12 +2,12 @@
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 
-import EventTarget from './EventTarget.js'
-import Log from '../utils/log.js'
+import EventTarget from './EventTarget.js';
+import Log from '../utils/log.js';
 
-const log = new Log('XMLHttpRequestEventTarget')
+const log = new Log('XMLHttpRequestEventTarget');
 
-log.disable()
+log.disable();
 // log.level(3)
 
 export default class XMLHttpRequestEventTarget extends EventTarget {
@@ -28,99 +28,99 @@ export default class XMLHttpRequestEventTarget extends EventTarget {
     };
 
     constructor() {
-        super()
-        log.info('constructor called')
+        super();
+        log.info('constructor called');
     }
 
     dispatchEvent(event: string, e: Event) {
-        log.debug('dispatch event', event, e)
-        super.dispatchEvent(event, e)
+        log.debug('dispatch event', event, e);
+        super.dispatchEvent(event, e);
         switch (event) {
             case 'abort' :
-                this._onabort(e)
+                this._onabort(e);
                 break;
             case 'error' :
-                this._onerror(e)
+                this._onerror(e);
                 break;
             case 'load' :
-                this._onload(e)
+                this._onload(e);
                 break;
             case 'loadstart' :
-                this._onloadstart(e)
+                this._onloadstart(e);
                 break;
             case 'loadend' :
-                this._onloadend(e)
+                this._onloadend(e);
                 break;
             case 'progress' :
-                this._onprogress(e)
+                this._onprogress(e);
                 break;
             case 'timeout' :
-                this._ontimeout(e)
+                this._ontimeout(e);
                 break;
         }
     }
 
     set onabort(fn: (e: Event) => void) {
-        log.info('set onabort')
-        this._onabort = fn
+        log.info('set onabort');
+        this._onabort = fn;
     }
 
     get onabort() {
-        return this._onabort
+        return this._onabort;
     }
 
     set onerror(fn: (e: Event) => void) {
-        log.info('set onerror')
-        this._onerror = fn
+        log.info('set onerror');
+        this._onerror = fn;
     }
 
     get onerror() {
-        return this._onerror
+        return this._onerror;
     }
 
     set onload(fn: (e: Event) => void) {
-        log.info('set onload', fn)
-        this._onload = fn
+        log.info('set onload', fn);
+        this._onload = fn;
     }
 
     get onload() {
-        return this._onload
+        return this._onload;
     }
 
     set onloadstart(fn: (e: Event) => void) {
-        log.info('set onloadstart')
-        this._onloadstart = fn
+        log.info('set onloadstart');
+        this._onloadstart = fn;
     }
 
     get onloadstart() {
-        return this._onloadstart
+        return this._onloadstart;
     }
 
     set onprogress(fn: (e: Event) => void) {
-        log.info('set onprogress')
-        this._onprogress = fn
+        log.info('set onprogress');
+        this._onprogress = fn;
     }
 
     get onprogress() {
-        return this._onprogress
+        return this._onprogress;
     }
 
     set ontimeout(fn: (e: Event) => void) {
-        log.info('set ontimeout')
-        this._ontimeout = fn
+        log.info('set ontimeout');
+        this._ontimeout = fn;
     }
 
     get ontimeout() {
-        return this._ontimeout
+        return this._ontimeout;
     }
 
     set onloadend(fn: (e: Event) => void) {
-        log.info('set onloadend')
-        this._onloadend = fn
+        log.info('set onloadend');
+        this._onloadend = fn;
     }
 
     get onloadend() {
-        return this._onloadend
+        return this._onloadend;
     }
 
 }
