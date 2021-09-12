@@ -20,6 +20,7 @@ interface ReactNativeBlobUtilStatic {
     session(name: string): ReactNativeBlobUtilSession;
 
     fs: FS;
+    MediaCollection: MediaCollection;
 
     wrap(path: string): string;
 
@@ -766,11 +767,12 @@ export declare class ReactNativeBlobUtilStat {
 }
 
 export type Mediatype = "Audio" | "Image" | "Video" | "Download";
+
 export interface MediaCollection {
     /**
      * Creates a new File in the collection.
      * @param filedata
      * @param mediatype
      */
-    createMediafile(filedata: { path: string, parentFolder: string, mimeType: string }, mediatype: Mediatype): Promise<string>;
+    createMediafile(filedata: { name: string, parentFolder: string, mimeType: string }, mediatype: Mediatype): Promise<string>;
 }

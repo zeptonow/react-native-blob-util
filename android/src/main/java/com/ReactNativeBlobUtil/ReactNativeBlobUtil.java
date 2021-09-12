@@ -428,12 +428,15 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void createMediaFile(ReadableMap filedata, ReactNativeBlobUtilMediaCollection.MediaType mt, Promise promise) {
-        if (!(filedata.hasKey("name") || filedata.hasKey("partentFolder") || filedata.hasKey("mimeType"))) promise.reject("ReactNativeBlobUtil.createMediaFile", "invalid filedata");
+    public void createMediaFile(ReadableMap filedata, String mt, Promise promise) {
+        if (!(filedata.hasKey("name") && filedata.hasKey("parentFolder") && filedata.hasKey("mimeType"))) {
+            promise.reject("ReactNativeBlobUtil.createMediaFile", "invalid filedata: " + filedata.toString());
+            return;
+        }
 
-        FileDescription file = new FileDescription(filedata.getString("name"), filedata.getString("partentFolder"), filedata.getString("mimeType"));
-        Uri res = ReactNativeBlobUtilMediaCollection.createNewMediaFile(file, mt);
-        if (res != null) promise.resolve(res);
+        FileDescription file = new FileDescription(filedata.getString("name"), filedata.getString("parentFolder"), filedata.getString("mimeType"));
+        Uri res = ReactNativeBlobUtilMediaCollection.createNewMediaFile(file, ReactNativeBlobUtilMediaCollection.MediaType.valueOf(mt));
+        if (res != null) promise.resolve(res.toString());
         else promise.reject("ReactNativeBlobUtil.createMediaFile", "File could not be created");
     }
 
