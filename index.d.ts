@@ -775,4 +775,6 @@ export interface MediaCollection {
      * @param mediatype
      */
     createMediafile(filedata: { name: string, parentFolder: string, mimeType: string }, mediatype: Mediatype): Promise<string>;
+
+    writeToMediafile(uri: string, data: string)
 }

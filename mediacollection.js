@@ -8,6 +8,11 @@ function createMediafile(filedata: Object<{ path: string, parentFolder: string, 
     return ReactNativeBlobUtil.createMediaFile(filedata, mediatype);
 }
 
+function writeToMediafile(uri:string, data:string){
+    return ReactNativeBlobUtil.writeToMediaFile(uri, data);
+}
+
 export default {
-    createMediafile
+    createMediafile,
+    writeToMediafile
 };

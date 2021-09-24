@@ -9,8 +9,11 @@ import android.os.Environment;
 import android.provider.MediaStore;
 
 import com.ReactNativeBlobUtil.Utils.FileDescription;
+import com.facebook.react.bridge.Promise;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
 
 public class ReactNativeBlobUtilMediaCollection {
 
@@ -91,6 +94,30 @@ public class ReactNativeBlobUtilMediaCollection {
         }
 
         return null;
+    }
+
+    public static void writeToMediaFile(Uri fileUri, String data, Promise promise) {
+        try {
+            Context appCtx = ReactNativeBlobUtil.RCTContext.getApplicationContext();
+            ContentResolver resolver = appCtx.getContentResolver();
+
+            // set pending
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(MediaStore.MediaColumns.IS_PENDING, 1);
+            resolver.update(fileUri, contentValues, null, null);
+
+            // write data
+            OutputStream outputStream = resolver.openOutputStream(fileUri);
+            outputStream.write(data.getBytes());
+
+            // remove pending
+            contentValues = new ContentValues();
+            contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0);
+            resolver.update(fileUri, contentValues, null, null);
+
+        } catch (IOException e) {
+            promise.reject("ReactNativeBlobUtil.createMediaFile", "Cannot write to file, file might not exist");
+        }
     }
 
 }

@@ -441,4 +441,9 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
         else promise.reject("ReactNativeBlobUtil.createMediaFile", "File could not be created");
     }
 
+    @ReactMethod
+    public void writeToMediaFile(String fileUri, String data, Promise promise){
+        ReactNativeBlobUtilMediaCollection.writeToMediaFile(Uri.parse(fileUri), data, promise);
+    }
+
 }
