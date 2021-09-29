@@ -399,6 +399,14 @@ export interface FS {
      */
     writeFile(path: string, data: string | number[], encoding?: Encoding): Promise<void>;
 
+    /**
+     * Processes the data and then writes to the file.
+     * @param  path  Path of the file.
+     * @param  data Data to write to the file.
+     * @param  encoding Encoding of data (Optional).
+     */
+     writeFileWithTransform(path: string, data: string | number[], encoding?: Encoding): Promise<void>;
+
     appendFile(path: string, data: string | number[], encoding?: Encoding | "uri"): Promise<number>;
 
     /**
@@ -407,6 +415,13 @@ export interface FS {
      * @param  encoding Encoding of read stream.
      */
     readFile(path: string, encoding: Encoding, bufferSize?: number): Promise<any>;
+
+    /**
+     * Reads from a file and then processes the data before returning
+     * @param  path Path of the file.
+     * @param  encoding Encoding of read stream.
+     */
+     readFileWithTransform(path: string, encoding: Encoding, bufferSize?: number): Promise<any>;
 
     /**
      * Check if file exists and if it is a folder.
@@ -697,6 +712,13 @@ export interface ReactNativeBlobUtilConfig {
      * file will stored in App's own root folder with file name template ReactNativeBlobUtil_tmp${timestamp}.
      */
     fileCache?: boolean;
+
+    /**
+     * Set this property to true if you want the data to be processed before it gets written onto disk.
+     * This only has effect if the FileTransformer has been registered and the library is configured to write
+     * response onto disk.
+     */
+    transformFile?: boolean;
 
     /**
      * Set this property to change temp file extension that created by fetch response data.

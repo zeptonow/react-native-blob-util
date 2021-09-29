@@ -121,7 +121,7 @@ class ReactNativeBlobUtilFS {
      * @param data     Array passed from JS context.
      * @param promise  RCT Promise
      */
-    static void writeFile(String path, String encoding, String data, final boolean append, final Promise promise) {
+    static void writeFile(String path, String encoding, String data, final boolean transformFile, final boolean append, final Promise promise) {
         try {
             int written;
             File f = new File(path);
@@ -169,6 +169,12 @@ class ReactNativeBlobUtilFS {
                 }
             } else {
                 byte[] bytes = ReactNativeBlobUtilUtils.stringToBytes(data, encoding);
+                if (transformFile) {
+                    if (ReactNativeBlobUtilFileTransformer.sharedFileTransformer == null) {
+                        throw new IllegalStateException("Write file with transform was specified but the shared file transformer is not set");
+                    }
+                    bytes = ReactNativeBlobUtilFileTransformer.sharedFileTransformer.onWriteFile(bytes);
+                }
                 FileOutputStream fout = new FileOutputStream(f, append);
                 try {
                     fout.write(bytes);
@@ -237,7 +243,7 @@ class ReactNativeBlobUtilFS {
      * @param encoding Encoding of read stream.
      * @param promise  JS promise
      */
-    static void readFile(String path, String encoding, final Promise promise) {
+    static void readFile(String path, String encoding, final boolean transformFile, final Promise promise) {
         String resolved = ReactNativeBlobUtilUtils.normalizePath(path);
         if (resolved != null)
             path = resolved;
@@ -278,6 +284,13 @@ class ReactNativeBlobUtilFS {
             if (bytesRead < length) {
                 promise.reject("EUNSPECIFIED", "Read only " + bytesRead + " bytes of " + length);
                 return;
+            }
+
+            if (transformFile) {
+                if (ReactNativeBlobUtilFileTransformer.sharedFileTransformer == null) {
+                    throw new IllegalStateException("Read file with transform was specified but the shared file transformer is not set");
+                }
+                bytes = ReactNativeBlobUtilFileTransformer.sharedFileTransformer.onReadFile(bytes);
             }
 
             switch (encoding.toLowerCase(Locale.ROOT)) {

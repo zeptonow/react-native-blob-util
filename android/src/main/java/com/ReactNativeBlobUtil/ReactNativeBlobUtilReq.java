@@ -87,6 +87,12 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
         BASE64
     }
 
+    private boolean shouldTransformFile() {
+        return this.options.transformFile &&
+            // Can only process if it's written to a file
+            (this.options.fileCache || this.options.path != null);
+    }
+
     public static HashMap<String, Call> taskTable = new HashMap<>();
     public static HashMap<String, Long> androidDownloadManagerTaskTable = new HashMap<>();
     static HashMap<String, ReactNativeBlobUtilProgressConfig> progressReport = new HashMap<>();
@@ -124,7 +130,9 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
         this.rawRequestBodyArray = arrayBody;
         this.client = client;
 
-        if (this.options.fileCache || this.options.path != null)
+        // If transformFile is specified, we first want to get the response back in memory so we can
+        // encrypt it wholesale and at that point, write it into the file storage.
+        if((this.options.fileCache || this.options.path != null) && !this.shouldTransformFile())
             responseType = ResponseType.FileStorage;
         else
             responseType = ResponseType.KeepInMemory;
@@ -557,6 +565,23 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                     // response data directly pass to JS context as string.
                     else {
                         byte[] b = resp.body().bytes();
+                        // If process file option is turned on, we first keep response in memory and then stream that content
+                        // after processing
+                        if (this.shouldTransformFile()) {
+                            if (ReactNativeBlobUtilFileTransformer.sharedFileTransformer == null) {
+                                throw new IllegalStateException("Write file with transform was specified but the shared file transformer is not set");
+                            }
+                            this.destPath = this.destPath.replace("?append=true", "");
+                            File file = new File(this.destPath);
+                            if (!file.exists()) {
+                                file.createNewFile();
+                            }
+                            try (FileOutputStream fos = new FileOutputStream(file)) {
+                                fos.write(ReactNativeBlobUtilFileTransformer.sharedFileTransformer.onWriteFile(b));
+                            }
+                            callback.invoke(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, this.destPath);
+                            return;
+                        }
                         if (responseFormat == ResponseFormat.BASE64) {
                             callback.invoke(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_BASE64, android.util.Base64.encodeToString(b, Base64.NO_WRAP));
                             return;
