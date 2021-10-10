@@ -398,8 +398,9 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
             clientBuilder.addInterceptor(new Interceptor() {
                 @Override
                 public Response intercept(@NonNull Chain chain) throws IOException {
+                    Response originalResponse = null;
                     try {
-                        Response originalResponse = chain.proceed(req);
+                        originalResponse = chain.proceed(req);
                         ResponseBody extended;
                         switch (responseType) {
                             case KeepInMemory:
@@ -428,12 +429,21 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                         return originalResponse.newBuilder().body(extended).build();
                     } catch (SocketException e) {
                         timeout = true;
+                        if (originalResponse != null) {
+                            originalResponse.close();
+                        }
                     } catch (SocketTimeoutException e) {
                         timeout = true;
+                        if (originalResponse != null) {
+                            originalResponse.close();
+                        }
                         //ReactNativeBlobUtilUtils.emitWarningEvent("ReactNativeBlobUtil error when sending request : " + e.getLocalizedMessage());
                     } catch (Exception ex) {
-
+                        if (originalResponse != null) {
+                            originalResponse.close();
+                        }
                     }
+
                     return chain.proceed(chain.request());
                 }
             });
