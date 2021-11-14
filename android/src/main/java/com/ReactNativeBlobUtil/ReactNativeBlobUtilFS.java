@@ -1185,9 +1185,6 @@ class ReactNativeBlobUtilFS {
             return null;
         if (!path.matches("\\w+\\:.*"))
             return path;
-        if (path.startsWith("file://")) {
-            return path.replace("file://", "");
-        }
 
         Uri uri = Uri.parse(path);
         if (path.startsWith(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET)) {
