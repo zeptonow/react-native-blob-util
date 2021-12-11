@@ -109,6 +109,7 @@ public class ReactNativeBlobUtilMediaCollection {
             // write data
             OutputStream outputStream = resolver.openOutputStream(fileUri);
             outputStream.write(data.getBytes());
+            outputStream.close();
 
             // remove pending
             contentValues = new ContentValues();
