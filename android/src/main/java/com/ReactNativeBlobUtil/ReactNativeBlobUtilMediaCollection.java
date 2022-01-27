@@ -6,12 +6,15 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Environment;
+import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 
 import com.ReactNativeBlobUtil.Utils.FileDescription;
 import com.facebook.react.bridge.Promise;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -107,9 +110,59 @@ public class ReactNativeBlobUtilMediaCollection {
             resolver.update(fileUri, contentValues, null, null);
 
             // write data
-            OutputStream outputStream = resolver.openOutputStream(fileUri);
-            outputStream.write(data.getBytes());
-            outputStream.close();
+            //OutputStream outputStream = resolver.openOutputStream(fileUri);
+            //outputStream.write(data.getBytes());
+            //outputStream.close();
+
+            OutputStream stream = null;
+            Uri uri = null;
+
+            try {
+                ParcelFileDescriptor descr;
+                try {
+                    assert fileUri != null;
+                    descr = appCtx.getContentResolver().openFileDescriptor(fileUri, "w");
+                    assert descr != null;
+                    String normalizedData = ReactNativeBlobUtilUtils.normalizePath(data);
+                    File src = new File(normalizedData);
+                    if (!src.exists()) {
+                        promise.reject("ENOENT", "No such file ('" + normalizedData + "')");
+                        return;
+                    }
+                    byte[] buf = new byte[10240];
+                    int read;
+                    int written = 0;
+
+                    FileInputStream fin = new FileInputStream(src);
+                    FileOutputStream out = new FileOutputStream(descr.getFileDescriptor());
+
+                    while ((read = fin.read(buf)) > 0) {
+                        out.write(buf, 0, read);
+                    }
+
+                    fin.close();
+                    out.close();
+                    descr.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                contentValues.clear();
+                contentValues.put(MediaStore.Video.Media.IS_PENDING, 0);
+                appCtx.getContentResolver().update(fileUri, contentValues, null, null);
+                stream = resolver.openOutputStream(fileUri);
+                if (stream == null) {
+                    throw new IOException("Failed to get output stream.");
+                }
+            } catch (IOException e) {
+                // Don't leave an orphan entry in the MediaStore
+                resolver.delete(uri, null, null);
+                throw e;
+            } finally {
+                if (stream != null) {
+                    stream.close();
+                }
+            }
 
             // remove pending
             contentValues = new ContentValues();
