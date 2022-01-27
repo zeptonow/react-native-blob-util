@@ -110,10 +110,6 @@ public class ReactNativeBlobUtilMediaCollection {
             resolver.update(fileUri, contentValues, null, null);
 
             // write data
-            //OutputStream outputStream = resolver.openOutputStream(fileUri);
-            //outputStream.write(data.getBytes());
-            //outputStream.close();
-
             OutputStream stream = null;
             Uri uri = null;
 
