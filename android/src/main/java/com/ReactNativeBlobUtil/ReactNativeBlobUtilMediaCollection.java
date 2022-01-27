@@ -152,15 +152,16 @@ public class ReactNativeBlobUtilMediaCollection {
                 appCtx.getContentResolver().update(fileUri, contentValues, null, null);
                 stream = resolver.openOutputStream(fileUri);
                 if (stream == null) {
-                    throw new IOException("Failed to get output stream.");
+                    promise.reject(new IOException("Failed to get output stream."));
                 }
             } catch (IOException e) {
                 // Don't leave an orphan entry in the MediaStore
                 resolver.delete(uri, null, null);
-                throw e;
+                promise.reject(e);
             } finally {
                 if (stream != null) {
                     stream.close();
+                    promise.resolve("");
                 }
             }
 
