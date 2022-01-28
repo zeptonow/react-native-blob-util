@@ -35,6 +35,11 @@ public class ReactNativeBlobUtilFileResp extends ResponseBody {
     FileOutputStream ofStream;
     boolean isEndMarkerReceived;
 
+    public ReactNativeBlobUtilFileResp(ResponseBody body) {
+        super();
+        this.originalBody = body;
+    }
+
     public ReactNativeBlobUtilFileResp(ReactApplicationContext ctx, String taskId, ResponseBody body, String path, boolean overwrite) throws IOException {
         super();
         this.rctContext = ctx;

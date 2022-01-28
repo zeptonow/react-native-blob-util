@@ -57,7 +57,7 @@ class ReactNativeBlobUtilFS {
 
             if (!f.exists()) {
                 if (dir != null && !dir.exists()) {
-                    if (!dir.mkdirs()) {
+                    if (!dir.mkdirs() && !dir.exists()) {
                         promise.reject("EUNSPECIFIED", "Failed to create parent directory of '" + path + "'");
                         return;
                     }
@@ -129,7 +129,7 @@ class ReactNativeBlobUtilFS {
 
             if (!f.exists()) {
                 if (dir != null && !dir.exists()) {
-                    if (!dir.mkdirs()) {
+                    if (!dir.mkdirs() && !dir.exists()) {
                         promise.reject("ENOTDIR", "Failed to create parent directory of '" + path + "'");
                         return;
                     }
@@ -445,7 +445,7 @@ class ReactNativeBlobUtilFS {
 
             if (!dest.exists()) {
                 if (dir != null && !dir.exists()) {
-                    if (!dir.mkdirs()) {
+                    if (!dir.mkdirs() && !dir.exists()) {
                         callback.invoke("ENOTDIR", "Failed to create parent directory of '" + path + "'");
                         return;
                     }
@@ -1185,9 +1185,6 @@ class ReactNativeBlobUtilFS {
             return null;
         if (!path.matches("\\w+\\:.*"))
             return path;
-        if (path.startsWith("file://")) {
-            return path.replace("file://", "");
-        }
 
         Uri uri = Uri.parse(path);
         if (path.startsWith(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET)) {
