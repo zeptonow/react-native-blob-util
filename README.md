@@ -651,7 +651,7 @@ In `v0.5.0` we've added  `writeStream` and `readStream`, which allows your app r
 
 When calling `readStream` method, you have to `open` the stream, and start to read data. When the file is large, consider using an appropriate `bufferSize` and `interval` to reduce the native event dispatching overhead (see [Performance Tips](#user-content-performance-tips))
 
-> The file stream event has a default throttle(10ms) and buffer size which preventing it cause too much overhead to main thread, yo can also [tweak these values](#user-content-performance-tips).
+> The file stream event has a default throttle(10ms) and buffer size which preventing it cause too much overhead to main thread, you can also [tweak these values](#user-content-performance-tips).
 
 ```js
 let data = ''

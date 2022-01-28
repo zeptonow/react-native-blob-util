@@ -57,7 +57,7 @@ class ReactNativeBlobUtilFS {
 
             if (!f.exists()) {
                 if (dir != null && !dir.exists()) {
-                    if (!dir.mkdirs()) {
+                    if (!dir.mkdirs() && !dir.exists()) {
                         promise.reject("EUNSPECIFIED", "Failed to create parent directory of '" + path + "'");
                         return;
                     }
@@ -129,7 +129,7 @@ class ReactNativeBlobUtilFS {
 
             if (!f.exists()) {
                 if (dir != null && !dir.exists()) {
-                    if (!dir.mkdirs()) {
+                    if (!dir.mkdirs() && !dir.exists()) {
                         promise.reject("ENOTDIR", "Failed to create parent directory of '" + path + "'");
                         return;
                     }
@@ -445,7 +445,7 @@ class ReactNativeBlobUtilFS {
 
             if (!dest.exists()) {
                 if (dir != null && !dir.exists()) {
-                    if (!dir.mkdirs()) {
+                    if (!dir.mkdirs() && !dir.exists()) {
                         callback.invoke("ENOTDIR", "Failed to create parent directory of '" + path + "'");
                         return;
                     }

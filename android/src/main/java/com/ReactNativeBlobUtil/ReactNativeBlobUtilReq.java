@@ -598,7 +598,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                 ReactNativeBlobUtilFileResp ReactNativeBlobUtilFileResp;
 
                 try {
-                    ReactNativeBlobUtilFileResp = (ReactNativeBlobUtilFileResp) responseBody;
+                    ReactNativeBlobUtilFileResp = new ReactNativeBlobUtilFileResp(responseBody);
                 } catch (ClassCastException ex) {
                     // unexpected response type
                     if (responseBody != null) {

@@ -436,9 +436,22 @@ export interface FS {
     slice(src: string, dest: string, start: number, end: number): Promise<void>;
 
     asset(path: string): string;
-
-    df(): Promise<{ free: number, total: number }>;
+    df(): Promise<RNFetchBlobDf>;
 }
+
+export interface RNFetchBlobDfIOS {
+    free?: number;
+    total?: number;
+}
+
+export interface RNFetchBlobDfAndroid {
+    external_free?: string;
+    external_total?: string;
+    internal_free?: string;
+    internal_total?: string;
+}
+
+export type RNFetchBlobDf = RNFetchBlobDfIOS & RNFetchBlobDfAndroid;
 
 export interface Dirs {
     DocumentDir: string;
@@ -555,7 +568,7 @@ export interface AndroidApi {
      * @param mime Basically system will open an app according to this MIME type.
      * @param chooserTitle title for chooser, if not set the chooser won't be displayed (see [Android docs](https://developer.android.com/reference/android/content/Intent.html#createChooser(android.content.Intent,%20java.lang.CharSequence)))
      */
-    actionViewIntent(path: string, mime: string, chooserTitle?: string): Promise<any>;
+    actionViewIntent(path: string, mime: string, chooserTitle?: string): Promise<boolean | null>;
 
     /**
      *
