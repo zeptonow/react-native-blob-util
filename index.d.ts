@@ -436,6 +436,7 @@ export interface FS {
     slice(src: string, dest: string, start: number, end: number): Promise<void>;
 
     asset(path: string): string;
+
     df(): Promise<RNFetchBlobDf>;
 }
 
@@ -790,4 +791,6 @@ export interface MediaCollection {
     createMediafile(filedata: { name: string, parentFolder: string, mimeType: string }, mediatype: Mediatype): Promise<string>;
 
     writeToMediafile(uri: string, data: string)
+
+    copyToInternal(contenturi: string, destpath: string)
 }

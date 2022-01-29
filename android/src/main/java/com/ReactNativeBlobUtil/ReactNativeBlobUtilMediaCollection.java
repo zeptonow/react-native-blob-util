@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 
 public class ReactNativeBlobUtilMediaCollection {
@@ -171,4 +172,54 @@ public class ReactNativeBlobUtilMediaCollection {
         }
     }
 
+    public static void copyToInternal(Uri contenturi, String destpath, Promise promise) {
+        Context appCtx = ReactNativeBlobUtil.RCTContext.getApplicationContext();
+        ContentResolver resolver = appCtx.getContentResolver();
+
+        InputStream in = null;
+        OutputStream out = null;
+
+        if (!new File(destpath).exists()) {
+            try {
+                boolean result = new File(destpath).createNewFile();
+                if (!result) {
+                    promise.reject("ReactNativeBlobUtil.copyToInternal: Destination file at '" + destpath + "' already exists");
+                    return;
+                }
+            } catch (IOException ioException) {
+                promise.reject("ReactNativeBlobUtil.copyToInternal: Could not create file: " + ioException.getLocalizedMessage());
+            }
+        }
+
+        try {
+            in = resolver.openInputStream(contenturi);
+            out = new FileOutputStream(destpath);
+
+            byte[] buf = new byte[10240];
+            int len;
+            while ((len = in.read(buf)) > 0) {
+                out.write(buf, 0, len);
+            }
+
+        } catch (IOException e) {
+            promise.reject("ReactNativeBlobUtil.copyToInternal:  Could not write data: " + e.getLocalizedMessage());
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+            }
+            if (out != null) {
+                try {
+                    out.close();
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
+                }
+            }
+        }
+
+        promise.resolve("");
+    }
 }

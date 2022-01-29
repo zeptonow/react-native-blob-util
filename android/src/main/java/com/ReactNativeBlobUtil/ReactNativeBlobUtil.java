@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.app.DownloadManager;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.util.SparseArray;
@@ -427,15 +426,20 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
         }
         if (mt == null) promise.reject("ReactNativeBlobUtil.createMediaFile", "invalid mediatype");
 
-        FileDescription file = new FileDescription(filedata.getString("name"),filedata.getString("mimeType"), filedata.getString("parentFolder"));
+        FileDescription file = new FileDescription(filedata.getString("name"), filedata.getString("mimeType"), filedata.getString("parentFolder"));
         Uri res = ReactNativeBlobUtilMediaCollection.createNewMediaFile(file, ReactNativeBlobUtilMediaCollection.MediaType.valueOf(mt));
         if (res != null) promise.resolve(res.toString());
         else promise.reject("ReactNativeBlobUtil.createMediaFile", "File could not be created");
     }
 
     @ReactMethod
-    public void writeToMediaFile(String fileUri, String data, Promise promise){
+    public void writeToMediaFile(String fileUri, String data, Promise promise) {
         ReactNativeBlobUtilMediaCollection.writeToMediaFile(Uri.parse(fileUri), data, promise);
+    }
+
+    @ReactMethod
+    public void copyToInternal(String contentUri, String destpath, Promise promise) {
+        ReactNativeBlobUtilMediaCollection.copyToInternal(Uri.parse(contentUri), destpath, promise);
     }
 
 }

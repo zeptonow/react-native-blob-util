@@ -12,7 +12,12 @@ function writeToMediafile(uri:string, data:string){
     return ReactNativeBlobUtil.writeToMediaFile(uri, data);
 }
 
+function copyToInternal(contenturi: string, destpath: string) {
+    return ReactNativeBlobUtil.copyToInternal(contenturi, destpath);
+    }
+
 export default {
     createMediafile,
-    writeToMediafile
+    writeToMediafile,
+    copyToInternal
 };
