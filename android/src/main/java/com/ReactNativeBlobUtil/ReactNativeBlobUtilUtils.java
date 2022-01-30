@@ -142,4 +142,8 @@ public class ReactNativeBlobUtilUtils {
     public static boolean isAsset(String path) {
         return path != null && path.startsWith(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET);
     }
+
+    public static boolean isContentUri(String path) {
+        return path != null && path.startsWith(ReactNativeBlobUtilConst.FILE_PREFIX_CONTENT);
+    }
 }

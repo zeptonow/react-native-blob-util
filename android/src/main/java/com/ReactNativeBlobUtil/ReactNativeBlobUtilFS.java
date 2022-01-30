@@ -7,10 +7,8 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Environment;
 import android.os.StatFs;
-import android.os.SystemClock;
 import android.util.Base64;
 
-import com.ReactNativeBlobUtil.Utils.PathResolver;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.Promise;
@@ -20,13 +18,17 @@ import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
-import java.io.*;
-import java.nio.charset.Charset;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 class ReactNativeBlobUtilFS {
 
@@ -329,106 +331,6 @@ class ReactNativeBlobUtilFS {
         return ReactNativeBlobUtil.RCTContext.getFilesDir() + "/ReactNativeBlobUtilTmp_" + taskId;
     }
 
-    /**
-     * Create a file stream for read
-     *
-     * @param path       File stream target path
-     * @param encoding   File stream decoder, should be one of `base64`, `utf8`, `ascii`
-     * @param bufferSize Buffer size of read stream, default to 4096 (4095 when encode is `base64`)
-     */
-    void readStream(String path, String encoding, int bufferSize, int tick, final String streamId) {
-        String resolved = ReactNativeBlobUtilUtils.normalizePath(path);
-        if (resolved != null)
-            path = resolved;
-
-        try {
-            int chunkSize = encoding.equalsIgnoreCase("base64") ? 4095 : 4096;
-            if (bufferSize > 0)
-                chunkSize = bufferSize;
-
-            InputStream fs;
-
-            if (resolved != null && path.startsWith(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET)) {
-                fs = ReactNativeBlobUtil.RCTContext.getAssets().open(path.replace(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET, ""));
-            }
-            // fix issue 287
-            else if (resolved == null) {
-                fs = ReactNativeBlobUtil.RCTContext.getContentResolver().openInputStream(Uri.parse(path));
-            } else {
-                fs = new FileInputStream(new File(path));
-            }
-
-            int cursor = 0;
-            boolean error = false;
-
-            if (encoding.equalsIgnoreCase("utf8")) {
-                InputStreamReader isr = new InputStreamReader(fs, Charset.forName("UTF-8"));
-                BufferedReader reader = new BufferedReader(isr, chunkSize);
-                char[] buffer = new char[chunkSize];
-                // read chunks of the string
-                while (reader.read(buffer, 0, chunkSize) != -1) {
-                    String chunk = new String(buffer);
-                    emitStreamEvent(streamId, "data", chunk);
-                    if (tick > 0)
-                        SystemClock.sleep(tick);
-                }
-
-                reader.close();
-                isr.close();
-            } else if (encoding.equalsIgnoreCase("ascii")) {
-                byte[] buffer = new byte[chunkSize];
-                while ((cursor = fs.read(buffer)) != -1) {
-                    WritableArray chunk = Arguments.createArray();
-                    for (int i = 0; i < cursor; i++) {
-                        chunk.pushInt((int) buffer[i]);
-                    }
-                    emitStreamEvent(streamId, "data", chunk);
-                    if (tick > 0)
-                        SystemClock.sleep(tick);
-                }
-            } else if (encoding.equalsIgnoreCase("base64")) {
-                byte[] buffer = new byte[chunkSize];
-                while ((cursor = fs.read(buffer)) != -1) {
-                    if (cursor < chunkSize) {
-                        byte[] copy = new byte[cursor];
-                        System.arraycopy(buffer, 0, copy, 0, cursor);
-                        emitStreamEvent(streamId, "data", Base64.encodeToString(copy, Base64.NO_WRAP));
-                    } else
-                        emitStreamEvent(streamId, "data", Base64.encodeToString(buffer, Base64.NO_WRAP));
-                    if (tick > 0)
-                        SystemClock.sleep(tick);
-                }
-            } else {
-                emitStreamEvent(
-                        streamId,
-                        "error",
-                        "EINVAL",
-                        "Unrecognized encoding `" + encoding + "`, should be one of `base64`, `utf8`, `ascii`"
-                );
-                error = true;
-            }
-
-            if (!error)
-                emitStreamEvent(streamId, "end", "");
-            fs.close();
-
-        } catch (FileNotFoundException err) {
-            emitStreamEvent(
-                    streamId,
-                    "error",
-                    "ENOENT",
-                    "No such file '" + path + "'"
-            );
-        } catch (Exception err) {
-            emitStreamEvent(
-                    streamId,
-                    "error",
-                    "EUNSPECIFIED",
-                    "Failed to convert data to " + encoding + " encoded string. This might be because this encoding cannot be used for this data."
-            );
-            err.printStackTrace();
-        }
-    }
 
     /**
      * Unlink file at path

@@ -113,9 +113,13 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
     @ReactMethod
     public void actionViewIntent(String path, String mime, @Nullable String chooserTitle, final Promise promise) {
         try {
-            Uri uriForFile = FileProvider.getUriForFile(this.getReactApplicationContext(),
-                    this.getReactApplicationContext().getPackageName() + ".provider", new File(path));
-
+            Uri uriForFile = null;
+            if (!ReactNativeBlobUtilUtils.isContentUri(path)) {
+                uriForFile = FileProvider.getUriForFile(this.getReactApplicationContext(),
+                        this.getReactApplicationContext().getPackageName() + ".provider", new File(path));
+            } else {
+                uriForFile = Uri.parse(path);
+            }
             Intent intent = new Intent(Intent.ACTION_VIEW);
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 // Create the intent with data and type

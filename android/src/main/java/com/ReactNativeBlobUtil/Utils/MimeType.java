@@ -57,7 +57,7 @@ public class MimeType {
     }
 
     /**
-     * Some file types return no mime type on older API levels. This function adds compatibility accross API levels.
+     * Some file types return no mime type on older API levels. This function adds compatibility across API levels.
      */
     public static String getMimeTypeFromExtension(String fileExtension) {
         if (fileExtension.equals("bin")) return BINARY_FILE;

@@ -8,9 +8,12 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
+import android.util.Base64;
 
 import com.ReactNativeBlobUtil.Utils.FileDescription;
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
+import com.facebook.react.bridge.WritableArray;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -72,7 +75,7 @@ public class ReactNativeBlobUtilMediaCollection {
 
         ContentValues fileDetails = new ContentValues();
         String relativePath = getRelativePath(mt);
-        String mimeType = getRelativePath(mt);
+        String mimeType = file.mimeType;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             fileDetails.put(MediaStore.MediaColumns.DATE_ADDED, System.currentTimeMillis() / 1000);
@@ -221,5 +224,46 @@ public class ReactNativeBlobUtilMediaCollection {
         }
 
         promise.resolve("");
+    }
+
+    public void getBlob(Uri contentUri, String encoding, Promise promise) {
+        Context appCtx = ReactNativeBlobUtil.RCTContext.getApplicationContext();
+        ContentResolver resolver = appCtx.getContentResolver();
+        try {
+            InputStream in = resolver.openInputStream(contentUri);
+            int length = 0;
+
+            length = in.available();
+
+            byte[] bytes = new byte[length];
+            int bytesRead = in.read(bytes);
+            in.close();
+
+            if (bytesRead < length) {
+                promise.reject("EUNSPECIFIED", "Read only " + bytesRead + " bytes of " + length);
+                return;
+            }
+
+            switch (encoding.toLowerCase()) {
+                case "base64":
+                    promise.resolve(Base64.encodeToString(bytes, Base64.NO_WRAP));
+                    break;
+                case "ascii":
+                    WritableArray asciiResult = Arguments.createArray();
+                    for (byte b : bytes) {
+                        asciiResult.pushInt((int) b);
+                    }
+                    promise.resolve(asciiResult);
+                    break;
+                case "utf8":
+                    promise.resolve(new String(bytes));
+                    break;
+                default:
+                    promise.resolve(new String(bytes));
+                    break;
+            }
+        } catch (IOException ioException) {
+            ioException.printStackTrace();
+        }
     }
 }
