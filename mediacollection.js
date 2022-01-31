@@ -8,16 +8,21 @@ function createMediafile(filedata: Object<{ path: string, parentFolder: string, 
     return ReactNativeBlobUtil.createMediaFile(filedata, mediatype);
 }
 
-function writeToMediafile(uri:string, data:string){
+function writeToMediafile(uri: string, data: string) {
     return ReactNativeBlobUtil.writeToMediaFile(uri, data);
 }
 
 function copyToInternal(contenturi: string, destpath: string) {
     return ReactNativeBlobUtil.copyToInternal(contenturi, destpath);
-    }
+}
+
+function getBlob(contenturi: string, encoding: string) {
+    return ReactNativeBlobUtil.getBlob(contenturi, encoding);
+}
 
 export default {
     createMediafile,
     writeToMediafile,
-    copyToInternal
+    copyToInternal,
+    getBlob
 };

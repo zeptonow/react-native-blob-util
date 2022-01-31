@@ -226,7 +226,7 @@ public class ReactNativeBlobUtilMediaCollection {
         promise.resolve("");
     }
 
-    public void getBlob(Uri contentUri, String encoding, Promise promise) {
+    public static void getBlob(Uri contentUri, String encoding, Promise promise) {
         Context appCtx = ReactNativeBlobUtil.RCTContext.getApplicationContext();
         ContentResolver resolver = appCtx.getContentResolver();
         try {

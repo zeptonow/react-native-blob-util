@@ -793,4 +793,6 @@ export interface MediaCollection {
     writeToMediafile(uri: string, data: string)
 
     copyToInternal(contenturi: string, destpath: string)
+
+    getBlob(contenturi: string, encoding: string)
 }

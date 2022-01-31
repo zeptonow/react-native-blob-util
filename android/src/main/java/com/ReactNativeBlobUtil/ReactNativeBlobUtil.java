@@ -446,4 +446,9 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
         ReactNativeBlobUtilMediaCollection.copyToInternal(Uri.parse(contentUri), destpath, promise);
     }
 
+    @ReactMethod
+    public void getBlob(String contentUri, String encoding,  Promise promise) {
+        ReactNativeBlobUtilMediaCollection.getBlob(Uri.parse(contentUri), encoding, promise);
+    }
+
 }
