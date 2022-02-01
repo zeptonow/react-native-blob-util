@@ -76,6 +76,7 @@ RCT_EXPORT_MODULE();
              @"MovieDir" : [ReactNativeBlobUtilFS getMovieDir],
              @"MusicDir" : [ReactNativeBlobUtilFS getMusicDir],
              @"PictureDir" : [ReactNativeBlobUtilFS getPictureDir],
+             @"ApplicationSupportDir" : [ReactNativeBlobUtilFS getApplicationSupportDir],
              };
 }
 

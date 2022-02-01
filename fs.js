@@ -23,7 +23,8 @@ const dirs = {
     SDCardDir: ReactNativeBlobUtil.SDCardDir, // Depracated
     SDCardApplicationDir: ReactNativeBlobUtil.SDCardApplicationDir, // Deprecated
     MainBundleDir: ReactNativeBlobUtil.MainBundleDir,
-    LibraryDir: ReactNativeBlobUtil.LibraryDir
+    LibraryDir: ReactNativeBlobUtil.LibraryDir,
+  ApplicationSupportDir: ReactNativeBlobUtil.ApplicationSupportDir
 };
 
 function addCode(code: string, error: Error): Error {
