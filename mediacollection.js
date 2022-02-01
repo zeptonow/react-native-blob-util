@@ -8,8 +8,8 @@ function createMediafile(filedata: Object<{ path: string, parentFolder: string, 
     return ReactNativeBlobUtil.createMediaFile(filedata, mediatype);
 }
 
-function writeToMediafile(uri: string, data: string) {
-    return ReactNativeBlobUtil.writeToMediaFile(uri, data);
+function writeToMediafile(uri: string, path: string) {
+    return ReactNativeBlobUtil.writeToMediaFile(uri, path);
 }
 
 function copyToInternal(contenturi: string, destpath: string) {

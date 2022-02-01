@@ -437,8 +437,8 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void writeToMediaFile(String fileUri, String data, Promise promise) {
-        ReactNativeBlobUtilMediaCollection.writeToMediaFile(Uri.parse(fileUri), data, promise);
+    public void writeToMediaFile(String fileUri, String path, Promise promise) {
+        ReactNativeBlobUtilMediaCollection.writeToMediaFile(Uri.parse(fileUri), path, promise);
     }
 
     @ReactMethod

@@ -790,9 +790,24 @@ export interface MediaCollection {
      */
     createMediafile(filedata: { name: string, parentFolder: string, mimeType: string }, mediatype: Mediatype): Promise<string>;
 
-    writeToMediafile(uri: string, data: string)
+    /**
+     * Copies an existing file to a mediastore file
+     * @param uri URI of the destination mediastore file
+     * @param path Path to the existing file which should be copied
+     */
+    writeToMediafile(uri: string, path: string)
 
+    /**
+     * Copies a file from the mediastore to the apps internal storage
+     * @param contenturi URI of the mediastore file
+     * @param destpath Path for the file in the internal storage
+     */
     copyToInternal(contenturi: string, destpath: string)
 
+    /**
+     * Gets the blob data for a given URI in the mediastore
+     * @param contenturi
+     * @param encoding
+     */
     getBlob(contenturi: string, encoding: string)
 }
