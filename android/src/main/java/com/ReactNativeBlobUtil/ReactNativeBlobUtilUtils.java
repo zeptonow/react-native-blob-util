@@ -6,6 +6,7 @@ import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import java.security.MessageDigest;
 import java.security.cert.CertificateException;
+import java.util.Locale;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -30,7 +31,7 @@ public class ReactNativeBlobUtilUtils {
             StringBuilder sb = new StringBuilder();
 
             for (byte b : digest) {
-                sb.append(String.format("%02x", b & 0xff));
+                sb.append(String.format(Locale.ROOT, "%02x", b & 0xff));
             }
 
             result = sb.toString();

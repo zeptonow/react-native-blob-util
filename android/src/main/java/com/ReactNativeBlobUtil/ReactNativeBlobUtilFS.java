@@ -25,6 +25,7 @@ import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -209,7 +210,7 @@ class ReactNativeBlobUtilFS {
                 return;
             }
 
-            switch (encoding.toLowerCase()) {
+            switch (encoding.toLowerCase(Locale.ROOT)) {
                 case "base64":
                     promise.resolve(Base64.encodeToString(bytes, Base64.NO_WRAP));
                     break;
@@ -1095,7 +1096,7 @@ class ReactNativeBlobUtilFS {
     private static byte[] stringToBytes(String data, String encoding) {
         if (encoding.equalsIgnoreCase("ascii")) {
             return data.getBytes(Charset.forName("US-ASCII"));
-        } else if (encoding.toLowerCase().contains("base64")) {
+        } else if (encoding.toLowerCase(Locale.ROOT).contains("base64")) {
             return Base64.decode(data, Base64.NO_WRAP);
 
         } else if (encoding.equalsIgnoreCase("utf8")) {
