@@ -64,3 +64,6 @@ export type ReactNativeBlobUtilStream = {
   _onEnd : () => void,
   _onError : () => void,
 }
+
+
+export type filedescriptor = { path: string, parentFolder: string, mimeType: string }
