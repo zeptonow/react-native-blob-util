@@ -130,7 +130,7 @@ public class ReactNativeBlobUtilMediaCollection {
                     File src = new File(normalizedData);
                     if (!src.exists()) {
                         promise.reject("ENOENT", "No such file ('" + normalizedData + "')");
-                        return;
+                        return false;
                     }
                     byte[] buf = new byte[10240];
                     int read;
@@ -179,7 +179,9 @@ public class ReactNativeBlobUtilMediaCollection {
 
         } catch (IOException e) {
             promise.reject("ReactNativeBlobUtil.createMediaFile", "Cannot write to file, file might not exist");
+            return false;
         }
+        return true;
     }
 
     public static void copyToInternal(Uri contenturi, String destpath, Promise promise) {

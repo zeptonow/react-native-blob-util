@@ -465,6 +465,10 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
             promise.reject("ReactNativeBlobUtil.createMediaFile", "invalid mediatype");
             return;
         }
+        if (path == null) {
+            promise.reject("ReactNativeBlobUtil.createMediaFile", "invalid path");
+            return;
+        }
 
         FileDescription file = new FileDescription(filedata.getString("name"), filedata.getString("mimeType"), filedata.getString("parentFolder"));
         Uri fileuri = ReactNativeBlobUtilMediaCollection.createNewMediaFile(file, ReactNativeBlobUtilMediaCollection.MediaType.valueOf(mt));
@@ -476,7 +480,7 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
 
         boolean res = ReactNativeBlobUtilMediaCollection.writeToMediaFile(fileuri, path, promise);
 
-        if(res) promise.resolve(fileuri);
+        if(res) promise.resolve(fileuri.toString());
     }
 
 }
