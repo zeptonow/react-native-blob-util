@@ -6,6 +6,7 @@
 export const ReactNativeBlobUtil: ReactNativeBlobUtilStatic;
 export type ReactNativeBlobUtil = ReactNativeBlobUtilStatic;
 export default ReactNativeBlobUtil;
+import {filedescriptor} from './types';
 
 interface ReactNativeBlobUtilStatic {
     fetch(method: Methods, url: string, headers?: { [key: string]: string }, body?: any
@@ -785,10 +786,19 @@ export type Mediatype = "Audio" | "Image" | "Video" | "Download";
 export interface MediaCollection {
     /**
      * Creates a new File in the collection.
+     * @param filedata descriptor for the media store entry
+     * @param mediatype
+     * @param path path of the file being copied
+     */
+    copyToMediaStore(filedata: filedescriptor, mediatype: Mediatype, path: string): Promise<string>;
+
+
+    /**
+     * Creates a new File in the collection.
      * @param filedata
      * @param mediatype
      */
-    createMediafile(filedata: { name: string, parentFolder: string, mimeType: string }, mediatype: Mediatype): Promise<string>;
+    createMediafile(filedata: filedescriptor, mediatype: Mediatype): Promise<string>;
 
     /**
      * Copies an existing file to a mediastore file
