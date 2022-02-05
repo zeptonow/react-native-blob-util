@@ -536,7 +536,7 @@ RCT_EXPORT_METHOD(readStream:(NSString *)path withEncoding:(NSString *)encoding 
     });
 }
 
-#pragma mark - fs.getEnvionmentDirs
+#pragma mark - fs.getEnvironmentDirs
 RCT_EXPORT_METHOD(getEnvironmentDirs:(RCTResponseSenderBlock) callback)
 {
 

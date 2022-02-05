@@ -3,6 +3,8 @@ package com.ReactNativeBlobUtil;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 
+import java.util.Locale;
+
 class ReactNativeBlobUtilConfig {
 
     public Boolean fileCache;
@@ -33,7 +35,7 @@ class ReactNativeBlobUtilConfig {
         }
         if (options.hasKey("binaryContentTypes"))
             this.binaryContentTypes = options.getArray("binaryContentTypes");
-        if (this.path != null && path.toLowerCase().contains("?append=true")) {
+        if (this.path != null && path.toLowerCase(Locale.ROOT).contains("?append=true")) {
             this.overwrite = false;
         }
         if (options.hasKey("overwrite"))

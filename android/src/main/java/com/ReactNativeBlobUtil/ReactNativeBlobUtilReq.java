@@ -54,6 +54,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.HashMap;
 
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLSocketFactory;
@@ -120,7 +121,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
     OkHttpClient client;
 
     public ReactNativeBlobUtilReq(ReadableMap options, String taskId, String method, String url, ReadableMap headers, String body, ReadableArray arrayBody, OkHttpClient client, final Callback callback) {
-        this.method = method.toUpperCase();
+        this.method = method.toUpperCase(Locale.ROOT);
         this.options = new ReactNativeBlobUtilConfig(options);
         this.taskId = taskId;
         this.url = url;
@@ -311,14 +312,14 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                         else if (value.equalsIgnoreCase("utf8"))
                             responseFormat = ResponseFormat.UTF8;
                     } else {
-                        builder.header(key.toLowerCase(), value);
-                        mheaders.put(key.toLowerCase(), value);
+                        builder.header(key.toLowerCase(Locale.ROOT), value);
+                        mheaders.put(key.toLowerCase(Locale.ROOT), value);
                     }
                 }
             }
 
             if (method.equalsIgnoreCase("post") || method.equalsIgnoreCase("put") || method.equalsIgnoreCase("patch")) {
-                String cType = getHeaderIgnoreCases(mheaders, "Content-Type").toLowerCase();
+                String cType = getHeaderIgnoreCases(mheaders, "Content-Type").toLowerCase(Locale.ROOT);
 
                 if (rawRequestBodyArray != null) {
                     requestType = RequestType.Form;
@@ -332,7 +333,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                     if (rawRequestBody.startsWith(ReactNativeBlobUtilConst.FILE_PREFIX)
                             || rawRequestBody.startsWith(ReactNativeBlobUtilConst.CONTENT_PREFIX)) {
                         requestType = RequestType.SingleFile;
-                    } else if (cType.toLowerCase().contains(";base64") || cType.toLowerCase().startsWith("application/octet")) {
+                    } else if (cType.toLowerCase(Locale.ROOT).contains(";base64") || cType.toLowerCase(Locale.ROOT).startsWith("application/octet")) {
                         cType = cType.replace(";base64", "").replace(";BASE64", "");
                         if (mheaders.containsKey("content-type"))
                             mheaders.put("content-type", cType);
@@ -718,7 +719,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
         boolean isCustomBinary = false;
         if (options.binaryContentTypes != null) {
             for (int i = 0; i < options.binaryContentTypes.size(); i++) {
-                if (ctype.toLowerCase().contains(options.binaryContentTypes.getString(i).toLowerCase())) {
+                if (ctype.toLowerCase(Locale.ROOT).contains(options.binaryContentTypes.getString(i).toLowerCase(Locale.ROOT))) {
                     isCustomBinary = true;
                     break;
                 }
@@ -730,13 +731,13 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
     private String getHeaderIgnoreCases(Headers headers, String field) {
         String val = headers.get(field);
         if (val != null) return val;
-        return headers.get(field.toLowerCase()) == null ? "" : headers.get(field.toLowerCase());
+        return headers.get(field.toLowerCase(Locale.ROOT)) == null ? "" : headers.get(field.toLowerCase(Locale.ROOT));
     }
 
     private String getHeaderIgnoreCases(HashMap<String, String> headers, String field) {
         String val = headers.get(field);
         if (val != null) return val;
-        String lowerCasedValue = headers.get(field.toLowerCase());
+        String lowerCasedValue = headers.get(field.toLowerCase(Locale.ROOT));
         return lowerCasedValue == null ? "" : lowerCasedValue;
     }
 
