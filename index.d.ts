@@ -786,6 +786,7 @@ export type Mediatype = "Audio" | "Image" | "Video" | "Download";
 export interface MediaCollection {
     /**
      * Creates a new File in the collection.
+     * Promise will resolve to content UIR or error message
      * @param filedata descriptor for the media store entry
      * @param mediatype
      * @param path path of the file being copied
@@ -805,19 +806,19 @@ export interface MediaCollection {
      * @param uri URI of the destination mediastore file
      * @param path Path to the existing file which should be copied
      */
-    writeToMediafile(uri: string, path: string)
+    writeToMediafile(uri: string, path: string): Promise<string>
 
     /**
      * Copies a file from the mediastore to the apps internal storage
      * @param contenturi URI of the mediastore file
      * @param destpath Path for the file in the internal storage
      */
-    copyToInternal(contenturi: string, destpath: string)
+    copyToInternal(contenturi: string, destpath: string): Promise<string>
 
     /**
      * Gets the blob data for a given URI in the mediastore
      * @param contenturi
      * @param encoding
      */
-    getBlob(contenturi: string, encoding: string)
+    getBlob(contenturi: string, encoding: string): Promise<string>
 }

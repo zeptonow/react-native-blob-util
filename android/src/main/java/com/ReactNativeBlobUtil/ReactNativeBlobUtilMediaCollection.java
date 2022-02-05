@@ -10,6 +10,8 @@ import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.util.Base64;
 
+import androidx.annotation.RequiresApi;
+
 import com.ReactNativeBlobUtil.Utils.FileDescription;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
@@ -103,7 +105,8 @@ public class ReactNativeBlobUtilMediaCollection {
         return null;
     }
 
-    public static void writeToMediaFile(Uri fileUri, String data, Promise promise) {
+    @RequiresApi(api = Build.VERSION_CODES.Q)
+    public static boolean writeToMediaFile(Uri fileUri, String data, Promise promise) {
         try {
             Context appCtx = ReactNativeBlobUtil.RCTContext.getApplicationContext();
             ContentResolver resolver = appCtx.getContentResolver();
@@ -145,6 +148,8 @@ public class ReactNativeBlobUtilMediaCollection {
                     descr.close();
                 } catch (Exception e) {
                     e.printStackTrace();
+                    promise.reject(new IOException("Failed to get output stream."));
+                    return false;
                 }
 
                 contentValues.clear();
@@ -153,15 +158,17 @@ public class ReactNativeBlobUtilMediaCollection {
                 stream = resolver.openOutputStream(fileUri);
                 if (stream == null) {
                     promise.reject(new IOException("Failed to get output stream."));
+                    return false;
                 }
             } catch (IOException e) {
                 // Don't leave an orphan entry in the MediaStore
                 resolver.delete(uri, null, null);
                 promise.reject(e);
+                return false;
             } finally {
                 if (stream != null) {
                     stream.close();
-                    promise.resolve("");
+                    return true;
                 }
             }
 
