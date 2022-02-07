@@ -432,29 +432,29 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
         if (mt == null) promise.reject("ReactNativeBlobUtil.createMediaFile", "invalid mediatype");
 
         FileDescription file = new FileDescription(filedata.getString("name"), filedata.getString("mimeType"), filedata.getString("parentFolder"));
-        Uri res = ReactNativeBlobUtilMediaCollection.createNewMediaFile(file, ReactNativeBlobUtilMediaCollection.MediaType.valueOf(mt));
+        Uri res = ReactNativeBlobUtilMediaCollection.createNewMediaFile(file, ReactNativeBlobUtilMediaCollection.MediaType.valueOf(mt), this.getReactApplicationContext());
         if (res != null) promise.resolve(res.toString());
         else promise.reject("ReactNativeBlobUtil.createMediaFile", "File could not be created");
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.Q)
     @ReactMethod
     public void writeToMediaFile(String fileUri, String path, Promise promise) {
         boolean res = ReactNativeBlobUtilMediaCollection.writeToMediaFile(Uri.parse(fileUri), path, promise);
         if(res) promise.resolve("Success");
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.Q)
     @ReactMethod
     public void copyToInternal(String contentUri, String destpath, Promise promise) {
         ReactNativeBlobUtilMediaCollection.copyToInternal(Uri.parse(contentUri), destpath, promise);
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.Q)
     @ReactMethod
     public void getBlob(String contentUri, String encoding, Promise promise) {
         ReactNativeBlobUtilMediaCollection.getBlob(Uri.parse(contentUri), encoding, promise);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.Q)
     @ReactMethod
     public void copyToMediaStore(ReadableMap filedata, String mt, String path, Promise promise) {
         if (!(filedata.hasKey("name") && filedata.hasKey("parentFolder") && filedata.hasKey("mimeType"))) {
@@ -471,7 +471,7 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
         }
 
         FileDescription file = new FileDescription(filedata.getString("name"), filedata.getString("mimeType"), filedata.getString("parentFolder"));
-        Uri fileuri = ReactNativeBlobUtilMediaCollection.createNewMediaFile(file, ReactNativeBlobUtilMediaCollection.MediaType.valueOf(mt));
+        Uri fileuri = ReactNativeBlobUtilMediaCollection.createNewMediaFile(file, ReactNativeBlobUtilMediaCollection.MediaType.valueOf(mt), this.getReactApplicationContext());
 
         if (fileuri == null) {
             promise.reject("ReactNativeBlobUtil.createMediaFile", "File could not be created");
@@ -479,7 +479,6 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
         }
 
         boolean res = ReactNativeBlobUtilMediaCollection.writeToMediaFile(fileuri, path, promise);
-
         if(res) promise.resolve(fileuri.toString());
     }
 
