@@ -45,6 +45,75 @@ class ReactNativeBlobUtilFS {
     }
 
     /**
+     * Write string with encoding to file (used for mediastore)
+     *
+     * @param path     Destination file path.
+     * @param encoding Encoding of the string.
+     * @param data     Array passed from JS context.
+     */
+    static boolean writeFile(String path, String encoding, String data, final boolean append) {
+        try {
+            int written;
+            File f = new File(path);
+            File dir = f.getParentFile();
+            if (!f.exists()) {
+                if (dir != null && !dir.exists()) {
+                    if (!dir.mkdirs() && !dir.exists()) {
+                        return false;
+                    }
+                }
+                if (!f.createNewFile()) {
+                    return false;
+                }
+            }
+
+            // write data from a file
+            if (encoding.equalsIgnoreCase(ReactNativeBlobUtilConst.DATA_ENCODE_URI)) {
+                String normalizedData = ReactNativeBlobUtilUtils.normalizePath(data);
+                File src = new File(normalizedData);
+                if (!src.exists()) {
+                    return false;
+                }
+                byte[] buffer = new byte[10240];
+                int read;
+                written = 0;
+                FileInputStream fin = null;
+                FileOutputStream fout = null;
+                try {
+                    fin = new FileInputStream(src);
+                    fout = new FileOutputStream(f, append);
+                    while ((read = fin.read(buffer)) > 0) {
+                        fout.write(buffer, 0, read);
+                        written += read;
+                    }
+                } finally {
+                    if (fin != null) {
+                        fin.close();
+                    }
+                    if (fout != null) {
+                        fout.close();
+                    }
+                }
+            } else {
+                byte[] bytes = ReactNativeBlobUtilUtils.stringToBytes(data, encoding);
+                FileOutputStream fout = new FileOutputStream(f, append);
+                try {
+                    fout.write(bytes);
+                    written = bytes.length;
+                } finally {
+                    fout.close();
+                }
+            }
+            return true;
+        } catch (FileNotFoundException e) {
+            // According to https://docs.oracle.com/javase/7/docs/api/java/io/FileOutputStream.html
+            return false;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
      * Write string with encoding to file
      *
      * @param path     Destination file path.
@@ -57,7 +126,6 @@ class ReactNativeBlobUtilFS {
             int written;
             File f = new File(path);
             File dir = f.getParentFile();
-
             if (!f.exists()) {
                 if (dir != null && !dir.exists()) {
                     if (!dir.mkdirs() && !dir.exists()) {

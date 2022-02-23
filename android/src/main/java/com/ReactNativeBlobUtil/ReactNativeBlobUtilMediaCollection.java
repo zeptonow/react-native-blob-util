@@ -10,11 +10,10 @@ import android.os.ParcelFileDescriptor;
 import android.provider.MediaStore;
 import android.util.Base64;
 
-import androidx.annotation.RequiresApi;
-
 import com.ReactNativeBlobUtil.Utils.FileDescription;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
+import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.WritableArray;
 
 import java.io.File;
@@ -62,21 +61,29 @@ public class ReactNativeBlobUtilMediaCollection {
         return res;
     }
 
-    private static String getRelativePath(MediaType mt) {
-        if (mt == MediaType.Audio) return Environment.DIRECTORY_MUSIC;
-        if (mt == MediaType.Video) return Environment.DIRECTORY_MOVIES;
-        if (mt == MediaType.Image) return Environment.DIRECTORY_PICTURES;
-        if (mt == MediaType.Download) return Environment.DIRECTORY_DOWNLOADS;
-        return Environment.DIRECTORY_DOWNLOADS;
+    private static String getRelativePath(MediaType mt, ReactApplicationContext ctx) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (mt == MediaType.Audio) return Environment.DIRECTORY_MUSIC;
+            if (mt == MediaType.Video) return Environment.DIRECTORY_MOVIES;
+            if (mt == MediaType.Image) return Environment.DIRECTORY_PICTURES;
+            if (mt == MediaType.Download) return Environment.DIRECTORY_DOWNLOADS;
+            return Environment.DIRECTORY_DOWNLOADS;
+        } else {
+            if (mt == MediaType.Audio) return ReactNativeBlobUtilFS.getExternalFilesDirPath(ctx, Environment.DIRECTORY_MUSIC);
+            if (mt == MediaType.Video) return ReactNativeBlobUtilFS.getExternalFilesDirPath(ctx, Environment.DIRECTORY_MOVIES);
+            if (mt == MediaType.Image) return ReactNativeBlobUtilFS.getExternalFilesDirPath(ctx, Environment.DIRECTORY_PICTURES);
+            if (mt == MediaType.Download) return ReactNativeBlobUtilFS.getExternalFilesDirPath(ctx, Environment.DIRECTORY_DOWNLOADS);
+            return ReactNativeBlobUtilFS.getExternalFilesDirPath(ctx, Environment.DIRECTORY_DOWNLOADS);
+        }
     }
 
-    public static Uri createNewMediaFile(FileDescription file, MediaType mt) {
+    public static Uri createNewMediaFile(FileDescription file, MediaType mt, ReactApplicationContext ctx) {
         // Add a specific media item.
         Context appCtx = ReactNativeBlobUtil.RCTContext.getApplicationContext();
         ContentResolver resolver = appCtx.getContentResolver();
 
         ContentValues fileDetails = new ContentValues();
-        String relativePath = getRelativePath(mt);
+        String relativePath = getRelativePath(mt, ctx);
         String mimeType = file.mimeType;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -91,12 +98,24 @@ public class ReactNativeBlobUtilMediaCollection {
             // Keeps a handle to the new file's URI in case we need to modify it later.
             return resolver.insert(mediauri, fileDetails);
         } else {
-            File directory = Environment.getExternalStoragePublicDirectory(relativePath);
-            if (directory.canWrite()) {
-                File f = new File(relativePath + '/' + file.getFullPath());
+            File f = new File(relativePath + file.getFullPath());
+            if (true) {
                 if (!f.exists()) {
-                    boolean result = f.mkdirs();
-                    if (result) return Uri.fromFile(f);
+                    File parent = f.getParentFile();
+                    if (parent != null && !parent.exists() && !parent.mkdirs()) {
+                        return null;
+                    }
+                    try {
+                        if (f.createNewFile()) ;
+                        {
+                            return Uri.fromFile(f);
+                        }
+                    } catch (IOException ioException) {
+                        return null;
+                    }
+
+                } else {
+                    return Uri.fromFile(f);
                 }
 
             }
@@ -105,83 +124,84 @@ public class ReactNativeBlobUtilMediaCollection {
         return null;
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.Q)
     public static boolean writeToMediaFile(Uri fileUri, String data, Promise promise) {
-        try {
-            Context appCtx = ReactNativeBlobUtil.RCTContext.getApplicationContext();
-            ContentResolver resolver = appCtx.getContentResolver();
-
-            // set pending
-            ContentValues contentValues = new ContentValues();
-            contentValues.put(MediaStore.MediaColumns.IS_PENDING, 1);
-            resolver.update(fileUri, contentValues, null, null);
-
-            // write data
-            OutputStream stream = null;
-            Uri uri = null;
-
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             try {
-                ParcelFileDescriptor descr;
+                Context appCtx = ReactNativeBlobUtil.RCTContext.getApplicationContext();
+                ContentResolver resolver = appCtx.getContentResolver();
+
+                // set pending doesn't work right now. We would have to requery for the item
+                //ContentValues contentValues = new ContentValues();
+                //contentValues.put(MediaStore.MediaColumns.IS_PENDING, 1);
+                //resolver.update(fileUri, contentValues, null, null);
+
+                // write data
+                OutputStream stream = null;
+                Uri uri = null;
+
                 try {
-                    assert fileUri != null;
-                    descr = appCtx.getContentResolver().openFileDescriptor(fileUri, "w");
-                    assert descr != null;
-                    String normalizedData = ReactNativeBlobUtilUtils.normalizePath(data);
-                    File src = new File(normalizedData);
-                    if (!src.exists()) {
-                        promise.reject("ENOENT", "No such file ('" + normalizedData + "')");
+                    ParcelFileDescriptor descr;
+                    try {
+                        assert fileUri != null;
+                        descr = appCtx.getContentResolver().openFileDescriptor(fileUri, "w");
+                        assert descr != null;
+                        String normalizedData = ReactNativeBlobUtilUtils.normalizePath(data);
+                        File src = new File(normalizedData);
+                        if (!src.exists()) {
+                            promise.reject("ENOENT", "No such file ('" + normalizedData + "')");
+                            return false;
+                        }
+                        byte[] buf = new byte[10240];
+                        int read;
+
+                        FileInputStream fin = new FileInputStream(src);
+                        FileOutputStream out = new FileOutputStream(descr.getFileDescriptor());
+
+                        while ((read = fin.read(buf)) > 0) {
+                            out.write(buf, 0, read);
+                        }
+
+                        fin.close();
+                        out.close();
+                        descr.close();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        promise.reject(new IOException("Failed to get output stream."));
                         return false;
                     }
-                    byte[] buf = new byte[10240];
-                    int read;
-                    int written = 0;
 
-                    FileInputStream fin = new FileInputStream(src);
-                    FileOutputStream out = new FileOutputStream(descr.getFileDescriptor());
-
-                    while ((read = fin.read(buf)) > 0) {
-                        out.write(buf, 0, read);
+                    //contentValues.clear();
+                    //contentValues.put(MediaStore.Video.Media.IS_PENDING, 0);
+                    //appCtx.getContentResolver().update(fileUri, contentValues, null, null);
+                    stream = resolver.openOutputStream(fileUri);
+                    if (stream == null) {
+                        promise.reject(new IOException("Failed to get output stream."));
+                        return false;
                     }
-
-                    fin.close();
-                    out.close();
-                    descr.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    promise.reject(new IOException("Failed to get output stream."));
+                } catch (IOException e) {
+                    // Don't leave an orphan entry in the MediaStore
+                    resolver.delete(uri, null, null);
+                    promise.reject(e);
                     return false;
+                } finally {
+                    if (stream != null) {
+                        stream.close();
+                    }
                 }
 
-                contentValues.clear();
-                contentValues.put(MediaStore.Video.Media.IS_PENDING, 0);
-                appCtx.getContentResolver().update(fileUri, contentValues, null, null);
-                stream = resolver.openOutputStream(fileUri);
-                if (stream == null) {
-                    promise.reject(new IOException("Failed to get output stream."));
-                    return false;
-                }
+                // remove pending
+                //contentValues = new ContentValues();
+                //contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0);
+                //resolver.update(fileUri, contentValues, null, null);
+
             } catch (IOException e) {
-                // Don't leave an orphan entry in the MediaStore
-                resolver.delete(uri, null, null);
-                promise.reject(e);
+                promise.reject("ReactNativeBlobUtil.createMediaFile", "Cannot write to file, file might not exist");
                 return false;
-            } finally {
-                if (stream != null) {
-                    stream.close();
-                    return true;
-                }
             }
-
-            // remove pending
-            contentValues = new ContentValues();
-            contentValues.put(MediaStore.MediaColumns.IS_PENDING, 0);
-            resolver.update(fileUri, contentValues, null, null);
-
-        } catch (IOException e) {
-            promise.reject("ReactNativeBlobUtil.createMediaFile", "Cannot write to file, file might not exist");
-            return false;
+            return true;
+        } else {
+            return ReactNativeBlobUtilFS.writeFile(ReactNativeBlobUtilUtils.normalizePath(fileUri.toString()), ReactNativeBlobUtilConst.DATA_ENCODE_URI, data, false);
         }
-        return true;
     }
 
     public static void copyToInternal(Uri contenturi, String destpath, Promise promise) {
@@ -190,10 +210,16 @@ public class ReactNativeBlobUtilMediaCollection {
 
         InputStream in = null;
         OutputStream out = null;
+        File f = new File((destpath));
 
-        if (!new File(destpath).exists()) {
+        if (!f.exists()) {
             try {
-                boolean result = new File(destpath).createNewFile();
+                File parent = f.getParentFile();
+                if (parent != null && !parent.exists() && !parent.mkdirs()) {
+                    promise.reject("ReactNativeBlobUtil.copyToInternal: Cannot create parent folders<'" + destpath);
+                    return;
+                }
+                boolean result = f.createNewFile();
                 if (!result) {
                     promise.reject("ReactNativeBlobUtil.copyToInternal: Destination file at '" + destpath + "' already exists");
                     return;
@@ -240,9 +266,7 @@ public class ReactNativeBlobUtilMediaCollection {
         ContentResolver resolver = appCtx.getContentResolver();
         try {
             InputStream in = resolver.openInputStream(contentUri);
-            int length = 0;
-
-            length = in.available();
+            int length = in.available();
 
             byte[] bytes = new byte[length];
             int bytesRead = in.read(bytes);
@@ -260,14 +284,11 @@ public class ReactNativeBlobUtilMediaCollection {
                 case "ascii":
                     WritableArray asciiResult = Arguments.createArray();
                     for (byte b : bytes) {
-                        asciiResult.pushInt((int) b);
+                        asciiResult.pushInt(b);
                     }
                     promise.resolve(asciiResult);
                     break;
-                case "utf8":
-                    promise.resolve(new String(bytes));
-                    break;
-                default:
+                default: // covers utf-8
                     promise.resolve(new String(bytes));
                     break;
             }
