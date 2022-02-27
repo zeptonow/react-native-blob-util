@@ -72,6 +72,10 @@ public class ReactNativeBlobUtilFileResp extends ResponseBody {
 
     @Override
     public long contentLength() {
+        if (originalBody.contentLength() > Integer.MAX_VALUE) {
+            // This is a workaround for a bug Okio buffer where it can't handle larger than int.
+            return Integer.MAX_VALUE;
+        }
         return originalBody.contentLength();
     }
 
