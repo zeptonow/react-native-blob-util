@@ -790,6 +790,8 @@ class ReactNativeBlobUtilFS {
                 promise.reject("EINVAL", "Invalid algorithm '" + algorithm + "', must be one of md5, sha1, sha224, sha256, sha384, sha512");
                 return;
             }
+            
+            path = ReactNativeBlobUtilUtils.normalizePath(path);
 
             File file = new File(path);
 
