@@ -9,7 +9,11 @@ function createMediafile(fd: filedescriptor, mediatype: string): Promise {
 }
 
 function writeToMediafile(uri: string, path: string) {
-    return ReactNativeBlobUtil.writeToMediaFile(uri, path);
+    return ReactNativeBlobUtil.writeToMediaFile(uri, path, false);
+}
+
+function writeToMediafileWithTransform(uri: string, path: string) {
+    return ReactNativeBlobUtil.writeToMediaFile(uri, path, true);
 }
 
 function copyToInternal(contenturi: string, destpath: string) {

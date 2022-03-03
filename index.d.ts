@@ -831,6 +831,13 @@ export interface MediaCollection {
     writeToMediafile(uri: string, path: string): Promise<string>
 
     /**
+     * Copies and transforms an existing file to a mediastore file. Make sure FileTransformer is set
+     * @param uri URI of the destination mediastore file
+     * @param path Path to the existing file which should be copied
+     */
+    writeToMediafileWithTransform(uri: string, path: string): Promise<string>
+
+    /**
      * Copies a file from the mediastore to the apps internal storage
      * @param contenturi URI of the mediastore file
      * @param destpath Path for the file in the internal storage

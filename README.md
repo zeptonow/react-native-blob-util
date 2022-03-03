@@ -696,6 +696,14 @@ await ReactNativeBlobUtil.MediaCollection.writeToMediafile('content://....', // 
 );
 ````
 
+Copies and tranforms data from a file in the apps storage to an existing entry of the Media Store. NOTE: you must set a transformer on the file in order for the transformation to happen (see [Setting a File Transformer](#Setting-A-File-Transformer)).
+
+````js
+await ReactNativeBlobUtil.MediaCollection.writeToMediafileWithTransform('content://....', // content uri of the entry in the media storage
+        localpath // path to the file that should be copied
+);
+````
+
 #### copyToInternal
 Copies an entry form the media storage to the apps internal storage.
 ````js

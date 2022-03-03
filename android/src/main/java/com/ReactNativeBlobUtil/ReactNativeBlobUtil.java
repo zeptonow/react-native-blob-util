@@ -438,8 +438,8 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void writeToMediaFile(String fileUri, String path, Promise promise) {
-        boolean res = ReactNativeBlobUtilMediaCollection.writeToMediaFile(Uri.parse(fileUri), path, promise);
+    public void writeToMediaFile(String fileUri, String path, boolean transformFile, Promise promise) {
+        boolean res = ReactNativeBlobUtilMediaCollection.writeToMediaFile(Uri.parse(fileUri), path, transformFile, promise);
         if(res) promise.resolve("Success");
     }
 
@@ -478,7 +478,7 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
             return;
         }
 
-        boolean res = ReactNativeBlobUtilMediaCollection.writeToMediaFile(fileuri, path, promise);
+        boolean res = ReactNativeBlobUtilMediaCollection.writeToMediaFile(fileuri, path, false, promise);
         if(res) promise.resolve(fileuri.toString());
     }
 
