@@ -442,6 +442,7 @@ class ReactNativeBlobUtilFS {
      * @param promise JS promise
      */
     static void mkdir(String path, Promise promise) {
+        path = ReactNativeBlobUtilUtils.normalizePath(path);
         File dest = new File(path);
         if (dest.exists()) {
             promise.reject("EEXIST", (dest.isDirectory() ? "Folder" : "File") + " '" + path + "' already exists");
@@ -469,6 +470,7 @@ class ReactNativeBlobUtilFS {
      */
     static void cp(String path, String dest, Callback callback) {
         path = ReactNativeBlobUtilUtils.normalizePath(path);
+        dest = ReactNativeBlobUtilUtils.normalizePath(dest);
         InputStream in = null;
         OutputStream out = null;
         String message = "";
@@ -525,6 +527,8 @@ class ReactNativeBlobUtilFS {
      * @param callback JS context callback
      */
     static void mv(String path, String dest, Callback callback) {
+        path = ReactNativeBlobUtilUtils.normalizePath(path);
+        dest = ReactNativeBlobUtilUtils.normalizePath(dest);
         File src = new File(path);
         if (!src.exists()) {
             callback.invoke("Source file at path `" + path + "` does not exist");
@@ -628,6 +632,7 @@ class ReactNativeBlobUtilFS {
     static void slice(String path, String dest, int start, int end, String encode, Promise promise) {
         try {
             path = ReactNativeBlobUtilUtils.normalizePath(path);
+            dest = ReactNativeBlobUtilUtils.normalizePath(dest);
             File source = new File(path);
             if (source.isDirectory()) {
                 promise.reject("EISDIR", "Expecting a file but '" + path + "' is a directory");
@@ -883,6 +888,7 @@ class ReactNativeBlobUtilFS {
      */
     static void createFileASCII(String path, ReadableArray data, Promise promise) {
         try {
+            path = ReactNativeBlobUtilUtils.normalizePath(path);
             File dest = new File(path);
             boolean created = dest.createNewFile();
             if (!created) {
