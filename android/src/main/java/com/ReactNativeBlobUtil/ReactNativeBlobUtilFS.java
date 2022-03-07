@@ -54,6 +54,7 @@ class ReactNativeBlobUtilFS {
     static boolean writeFile(String path, String encoding, String data, final boolean append) {
         try {
             int written;
+            path = ReactNativeBlobUtilUtils.normalizePath(path);
             File f = new File(path);
             File dir = f.getParentFile();
             if (!f.exists()) {
