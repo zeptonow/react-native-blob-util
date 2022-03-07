@@ -31,6 +31,7 @@ function copyToMediaStore(fd: filedescriptor, mediatype: string, path: string) {
 export default {
     createMediafile,
     writeToMediafile,
+    writeToMediafileWithTransform,
     copyToInternal,
     getBlob,
     copyToMediaStore
