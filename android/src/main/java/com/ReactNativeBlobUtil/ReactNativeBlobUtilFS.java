@@ -839,6 +839,7 @@ class ReactNativeBlobUtilFS {
      */
     static void createFile(String path, String data, String encoding, Promise promise) {
         try {
+            path = ReactNativeBlobUtilUtils.normalizePath(path);
             File dest = new File(path);
             boolean created = dest.createNewFile();
             if (encoding.equals(ReactNativeBlobUtilConst.DATA_ENCODE_URI)) {
