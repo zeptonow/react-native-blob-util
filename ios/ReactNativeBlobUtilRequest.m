@@ -406,8 +406,13 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
             if (!fileTransformer) {
                 errMsg = @"Transform file specified but file transfomer not set";
             } else {
-                NSData* transformedData = [fileTransformer onWriteFile:respData];
-                [writeStream write:[transformedData bytes] maxLength:[transformedData length]];
+                @try{
+                    NSData* transformedData = [fileTransformer onWriteFile:respData];
+                    [writeStream write:[transformedData bytes] maxLength:[transformedData length]];
+                } @catch(NSException * ex)
+                {
+                    errMsg = [NSString stringWithFormat:@"Exception on File Transformer: '%@' ", [ex description]];
+                }
             }
         }
         [writeStream close];

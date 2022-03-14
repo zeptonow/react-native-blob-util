@@ -538,7 +538,13 @@ NSMutableDictionary *fileStreams = nil;
         if (transformFile) {
             NSObject<FileTransformer>* fileTransformer = [ReactNativeBlobUtilFileTransformer getFileTransformer];
             if (fileTransformer) {
-                fileContent = [fileTransformer onReadFile:fileContent];
+                @try{
+                    fileContent = [fileTransformer onReadFile:fileContent];
+                } @catch (NSException * ex)
+                {
+                    onComplete(nil, @"EUNSPECIFIED", [NSString stringWithFormat:@"Exception on File Transformer: '%@' ", [ex description]]);
+                    return;
+                }
             } else {
                 onComplete(nil, @"EUNSPECIFIED", @"Transform specified but transformer not set");
                 return;

@@ -578,6 +578,9 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                             }
                             try (FileOutputStream fos = new FileOutputStream(file)) {
                                 fos.write(ReactNativeBlobUtilFileTransformer.sharedFileTransformer.onWriteFile(b));
+                            } catch(Exception e) {
+                                callback.invoke("Error from file transformer:" + e.getLocalizedMessage(), null);
+                                return;
                             }
                             callback.invoke(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, this.destPath);
                             return;
