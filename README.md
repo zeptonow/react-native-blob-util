@@ -303,6 +303,26 @@ ReactNativeBlobUtil
 
 **These files won't be removed automatically, please refer to [Cache File Management](#user-content-cache-file-management)**
 
+**Use File Transformer**
+
+If you need to perform any processing on the bytes prior to it being written into storage (e.g. if you want it to be encrypted) then you can use `transform` option.  NOTE: you will need to set a transformer on the libray (see [Setting a File Transformer](#Setting-A-File-Transformer))
+
+```js
+ReactNativeBlobUtil
+        .config({
+            // response data will be saved to this path if it has access right.
+            path: dirs.DocumentDir + '/path-to-file.anything',
+            transform: true
+        })
+        .fetch('GET', 'http://www.example.com/file/example.zip', {
+            //some headers ..
+        })
+        .then((res) => {
+            // the path should be dirs.DocumentDir + 'path-to-file.anything'
+            console.log('The file saved to ', res.path())
+        })
+```
+
 #### Upload example : Dropbox [files-upload](https://www.dropbox.com/developers/documentation/http/documentation#files-upload) API
 
 `react-native-blob-util` will convert the base64 string in `body` to binary format using native API, this process is done in a separated thread so that it won't block your GUI.
@@ -676,6 +696,14 @@ await ReactNativeBlobUtil.MediaCollection.writeToMediafile('content://....', // 
 );
 ````
 
+Copies and tranforms data from a file in the apps storage to an existing entry of the Media Store. NOTE: you must set a transformer on the file in order for the transformation to happen (see [Setting a File Transformer](#Setting-A-File-Transformer)).
+
+````js
+await ReactNativeBlobUtil.MediaCollection.writeToMediafileWithTransform('content://....', // content uri of the entry in the media storage
+        localpath // path to the file that should be copied
+);
+````
+
 #### copyToInternal
 Copies an entry form the media storage to the apps internal storage.
 ````js
@@ -697,8 +725,10 @@ File Access APIs
 - [dirs](https://github.com/RonRadtke/react-native-blob-util/wiki/File-System-Access-API#dirs)
 - [createFile](https://github.com/RonRadtke/react-native-blob-util/wiki/File-System-Access-API#createfilepath-data-encodingpromise)
 - [writeFile (0.6.0)](https://github.com/RonRadtke/react-native-blob-util/wiki/File-System-Access-API#writefilepathstring-contentstring--array-encodingstring-appendbooleanpromise)
+- writeFileWithTransform
 - [appendFile (0.6.0) ](https://github.com/RonRadtke/react-native-blob-util/wiki/File-System-Access-API#appendfilepathstring-contentstring--arraynumber-encodingstring-promisenumber)
 - [readFile (0.6.0)](https://github.com/RonRadtke/react-native-blob-util/wiki/File-System-Access-API#readfilepath-encodingpromise)
+- readFileWithTransform
 - [readStream](https://github.com/RonRadtke/react-native-blob-util/wiki/File-System-Access-API#readstreampath-encoding-buffersize-interval-promisernfbreadstream)
 - [hash (0.10.9)](https://github.com/RonRadtke/react-native-blob-util/wiki/File-System-Access-API#hashpath-algorithm-promise)
 - [writeStream](https://github.com/RonRadtke/react-native-blob-util/wiki/File-System-Access-API#writestreampathstring-encodingstringpromise)
@@ -903,12 +933,58 @@ ReactNativeBlobUtil.config({
         })
 ```
 
+### Transform Files
+
+Sometimes you may need the files to be transformed after reading from storage or before writing into storage (eg encryption/decyrption). In order to perform the transformations, use `readFileWithTransform` and `writeFileWithTransform`. NOTE: you must set a transformer on the file in order for the transformation to happen (see [Setting a File Transformer](#Setting-A-File-Transformer)).
+
 ## Web API Polyfills
 
 After `0.8.0` we've made some [Web API polyfills](https://github.com/RonRadtke/react-native-blob-util/wiki/Web-API-Polyfills-(experimental)) that makes some browser-based library available in RN.
 
 - Blob
 - XMLHttpRequest (Use our implementation if you're going to use it with Blob)
+
+
+## Setting A File Transformer
+
+Setting a file transformer will allow you to specify how data should be transformed whenever the library is writing into storage or reading from storage. A use case for this is if you want the files handled by this library to be encrypted. 
+
+If you want to use a file transformer, you must implement an interface defined in:
+
+[ReactNativeBlobUtilFileTransformer.h (iOS)](/ios/ReactNativeBlobUtilFileTransformer.h)
+
+[ReactNativeBlobUtilFileTransformer.java (Android)](/android/src/main/java/com/ReactNativeBlobUtil/ReactNativeBlobUtilFileTransformer.java)
+
+Then you set the File Transformer during app startup
+
+Android:
+```java
+public class MainApplication extends Application implements ReactApplication {
+    ...
+    @Override
+    public void onCreate() {
+       ...
+       ReactNativeBlobUtilFileTransformer.sharedFileTransformer = new MyCustomEncryptor(); 
+       ...
+    }
+```
+
+iOS:
+```m
+@implementation AppDelegate
+...
+- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
+{
+    ...
+    [ReactNativeBlobUtilFileTransformer setFileTransformer: MyCustomEncryptor.new];
+    ...
+}
+```
+
+Here are the places where the transformer would apply 
+- Reading a file from the file system  
+- Writing a file into the file system
+- Http response is downloaded to storage directly
 
 ## Performance Tips
 

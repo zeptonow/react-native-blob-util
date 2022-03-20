@@ -3,6 +3,7 @@ export type ReactNativeBlobUtilConfig = {
   Progress: any,
   UploadProgress: any,
   fileCache : bool,
+  transformFile: boolean;
   path : string,
   appendExt : string,
   session : string,
