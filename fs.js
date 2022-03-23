@@ -243,7 +243,7 @@ function appendFile(path: string, data: string | Array<number>, encoding?: strin
             return Promise.reject(addCode('EINVAL'), new TypeError(`"data" must be a String when encoding is "utf8" or "base64", but it is "${typeof data}"`));
         }
         else
-            return ReactNativeBlobUtil.writeFile(path, encoding, data, true);
+            return ReactNativeBlobUtil.writeFile(path, encoding, data, false, true);
     }
 }
 
