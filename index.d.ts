@@ -490,7 +490,7 @@ export interface ReactNativeBlobUtilWriteStream {
 
     write(data: string): Promise<void>;
 
-    close(): void;
+    close(): Promise<void>;
 }
 
 export interface ReactNativeBlobUtilReadStream {
