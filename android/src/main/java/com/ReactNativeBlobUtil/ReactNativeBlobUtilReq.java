@@ -185,6 +185,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                         DownloadManager downloadManager = (DownloadManager) appCtx.getSystemService(Context.DOWNLOAD_SERVICE);
 
                         DownloadManager.Query query = new DownloadManager.Query();
+                        query.setFilterById(downloadManagerId);
 
                         Cursor cursor = downloadManager.query(query);
 
