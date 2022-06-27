@@ -358,6 +358,30 @@ class ReactNativeBlobUtilFS {
 
         return res;
     }
+    /**
+     * Static method that returns legacy system folders to JS context (usage of deprecated functions since these retunr different folders)
+     *
+     * @param ctx React Native application context
+     */
+    static Map<String, Object> getLegacySystemfolders(ReactApplicationContext ctx) {
+        Map<String, Object> res = new HashMap<>();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) return ReactNativeBlobUtilFS.getSystemfolders(ctx);
+
+        res.put("LegacyDCIMDir", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getAbsolutePath());
+        res.put("LegacyPictureDir", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath());
+        res.put("LegacyMusicDir", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).getAbsolutePath());
+        res.put("LegacyDownloadDir", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getAbsolutePath());
+        res.put("LegacyMovieDir", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES).getAbsolutePath());
+        res.put("LegacyRingtoneDir", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_RINGTONES).getAbsolutePath());
+
+        String state = Environment.getExternalStorageState();
+        if (state.equals(Environment.MEDIA_MOUNTED)) {
+            res.put("LegacySDCardDir", Environment.getExternalStorageDirectory().getAbsolutePath());
+        }
+
+        return res;
+    }
 
     static String getExternalFilesDirPath(ReactApplicationContext ctx, String type) {
         File dir = ctx.getExternalFilesDir(type);
