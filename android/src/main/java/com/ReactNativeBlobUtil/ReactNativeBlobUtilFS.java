@@ -9,6 +9,8 @@ import android.os.Environment;
 import android.os.StatFs;
 import android.util.Base64;
 
+import androidx.annotation.NonNull;
+
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.Promise;
@@ -358,11 +360,15 @@ class ReactNativeBlobUtilFS {
 
         return res;
     }
+
     /**
      * Static method that returns legacy system folders to JS context (usage of deprecated functions since these retunr different folders)
      *
      * @param ctx React Native application context
      */
+
+    @NonNull
+    @SuppressWarnings("deprecation")
     static Map<String, Object> getLegacySystemfolders(ReactApplicationContext ctx) {
         Map<String, Object> res = new HashMap<>();
 
@@ -833,7 +839,7 @@ class ReactNativeBlobUtilFS {
                 promise.reject("EINVAL", "Invalid algorithm '" + algorithm + "', must be one of md5, sha1, sha224, sha256, sha384, sha512");
                 return;
             }
-            
+
             path = ReactNativeBlobUtilUtils.normalizePath(path);
 
             File file = new File(path);
