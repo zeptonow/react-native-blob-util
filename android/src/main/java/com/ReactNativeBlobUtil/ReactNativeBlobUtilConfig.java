@@ -8,6 +8,7 @@ import java.util.Locale;
 class ReactNativeBlobUtilConfig {
 
     public Boolean fileCache;
+    public Boolean transformFile;
     public String path;
     public String appendExt;
     public ReadableMap addAndroidDownloads;
@@ -26,6 +27,7 @@ class ReactNativeBlobUtilConfig {
         if (options == null)
             return;
         this.fileCache = options.hasKey("fileCache") && options.getBoolean("fileCache");
+        this.transformFile = options.hasKey("transformFile") ? options.getBoolean("transformFile") : false;
         this.path = options.hasKey("path") ? options.getString("path") : null;
         this.appendExt = options.hasKey("appendExt") ? options.getString("appendExt") : "";
         this.trusty = options.hasKey("trusty") && options.getBoolean("trusty");

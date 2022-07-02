@@ -54,6 +54,7 @@ class ReactNativeBlobUtilFS {
     static boolean writeFile(String path, String encoding, String data, final boolean append) {
         try {
             int written;
+            path = ReactNativeBlobUtilUtils.normalizePath(path);
             File f = new File(path);
             File dir = f.getParentFile();
             if (!f.exists()) {
@@ -121,7 +122,7 @@ class ReactNativeBlobUtilFS {
      * @param data     Array passed from JS context.
      * @param promise  RCT Promise
      */
-    static void writeFile(String path, String encoding, String data, final boolean append, final Promise promise) {
+    static void writeFile(String path, String encoding, String data, final boolean transformFile, final boolean append, final Promise promise) {
         try {
             int written;
             File f = new File(path);
@@ -169,6 +170,12 @@ class ReactNativeBlobUtilFS {
                 }
             } else {
                 byte[] bytes = ReactNativeBlobUtilUtils.stringToBytes(data, encoding);
+                if (transformFile) {
+                    if (ReactNativeBlobUtilFileTransformer.sharedFileTransformer == null) {
+                        throw new IllegalStateException("Write file with transform was specified but the shared file transformer is not set");
+                    }
+                    bytes = ReactNativeBlobUtilFileTransformer.sharedFileTransformer.onWriteFile(bytes);
+                }
                 FileOutputStream fout = new FileOutputStream(f, append);
                 try {
                     fout.write(bytes);
@@ -237,7 +244,7 @@ class ReactNativeBlobUtilFS {
      * @param encoding Encoding of read stream.
      * @param promise  JS promise
      */
-    static void readFile(String path, String encoding, final Promise promise) {
+    static void readFile(String path, String encoding, final boolean transformFile, final Promise promise) {
         String resolved = ReactNativeBlobUtilUtils.normalizePath(path);
         if (resolved != null)
             path = resolved;
@@ -278,6 +285,13 @@ class ReactNativeBlobUtilFS {
             if (bytesRead < length) {
                 promise.reject("EUNSPECIFIED", "Read only " + bytesRead + " bytes of " + length);
                 return;
+            }
+
+            if (transformFile) {
+                if (ReactNativeBlobUtilFileTransformer.sharedFileTransformer == null) {
+                    throw new IllegalStateException("Read file with transform was specified but the shared file transformer is not set");
+                }
+                bytes = ReactNativeBlobUtilFileTransformer.sharedFileTransformer.onReadFile(bytes);
             }
 
             switch (encoding.toLowerCase(Locale.ROOT)) {
@@ -441,6 +455,7 @@ class ReactNativeBlobUtilFS {
      * @param promise JS promise
      */
     static void mkdir(String path, Promise promise) {
+        path = ReactNativeBlobUtilUtils.normalizePath(path);
         File dest = new File(path);
         if (dest.exists()) {
             promise.reject("EEXIST", (dest.isDirectory() ? "Folder" : "File") + " '" + path + "' already exists");
@@ -468,6 +483,7 @@ class ReactNativeBlobUtilFS {
      */
     static void cp(String path, String dest, Callback callback) {
         path = ReactNativeBlobUtilUtils.normalizePath(path);
+        dest = ReactNativeBlobUtilUtils.normalizePath(dest);
         InputStream in = null;
         OutputStream out = null;
         String message = "";
@@ -524,6 +540,8 @@ class ReactNativeBlobUtilFS {
      * @param callback JS context callback
      */
     static void mv(String path, String dest, Callback callback) {
+        path = ReactNativeBlobUtilUtils.normalizePath(path);
+        dest = ReactNativeBlobUtilUtils.normalizePath(dest);
         File src = new File(path);
         if (!src.exists()) {
             callback.invoke("Source file at path `" + path + "` does not exist");
@@ -627,6 +645,7 @@ class ReactNativeBlobUtilFS {
     static void slice(String path, String dest, int start, int end, String encode, Promise promise) {
         try {
             path = ReactNativeBlobUtilUtils.normalizePath(path);
+            dest = ReactNativeBlobUtilUtils.normalizePath(dest);
             File source = new File(path);
             if (source.isDirectory()) {
                 promise.reject("EISDIR", "Expecting a file but '" + path + "' is a directory");
@@ -790,6 +809,8 @@ class ReactNativeBlobUtilFS {
                 promise.reject("EINVAL", "Invalid algorithm '" + algorithm + "', must be one of md5, sha1, sha224, sha256, sha384, sha512");
                 return;
             }
+            
+            path = ReactNativeBlobUtilUtils.normalizePath(path);
 
             File file = new File(path);
 
@@ -837,6 +858,7 @@ class ReactNativeBlobUtilFS {
      */
     static void createFile(String path, String data, String encoding, Promise promise) {
         try {
+            path = ReactNativeBlobUtilUtils.normalizePath(path);
             File dest = new File(path);
             boolean created = dest.createNewFile();
             if (encoding.equals(ReactNativeBlobUtilConst.DATA_ENCODE_URI)) {
@@ -879,6 +901,7 @@ class ReactNativeBlobUtilFS {
      */
     static void createFileASCII(String path, ReadableArray data, Promise promise) {
         try {
+            path = ReactNativeBlobUtilUtils.normalizePath(path);
             File dest = new File(path);
             boolean created = dest.createNewFile();
             if (!created) {

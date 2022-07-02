@@ -26,7 +26,6 @@ import okio.BufferedSink;
 
 class ReactNativeBlobUtilBody extends RequestBody {
 
-    private InputStream requestStream;
     private long contentLength = 0;
     private ReadableArray form;
     private String mTaskId;
@@ -71,12 +70,10 @@ class ReactNativeBlobUtilBody extends RequestBody {
         try {
             switch (requestType) {
                 case SingleFile:
-                    requestStream = getRequestStream();
-                    contentLength = requestStream.available();
+                    contentLength = getRequestStream().available();
                     break;
                 case AsIs:
                     contentLength = this.rawBody.getBytes().length;
-                    requestStream = new ByteArrayInputStream(this.rawBody.getBytes());
                     break;
                 case Others:
                     break;
@@ -98,13 +95,40 @@ class ReactNativeBlobUtilBody extends RequestBody {
         this.form = body;
         try {
             bodyCache = createMultipartBodyCache();
-            requestStream = new FileInputStream(bodyCache);
             contentLength = bodyCache.length();
         } catch (Exception ex) {
             ex.printStackTrace();
             ReactNativeBlobUtilUtils.emitWarningEvent("ReactNativeBlobUtil failed to create request multipart body :" + ex.getLocalizedMessage());
         }
         return this;
+    }
+
+    // This organizes the input stream initialization logic into a method. This allows:
+    // 1) Initialization to be deferred until it's needed (when we are ready to pipe it into the BufferedSink)
+    // 2) The stream to be initialized and used as many times as necessary. When okhttp runs into
+    //    a connection error, it will retry the request which will require a new stream to write into
+    //    the sink once again.
+    InputStream getInputStreamForRequestBody() {
+        try {
+            if (this.form != null) {
+                return new FileInputStream(bodyCache);
+            } else {
+                switch (requestType) {
+                    case SingleFile:
+                        return getRequestStream();
+                    case AsIs:
+                        return new ByteArrayInputStream(this.rawBody.getBytes());
+                    case Others:
+                        ReactNativeBlobUtilUtils.emitWarningEvent("ReactNativeBlobUtil could not create input stream for request type others");
+                        break;
+                }
+            }
+        } catch (Exception ex){
+            ex.printStackTrace();
+            ReactNativeBlobUtilUtils.emitWarningEvent("ReactNativeBlobUtil failed to create input stream for request:" + ex.getLocalizedMessage());
+        }
+
+        return null;
     }
 
     @Override
@@ -120,7 +144,7 @@ class ReactNativeBlobUtilBody extends RequestBody {
     @Override
     public void writeTo(@NonNull BufferedSink sink) {
         try {
-            pipeStreamToSink(requestStream, sink);
+            pipeStreamToSink(getInputStreamForRequestBody(), sink);
         } catch (Exception ex) {
             ReactNativeBlobUtilUtils.emitWarningEvent(ex.getLocalizedMessage());
             ex.printStackTrace();

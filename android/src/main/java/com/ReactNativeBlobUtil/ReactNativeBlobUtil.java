@@ -233,11 +233,11 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void readFile(final String path, final String encoding, final Promise promise) {
+    public void readFile(final String path, final String encoding, final boolean transformFile, final Promise promise) {
         threadPool.execute(new Runnable() {
             @Override
             public void run() {
-                ReactNativeBlobUtilFS.readFile(path, encoding, promise);
+                ReactNativeBlobUtilFS.readFile(path, encoding, transformFile, promise);
             }
         });
     }
@@ -253,11 +253,11 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void writeFile(final String path, final String encoding, final String data, final boolean append, final Promise promise) {
+    public void writeFile(final String path, final String encoding, final String data, final boolean transformFile, final boolean append, final Promise promise) {
         threadPool.execute(new Runnable() {
             @Override
             public void run() {
-                ReactNativeBlobUtilFS.writeFile(path, encoding, data, append, promise);
+                ReactNativeBlobUtilFS.writeFile(path, encoding, data, transformFile, append, promise);
             }
         });
     }
@@ -438,8 +438,8 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void writeToMediaFile(String fileUri, String path, Promise promise) {
-        boolean res = ReactNativeBlobUtilMediaCollection.writeToMediaFile(Uri.parse(fileUri), path, promise);
+    public void writeToMediaFile(String fileUri, String path, boolean transformFile, Promise promise) {
+        boolean res = ReactNativeBlobUtilMediaCollection.writeToMediaFile(Uri.parse(fileUri), path, transformFile, promise);
         if(res) promise.resolve("Success");
     }
 
@@ -478,7 +478,7 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
             return;
         }
 
-        boolean res = ReactNativeBlobUtilMediaCollection.writeToMediaFile(fileuri, path, promise);
+        boolean res = ReactNativeBlobUtilMediaCollection.writeToMediaFile(fileuri, path, false, promise);
         if(res) promise.resolve(fileuri.toString());
     }
 

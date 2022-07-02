@@ -10,9 +10,9 @@
 
 #import "ReactNativeBlobUtilFS.h"
 #import "ReactNativeBlobUtilConst.h"
+#import "ReactNativeBlobUtilFileTransformer.h"
 #import "ReactNativeBlobUtilReqBuilder.h"
 
-#import "IOS7Polyfill.h"
 #import <CommonCrypto/CommonDigest.h>
 
 
@@ -156,6 +156,12 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
         } else {
             destPath = [ReactNativeBlobUtilFS getTempPath:cacheKey withExtension:[self.options valueForKey:CONFIG_FILE_EXT]];
         }
+
+        // We still need to initialize this as a placeholder in memory before we perform
+        // the conversion
+        if ([self ShouldTransformFile]) {
+            respData = [[NSMutableData alloc] init];
+        }
     } else {
         respData = [[NSMutableData alloc] init];
         respFile = NO;
@@ -215,20 +221,20 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
 
             return;
         } else {
-            self.isServerPush = [[respCType lowercaseString] RNFBContainsString:@"multipart/x-mixed-replace;"];
+            self.isServerPush = [[respCType lowercaseString] containsString:@"multipart/x-mixed-replace;"];
         }
 
         if(respCType)
         {
             NSArray * extraBlobCTypes = [options objectForKey:CONFIG_EXTRA_BLOB_CTYPE];
 
-            if ([respCType RNFBContainsString:@"text/"]) {
+            if ([respCType containsString:@"text/"]) {
                 respType = @"text";
-            } else if ([respCType RNFBContainsString:@"application/json"]) {
+            } else if ([respCType containsString:@"application/json"]) {
                 respType = @"json";
             } else if(extraBlobCTypes) { // If extra blob content type is not empty, check if response type matches
                 for (NSString * substr in extraBlobCTypes) {
-                    if ([respCType RNFBContainsString:[substr lowercaseString]]) {
+                    if ([respCType containsString:[substr lowercaseString]]) {
                         respType = @"blob";
                         respFile = YES;
                         destPath = [ReactNativeBlobUtilFS getTempPath:taskId withExtension:nil];
@@ -286,7 +292,7 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
 
             // if not set overwrite in options, defaults to TRUE
             BOOL overwrite = [options valueForKey:@"overwrite"] == nil ? YES : [[options valueForKey:@"overwrite"] boolValue];
-            BOOL appendToExistingFile = [destPath RNFBContainsString:@"?append=true"];
+            BOOL appendToExistingFile = [destPath containsString:@"?append=true"];
 
             appendToExistingFile = !overwrite;
 
@@ -333,7 +339,9 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
         chunkString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
     }
 
-    if (respFile) {
+    // If we need to process the data, we defer writing into the file until the we have all the data, at which point
+    // we can perform the processing and then write into the file
+    if (respFile && ![self ShouldTransformFile]) {
         [writeStream write:[data bytes] maxLength:[data length]];
     } else {
         [respData appendData:data];
@@ -390,6 +398,22 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
     }
 
     if (respFile) {
+        if ([self ShouldTransformFile]) {
+            // At this point, we have the data that we deferred to write into a file. We can now
+            // perform the conversion and write the converted data into the file.
+            NSObject<FileTransformer>* fileTransformer = [ReactNativeBlobUtilFileTransformer getFileTransformer];
+            if (!fileTransformer) {
+                errMsg = @"Transform file specified but file transfomer not set";
+            } else {
+                @try{
+                    NSData* transformedData = [fileTransformer onWriteFile:respData];
+                    [writeStream write:[transformedData bytes] maxLength:[transformedData length]];
+                } @catch(NSException * ex)
+                {
+                    errMsg = [NSString stringWithFormat:@"Exception on File Transformer: '%@' ", [ex description]];
+                }
+            }
+        }
         [writeStream close];
         rnfbRespType = RESP_TYPE_PATH;
         respStr = destPath;
@@ -428,6 +452,10 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
     receivedBytes = 0;
     [session finishTasksAndInvalidate];
 
+}
+
+- (BOOL) ShouldTransformFile{
+    return [[options valueForKey:CONFIG_TRANSFORM_FILE] boolValue];
 }
 
 // upload progress handler

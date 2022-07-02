@@ -124,7 +124,7 @@ public class ReactNativeBlobUtilMediaCollection {
         return null;
     }
 
-    public static boolean writeToMediaFile(Uri fileUri, String data, Promise promise) {
+    public static boolean writeToMediaFile(Uri fileUri, String data, boolean transformFile, Promise promise) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             try {
                 Context appCtx = ReactNativeBlobUtil.RCTContext.getApplicationContext();
@@ -151,15 +151,30 @@ public class ReactNativeBlobUtilMediaCollection {
                             promise.reject("ENOENT", "No such file ('" + normalizedData + "')");
                             return false;
                         }
-                        byte[] buf = new byte[10240];
-                        int read;
+
 
                         FileInputStream fin = new FileInputStream(src);
                         FileOutputStream out = new FileOutputStream(descr.getFileDescriptor());
 
-                        while ((read = fin.read(buf)) > 0) {
-                            out.write(buf, 0, read);
+                        if (transformFile) {
+                            // in order to transform file, we must load the entire file onto memory
+                            int length = (int) src.length();
+                            byte[] bytes = new byte[length];
+                            fin.read(bytes);
+                            if (ReactNativeBlobUtilFileTransformer.sharedFileTransformer == null) {
+                                throw new IllegalStateException("Write to media file with transform was specified but the shared file transformer is not set");
+                            }
+                            byte[] transformedBytes = ReactNativeBlobUtilFileTransformer.sharedFileTransformer.onWriteFile(bytes);
+                            out.write(transformedBytes);
+                        } else  {
+                            byte[] buf = new byte[10240];
+                            int read;
+
+                            while ((read = fin.read(buf)) > 0) {
+                                out.write(buf, 0, read);
+                            }
                         }
+
 
                         fin.close();
                         out.close();
