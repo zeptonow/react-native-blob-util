@@ -15,6 +15,12 @@
 
 #import <CommonCrypto/CommonDigest.h>
 
+#if __has_include(<React/RCTAssert.h>)
+#import <React/RCTEventDispatcherProtocol.h>
+#else
+#import "RCTEventDispatcherProtocol.h"
+#endif
+
 
 typedef NS_ENUM(NSUInteger, ResponseFormat) {
     UTF8,
@@ -47,7 +53,7 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
 @synthesize receivedBytes;
 @synthesize respData;
 @synthesize callback;
-@synthesize bridge;
+@synthesize eventDispatcher;
 @synthesize options;
 @synthesize error;
 
@@ -67,7 +73,7 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
 // send HTTP request
 - (void) sendRequest:(__weak NSDictionary  * _Nullable )options
        contentLength:(long) contentLength
-              bridge:(RCTBridge * _Nullable)bridgeRef
+              eventDispatcher:(RCTEventDispatcher * _Nullable)eventDispatcherRef
               taskId:(NSString * _Nullable)taskId
          withRequest:(__weak NSURLRequest * _Nullable)req
   taskOperationQueue:(NSOperationQueue * _Nonnull)operationQueue
@@ -76,7 +82,7 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
     self.taskId = taskId;
     self.respData = [[NSMutableData alloc] initWithLength:0];
     self.callback = callback;
-    self.bridge = bridgeRef;
+    self.eventDispatcher = eventDispatcherRef;
     self.expectedBytes = 0;
     self.receivedBytes = 0;
     self.options = options;
@@ -207,7 +213,7 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
 
         if (self.isServerPush) {
             if (partBuffer) {
-                [self.bridge.eventDispatcher
+                [self.eventDispatcher
                  sendDeviceEventWithName:EVENT_SERVER_PUSH
                  body:@{
                         @"taskId": taskId,
@@ -263,8 +269,7 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
                 [cookieStore setCookies:cookies forURL:response.URL mainDocumentURL:nil];
             }
         }
-
-        [self.bridge.eventDispatcher
+        [self.eventDispatcher
          sendDeviceEventWithName: EVENT_STATE_CHANGE
          body:@{
                 @"taskId": taskId,
@@ -342,7 +347,7 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
     // If we need to process the data, we defer writing into the file until the we have all the data, at which point
     // we can perform the processing and then write into the file
     if (respFile && ![self ShouldTransformFile]) {
-        [writeStream write:[data bytes] maxLength:[data length]];
+        [writeStream write:(const uint8_t *)[data bytes] maxLength:[data length]];
     } else {
         [respData appendData:data];
     }
@@ -354,7 +359,7 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
     NSNumber * now =[NSNumber numberWithFloat:((float)receivedBytes/(float)expectedBytes)];
 
     if ([self.progressConfig shouldReport:now]) {
-        [self.bridge.eventDispatcher
+        [self.eventDispatcher
          sendDeviceEventWithName:EVENT_PROGRESS
          body:@{
                 @"taskId": taskId,
@@ -362,7 +367,7 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
                 @"total": [NSString stringWithFormat:@"%lld", (long long) expectedBytes],
                 @"chunk": chunkString
                 }
-         ];
+        ];
     }
 }
 
@@ -407,7 +412,7 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
             } else {
                 @try{
                     NSData* transformedData = [fileTransformer onWriteFile:respData];
-                    [writeStream write:[transformedData bytes] maxLength:[transformedData length]];
+                    [writeStream write:(const uint8_t *)[transformedData bytes] maxLength:[transformedData length]];
                 } @catch(NSException * ex)
                 {
                     errMsg = [NSString stringWithFormat:@"Exception on File Transformer: '%@' ", [ex description]];
@@ -468,7 +473,7 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
     NSNumber * now = [NSNumber numberWithFloat:((float)totalBytesWritten/(float)totalBytesExpectedToWrite)];
 
     if ([self.uploadProgressConfig shouldReport:now]) {
-        [self.bridge.eventDispatcher
+        [self.eventDispatcher
          sendDeviceEventWithName:EVENT_PROGRESS_UPLOAD
          body:@{
                 @"taskId": taskId,

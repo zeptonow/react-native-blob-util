@@ -11,8 +11,12 @@
 #import "ReactNativeBlobUtilReqBuilder.h"
 #import "ReactNativeBlobUtilProgress.h"
 
+#if RCT_NEW_ARCH_ENABLED
+#import "ReactNativeBlobUtilSpec.h"
+#endif
 
-__strong RCTBridge * bridgeRef;
+
+__strong RCTEventDispatcher * eventDispatcherRef;
 dispatch_queue_t commonTaskQueue;
 dispatch_queue_t fsQueue;
 
@@ -28,7 +32,6 @@ dispatch_queue_t fsQueue;
 
 @synthesize filePathPrefix;
 @synthesize documentController;
-@synthesize bridge = _bridge;
 
 - (dispatch_queue_t) methodQueue {
     if(commonTaskQueue == nil)
@@ -36,10 +39,14 @@ dispatch_queue_t fsQueue;
     return commonTaskQueue;
 }
 
-+ (RCTBridge *)getRCTBridge
++ (RCTEventDispatcher *)getRCTEventDispatcher
 {
     RCTRootView * rootView = (RCTRootView*) [[UIApplication sharedApplication] keyWindow].rootViewController.view;
-    return rootView.bridge;
+#if RCT_NEW_ARCH_ENABLED
+    return (RCTEventDispatcher *)[rootView.moduleRegistry moduleForName:"EventDispatcher"];
+#else
+    return rootView.bridge.eventDispatcher;
+#endif
 }
 
 + (BOOL)requiresMainQueueSetup {
@@ -60,8 +67,11 @@ RCT_EXPORT_MODULE();
     if(![[NSFileManager defaultManager] fileExistsAtPath: [ReactNativeBlobUtilFS getTempPath] isDirectory:&isDir]) {
         [[NSFileManager defaultManager] createDirectoryAtPath:[ReactNativeBlobUtilFS getTempPath] withIntermediateDirectories:YES attributes:nil error:NULL];
     }
-    bridgeRef = _bridge;
-    [ReactNativeBlobUtilNetwork emitExpiredTasks];
+    eventDispatcherRef = nil;
+    dispatch_async(dispatch_get_main_queue(), ^{
+        eventDispatcherRef = [ReactNativeBlobUtil getRCTEventDispatcher];
+        [ReactNativeBlobUtilNetwork emitExpiredTasks: eventDispatcherRef];
+    });
     return self;
 }
 
@@ -108,7 +118,7 @@ RCT_EXPORT_METHOD(fetchBlobForm:(NSDictionary *)options
         {
             [[ReactNativeBlobUtilNetwork sharedInstance] sendRequest:options
                                                contentLength:bodyLength
-                                                      bridge:self.bridge
+                                                      eventDispatcher:eventDispatcherRef
                                                       taskId:taskId
                                                  withRequest:req
                                                     callback:callback];
@@ -124,7 +134,8 @@ RCT_EXPORT_METHOD(fetchBlob:(NSDictionary *)options
                   method:(NSString *)method
                   url:(NSString *)url
                   headers:(NSDictionary *)headers
-                  body:(NSString *)body callback:(RCTResponseSenderBlock)callback)
+                  body:(NSString *)body
+                  callback:(RCTResponseSenderBlock)callback)
 {
     [ReactNativeBlobUtilReqBuilder buildOctetRequest:options
                                       taskId:taskId
@@ -144,7 +155,7 @@ RCT_EXPORT_METHOD(fetchBlob:(NSDictionary *)options
         {
             [[ReactNativeBlobUtilNetwork sharedInstance] sendRequest:options
                                                contentLength:bodyLength
-                                                      bridge:self.bridge
+                                                      eventDispatcher:eventDispatcherRef
                                                       taskId:taskId
                                                  withRequest:req
                                                     callback:callback];
@@ -153,11 +164,23 @@ RCT_EXPORT_METHOD(fetchBlob:(NSDictionary *)options
 }
 
 #pragma mark - fs.createFile
+// Signature for the Old Architecture
 RCT_EXPORT_METHOD(createFile:(NSString *)path
                   data:(NSString *)data
                   encoding:(NSString *)encoding
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
+{
+    [self createFile:path data:data encoding:encoding resolve:resolve reject:reject];
+}
+
+// Signature for the New Architecture. Codegen can't change the resolve/reject param names and
+// If we change the RCT_EXPORT_METHOD we are going to introduce braking changes we may avoid.
+- (void)createFile:(NSString *)path
+              data:(NSString *)data
+          encoding:(NSString *)encoding
+           resolve:(RCTPromiseResolveBlock)resolve
+            reject:(RCTPromiseRejectBlock)reject
 {
     NSFileManager * fm = [NSFileManager defaultManager];
     NSData * fileContent = nil;
@@ -166,7 +189,7 @@ RCT_EXPORT_METHOD(createFile:(NSString *)path
         fileContent = [[NSData alloc] initWithData:[data dataUsingEncoding:NSUTF8StringEncoding allowLossyConversion:YES]];
     }
     else if([[encoding lowercaseString] isEqualToString:@"base64"]) {
-        fileContent = [[NSData alloc] initWithBase64EncodedData:data options:0];
+        fileContent = [[NSData alloc] initWithBase64EncodedString:data options:0];
     }
     else if([[encoding lowercaseString] isEqualToString:@"uri"]) {
         NSString * orgPath = [data stringByReplacingOccurrencesOfString:FILE_PREFIX withString:@""];
@@ -190,21 +213,32 @@ RCT_EXPORT_METHOD(createFile:(NSString *)path
 
 #pragma mark - fs.createFileASCII
 // method for create file with ASCII content
+// Signature for the Old Architecture
 RCT_EXPORT_METHOD(createFileASCII:(NSString *)path
                   data:(NSArray *)dataArray
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
+    [self createFileASCII:path data:dataArray resolve:resolve reject:reject];
+}
+
+// Signature for the New Architecture. Codegen can't change the resolve/reject param names and
+// If we change the RCT_EXPORT_METHOD we are going to introduce braking changes we may avoid.
+- (void)createFileASCII:(NSString *)path
+                   data:(NSArray *)data
+                resolve:(RCTPromiseResolveBlock)resolve
+                 reject:(RCTPromiseRejectBlock)reject
+{
     NSFileManager * fm = [NSFileManager defaultManager];
     NSMutableData * fileContent = [NSMutableData alloc];
     // prevent stack overflow, alloc on heap
-    char * bytes = (char*) malloc([dataArray count]);
+    char * bytes = (char*) malloc([data count]);
 
-    for(int i = 0; i < dataArray.count; i++) {
-        bytes[i] = [[dataArray objectAtIndex:i] charValue];
+    for(int i = 0; i < data.count; i++) {
+        bytes[i] = [[data objectAtIndex:i] charValue];
     }
 
-    [fileContent appendBytes:bytes length:dataArray.count];
+    [fileContent appendBytes:bytes length:data.count];
 
     if ([fm fileExistsAtPath:path]) {
         reject(@"EEXIST", [NSString stringWithFormat:@"File '%@' already exists", path], nil);
@@ -221,9 +255,19 @@ RCT_EXPORT_METHOD(createFileASCII:(NSString *)path
 }
 
 #pragma mark - fs.pathForAppGroup
+// Signature for the Old Architecture
 RCT_EXPORT_METHOD(pathForAppGroup:(NSString *)groupName
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
+{
+    [self pathForAppGroup:groupName resolve:resolve reject:reject];
+}
+
+// Signature for the New Architecture. Codegen can't change the resolve/reject param names and
+// If we change the RCT_EXPORT_METHOD we are going to introduce braking changes we may avoid.
+- (void)pathForAppGroup:(NSString *)groupName
+                resolve:(RCTPromiseResolveBlock)resolve
+                 reject:(RCTPromiseRejectBlock)reject
 {
     NSString * path = [ReactNativeBlobUtilFS getPathForAppGroup:groupName];
 
@@ -252,21 +296,60 @@ RCT_EXPORT_METHOD(exists:(NSString *)path callback:(RCTResponseSenderBlock)callb
 }
 
 #pragma mark - fs.writeFile
-RCT_EXPORT_METHOD(writeFile:(NSString *)path encoding:(NSString *)encoding data:(NSString *)data transformFile:(BOOL)transformFile append:(BOOL)append resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
+// Signature for the Old Architecture
+RCT_EXPORT_METHOD(writeFile:(NSString *)path
+    encoding:(NSString *)encoding
+    data:(NSString *)data
+    transformFile:(BOOL)transformFile
+    append:(BOOL)append
+    resolver:(RCTPromiseResolveBlock)resolve
+    rejecter:(RCTPromiseRejectBlock)reject)
+{
+    [self writeFile:path encoding:encoding data:data transformFile:transformFile append:append resolve:resolve reject:reject];
+}
+
+// Signature for the New Architecture. Codegen can't change the resolve/reject param names and
+// If we change the RCT_EXPORT_METHOD we are going to introduce braking changes we may avoid.
+- (void)writeFile:(NSString *)path
+         encoding:(NSString *)encoding
+             data:(NSString *)data
+    transformFile:(BOOL)transformFile
+           append:(BOOL)append
+          resolve:(RCTPromiseResolveBlock)resolve
+           reject:(RCTPromiseRejectBlock)reject;
 {
     [ReactNativeBlobUtilFS writeFile:path encoding:[NSString stringWithString:encoding] data:data transformFile:transformFile append:append resolver:resolve rejecter:reject];
 }
 
 #pragma mark - fs.writeArray
-RCT_EXPORT_METHOD(writeFileArray:(NSString *)path data:(NSArray *)data append:(BOOL)append resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
+// Signature for the Old Architecture
+RCT_EXPORT_METHOD(writeFileArray:(NSString *)path
+    data:(NSArray *)data
+    append:(BOOL)append
+    resolver:(RCTPromiseResolveBlock)resolve
+    rejecter:(RCTPromiseRejectBlock)reject)
+{
+    [self writeFileArray:path data:data append:append resolve:resolve reject:reject];
+}
+
+// Signature for the New Architecture. Codegen can't change the resolve/reject param names and
+// If we change the RCT_EXPORT_METHOD we are going to introduce braking changes we may avoid.
+- (void)writeFileArray:(NSString *)path
+                  data:(NSArray *)data
+                append:(BOOL)append
+               resolve:(RCTPromiseResolveBlock)resolve
+                reject:(RCTPromiseRejectBlock)reject
 {
     [ReactNativeBlobUtilFS writeFileArray:path data:data append:append resolver:resolve rejecter:reject];
 }
 
 #pragma mark - fs.writeStream
-RCT_EXPORT_METHOD(writeStream:(NSString *)path withEncoding:(NSString *)encoding appendData:(BOOL)append callback:(RCTResponseSenderBlock)callback)
+RCT_EXPORT_METHOD(writeStream:(NSString *)path
+    withEncoding:(NSString *)encoding
+    appendData:(BOOL)append
+    callback:(RCTResponseSenderBlock)callback)
 {
-    ReactNativeBlobUtilFS * fileStream = [[ReactNativeBlobUtilFS alloc] initWithBridgeRef:self.bridge];
+    ReactNativeBlobUtilFS * fileStream = [[ReactNativeBlobUtilFS alloc] initWithEventDispatcherRef:eventDispatcherRef];
     NSFileManager * fm = [NSFileManager defaultManager];
     NSString * folder = [path stringByDeletingLastPathComponent];
     NSError* err = nil;
@@ -291,7 +374,9 @@ RCT_EXPORT_METHOD(writeStream:(NSString *)path withEncoding:(NSString *)encoding
 }
 
 #pragma mark - fs.writeArrayChunk
-RCT_EXPORT_METHOD(writeArrayChunk:(NSString *)streamId withArray:(NSArray *)dataArray callback:(RCTResponseSenderBlock) callback)
+RCT_EXPORT_METHOD(writeArrayChunk:(NSString *)streamId
+    withArray:(NSArray *)dataArray
+    callback:(RCTResponseSenderBlock) callback)
 {
     ReactNativeBlobUtilFS *fs = [[ReactNativeBlobUtilFS getFileStreams] valueForKey:streamId];
     char * bytes = (char *) malloc([dataArray count]);
@@ -306,7 +391,9 @@ RCT_EXPORT_METHOD(writeArrayChunk:(NSString *)streamId withArray:(NSArray *)data
 }
 
 #pragma mark - fs.writeChunk
-RCT_EXPORT_METHOD(writeChunk:(NSString *)streamId withData:(NSString *)data callback:(RCTResponseSenderBlock) callback)
+RCT_EXPORT_METHOD(writeChunk:(NSString *)streamId
+    withData:(NSString *)data
+    callback:(RCTResponseSenderBlock) callback)
 {
     ReactNativeBlobUtilFS *fs = [[ReactNativeBlobUtilFS getFileStreams] valueForKey:streamId];
     [fs writeEncodeChunk:data];
@@ -351,11 +438,21 @@ RCT_EXPORT_METHOD(removeSession:(NSArray *)paths callback:(RCTResponseSenderBloc
 }
 
 #pragma mark - fs.ls
+// Signature for the Old Architecture
 RCT_EXPORT_METHOD(ls:(NSString *)path resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
 {
+    [self ls:path resolve:resolve reject:reject];
+}
+
+// Signature for the New Architecture. Codegen can't change the resolve/reject param names and
+// If we change the RCT_EXPORT_METHOD we are going to introduce braking changes we may avoid.
+- (void)ls:(NSString *)path
+   resolve:(RCTPromiseResolveBlock)resolve
+    reject:(RCTPromiseRejectBlock)reject
+{
     NSFileManager* fm = [NSFileManager defaultManager];
-    BOOL exist = nil;
-    BOOL isDir = nil;
+    BOOL exist = NO;
+    BOOL isDir = NO;
     exist = [fm fileExistsAtPath:path isDirectory:&isDir];
     if(exist == NO) {
         return reject(@"ENOENT", [NSString stringWithFormat:@"No such file '%@'", path], nil);
@@ -377,12 +474,12 @@ RCT_EXPORT_METHOD(stat:(NSString *)target callback:(RCTResponseSenderBlock) call
 {
 
     [ReactNativeBlobUtilFS getPathFromUri:target completionHandler:^(NSString *path, ALAssetRepresentation *asset) {
-        __block NSMutableArray * result;
+        __block NSMutableDictionary * result;
         if(path != nil)
         {
             NSFileManager* fm = [NSFileManager defaultManager];
-            BOOL exist = nil;
-            BOOL isDir = nil;
+            BOOL exist = NO;
+            BOOL isDir = NO;
             NSError * error = nil;
 
             exist = [fm fileExistsAtPath:path isDirectory:&isDir];
@@ -416,8 +513,8 @@ RCT_EXPORT_METHOD(stat:(NSString *)target callback:(RCTResponseSenderBlock) call
 RCT_EXPORT_METHOD(lstat:(NSString *)path callback:(RCTResponseSenderBlock) callback)
 {
     NSFileManager* fm = [NSFileManager defaultManager];
-    BOOL exist = nil;
-    BOOL isDir = nil;
+    BOOL exist = NO;
+    BOOL isDir = NO;
 
     path = [ReactNativeBlobUtilFS getPathOfAsset:path];
 
@@ -448,7 +545,17 @@ RCT_EXPORT_METHOD(lstat:(NSString *)path callback:(RCTResponseSenderBlock) callb
 }
 
 #pragma mark - fs.cp
+// Signature for the Old Architecture
 RCT_EXPORT_METHOD(cp:(NSString*)src toPath:(NSString *)dest callback:(RCTResponseSenderBlock) callback)
+{
+    [self cp:src dest:dest callback:callback];
+}
+
+// Signature for the New Architecture. Codegen can't change the resolve/reject param names and
+// If we change the RCT_EXPORT_METHOD we are going to introduce braking changes we may avoid.
+- (void)cp:(NSString *)src
+      dest:(NSString *)dest
+  callback:(RCTResponseSenderBlock)callback
 {
 //    path = [ReactNativeBlobUtilFS getPathOfAsset:path];
     [ReactNativeBlobUtilFS getPathFromUri:src completionHandler:^(NSString *path, ALAssetRepresentation *asset) {
@@ -471,9 +578,18 @@ RCT_EXPORT_METHOD(cp:(NSString*)src toPath:(NSString *)dest callback:(RCTRespons
     }];
 }
 
-
 #pragma mark - fs.mv
+// Signature for the Old Architecture
 RCT_EXPORT_METHOD(mv:(NSString *)path toPath:(NSString *)dest callback:(RCTResponseSenderBlock) callback)
+{
+    [self mv:path dest:dest callback:callback];
+}
+
+// Signature for the New Architecture. Codegen can't change the resolve/reject param names and
+// If we change the RCT_EXPORT_METHOD we are going to introduce braking changes we may avoid.
+- (void)mv:(NSString *)path
+      dest:(NSString *)dest
+  callback:(RCTResponseSenderBlock)callback
 {
     NSError * error = nil;
     BOOL result = [[NSFileManager defaultManager] moveItemAtURL:[NSURL fileURLWithPath:path] toURL:[NSURL fileURLWithPath:dest] error:&error];
@@ -488,17 +604,36 @@ RCT_EXPORT_METHOD(mv:(NSString *)path toPath:(NSString *)dest callback:(RCTRespo
 #pragma mark - fs.mkdir
 RCT_EXPORT_METHOD(mkdir:(NSString *)path resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
 {
+    [self mkdir:path resolve:resolve reject:reject];
+}
+
+- (void)mkdir:(NSString *)path
+      resolve:(RCTPromiseResolveBlock)resolve
+       reject:(RCTPromiseRejectBlock)reject
+{
     [ReactNativeBlobUtilFS mkdir:path resolver:resolve rejecter:reject];
 }
 
 #pragma mark - fs.readFile
+// Signature for the Old Architecture
 RCT_EXPORT_METHOD(readFile:(NSString *)path
                   encoding:(NSString *)encoding
                   transformFile:(BOOL) transformFile
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
 {
-    
+    [self readFile:path encoding:encoding transformFile:transformFile resolve:resolve reject:reject];
+}
+
+// Signature for the New Architecture. Codegen can't change the resolve/reject param names and
+// If we change the RCT_EXPORT_METHOD we are going to introduce braking changes we may avoid.
+- (void)readFile:(NSString *)path
+        encoding:(NSString *)encoding
+   transformFile:(BOOL)transformFile
+         resolve:(RCTPromiseResolveBlock)resolve
+          reject:(RCTPromiseRejectBlock)reject
+{
+
     [ReactNativeBlobUtilFS readFile:path encoding:encoding transformFile:transformFile onComplete:^(NSData * content, NSString * code, NSString * err) {
         if(err != nil) {
             reject(code, err, nil);
@@ -514,10 +649,21 @@ RCT_EXPORT_METHOD(readFile:(NSString *)path
 }
 
 #pragma mark - fs.hash
+// Signature for the Old Architecture
 RCT_EXPORT_METHOD(hash:(NSString *)path
                   algorithm:(NSString *)algorithm
                   resolver:(RCTPromiseResolveBlock)resolve
                   rejecter:(RCTPromiseRejectBlock)reject)
+{
+    [self hash:path algorithm:algorithm resolve:resolve reject:reject];
+}
+
+// Signature for the New Architecture. Codegen can't change the resolve/reject param names and
+// If we change the RCT_EXPORT_METHOD we are going to introduce braking changes we may avoid.
+- (void)hash:(NSString *)path
+   algorithm:(NSString *)algorithm
+     resolve:(RCTPromiseResolveBlock)resolve
+      reject:(RCTPromiseRejectBlock)reject
 {
     [ReactNativeBlobUtilFS hash:path algorithm:[NSString stringWithString:algorithm] resolver:resolve rejecter:reject];
 }
@@ -525,7 +671,7 @@ RCT_EXPORT_METHOD(hash:(NSString *)path
 #pragma mark - fs.readStream
 RCT_EXPORT_METHOD(readStream:(NSString *)path withEncoding:(NSString *)encoding bufferSize:(int)bufferSize tick:(int)tick streamId:(NSString *)streamId)
 {
-    if(bufferSize == nil) {
+    if(bufferSize == 0) {
         if([[encoding lowercaseString] isEqualToString:@"base64"])
             bufferSize = 4095;
         else
@@ -533,7 +679,7 @@ RCT_EXPORT_METHOD(readStream:(NSString *)path withEncoding:(NSString *)encoding 
     }
 
     dispatch_async(fsQueue, ^{
-        [ReactNativeBlobUtilFS readStream:path encoding:encoding bufferSize:bufferSize tick:tick streamId:streamId bridgeRef:_bridge];
+        [ReactNativeBlobUtilFS readStream:path encoding:encoding bufferSize:bufferSize tick:tick streamId:streamId eventDispatcherRef:eventDispatcherRef];
     });
 }
 
@@ -570,12 +716,36 @@ RCT_EXPORT_METHOD(enableUploadProgressReport:(NSString *)taskId interval:(nonnul
 }
 
 #pragma mark - fs.slice
+// Signature for the Old Architecture
 RCT_EXPORT_METHOD(slice:(NSString *)src dest:(NSString *)dest start:(nonnull NSNumber *)start end:(nonnull NSNumber *)end resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
 {
-    [ReactNativeBlobUtilFS slice:src dest:dest start:start end:end encode:@"" resolver:resolve rejecter:reject];
+    [self slice:src dest:dest start:start.doubleValue end:end.doubleValue resolve:resolve reject:reject];
 }
 
+// Signature for the New Architecture. Codegen can't change the resolve/reject param names and
+// If we change the RCT_EXPORT_METHOD we are going to introduce braking changes we may avoid.
+- (void)slice:(NSString *)src
+         dest:(NSString *)dest
+        start:(double)start
+          end:(double)end
+      resolve:(RCTPromiseResolveBlock)resolve
+       reject:(RCTPromiseRejectBlock)reject
+{
+    [ReactNativeBlobUtilFS slice:src dest:dest start:@(start) end:@(end) encode:@"" resolver:resolve rejecter:reject];
+}
+
+// Signature for the Old Architecture
 RCT_EXPORT_METHOD(presentOptionsMenu:(NSString*)uri scheme:(NSString *)scheme resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
+{
+    [self presentOptionsMenu:uri scheme:scheme resolve:resolve reject:reject];
+}
+
+// Signature for the New Architecture. Codegen can't change the resolve/reject param names and
+// If we change the RCT_EXPORT_METHOD we are going to introduce braking changes we may avoid.
+- (void)presentOptionsMenu:(NSString *)uri
+                    scheme:(NSString *)scheme
+                   resolve:(RCTPromiseResolveBlock)resolve
+                    reject:(RCTPromiseRejectBlock)reject
 {
     NSString * utf8uri = [uri stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
     NSURL * url = [[NSURL alloc] initWithString:utf8uri];
@@ -594,7 +764,18 @@ RCT_EXPORT_METHOD(presentOptionsMenu:(NSString*)uri scheme:(NSString *)scheme re
     }
 }
 
+// Signature for the Old Architecture
 RCT_EXPORT_METHOD(presentOpenInMenu:(NSString*)uri scheme:(NSString *)scheme resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
+{
+    [self presentOpenInMenu:uri scheme:scheme resolve:resolve reject:reject];
+}
+
+// Signature for the New Architecture. Codegen can't change the resolve/reject param names and
+// If we change the RCT_EXPORT_METHOD we are going to introduce braking changes we may avoid.
+- (void)presentOpenInMenu:(NSString *)uri
+                   scheme:(NSString *)scheme
+                  resolve:(RCTPromiseResolveBlock)resolve
+                   reject:(RCTPromiseRejectBlock)reject
 {
     NSString * utf8uri = [uri stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
     NSURL * url = [[NSURL alloc] initWithString:utf8uri];
@@ -613,8 +794,18 @@ RCT_EXPORT_METHOD(presentOpenInMenu:(NSString*)uri scheme:(NSString *)scheme res
 }
 
 # pragma mark - open file with UIDocumentInteractionController and delegate
-
+// Signature for the Old Architecture
 RCT_EXPORT_METHOD(presentPreview:(NSString*)uri scheme:(NSString *)scheme resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
+{
+    [self presentPreview:uri scheme:scheme resolve:resolve reject:reject];
+}
+
+// Signature for the New Architecture. Codegen can't change the resolve/reject param names and
+// If we change the RCT_EXPORT_METHOD we are going to introduce braking changes we may avoid.
+- (void)presentPreview:(NSString *)uri
+                scheme:(NSString *)scheme
+               resolve:(RCTPromiseResolveBlock)resolve
+                reject:(RCTPromiseRejectBlock)reject
 {
     NSString * utf8uri = [uri stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
     NSURL * url = [[NSURL alloc] initWithString:utf8uri];
@@ -638,6 +829,13 @@ RCT_EXPORT_METHOD(presentPreview:(NSString*)uri scheme:(NSString *)scheme resolv
 # pragma mark - exclude from backup key
 
 RCT_EXPORT_METHOD(excludeFromBackupKey:(NSString *)url resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject)
+{
+    [self excludeFromBackupKey:url resolve:resolve reject:reject];
+}
+
+- (void)excludeFromBackupKey:(NSString *)url
+                     resolve:(RCTPromiseResolveBlock)resolve
+                      reject:(RCTPromiseRejectBlock)reject
 {
     NSError *error = nil;
     [ [NSURL URLWithString:url] setResourceValue:[NSNumber numberWithBool:YES] forKey:NSURLIsExcludedFromBackupKey error:&error];
@@ -666,10 +864,11 @@ RCT_EXPORT_METHOD(df:(RCTResponseSenderBlock)callback)
 
 RCT_EXPORT_METHOD(emitExpiredEvent:(RCTResponseSenderBlock)callback)
 {
-    [ReactNativeBlobUtilNetwork emitExpiredTasks];
+    [ReactNativeBlobUtilNetwork emitExpiredTasks:eventDispatcherRef];
 }
 
 
-
+#if RCT_NEW_ARCH_ENABLED
+#endif
 
 @end

@@ -4,15 +4,15 @@ import { TurboModuleRegistry } from 'react-native';
 
 export interface Spec extends TurboModule {
     +getConstants: () => {|
-        'CacheDir': string,
-        'DocumentDir': string,
-        'DownloadDir': string,
-        'LibraryDir': string,
-        'MainBundleDir': string,
-        'MovieDir': string,
-        'MusicDir': string,
-        'PictureDir': string,
-        'ApplicationSupportDir': string,
+        CacheDir: string,
+        DocumentDir: string,
+        DownloadDir: string,
+        LibraryDir: string,
+        MainBundleDir: string,
+        MovieDir: string,
+        MusicDir: string,
+        PictureDir: string,
+        ApplicationSupportDir: string,
     |};
 
     +fetchBlobForm: (options: Object, taskId: string, method: string, url: string, headers: Object, form: Array<any>, callback: (value: Array<any>) => void) => void;
