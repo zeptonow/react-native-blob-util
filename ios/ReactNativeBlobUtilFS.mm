@@ -65,11 +65,11 @@ NSMutableDictionary *fileStreams = nil;
 }
 
 // static member getter
-+ (NSArray *) getFileStreams {
++ (NSDictionary *) getFileStreams {
 
     if(fileStreams == nil)
         fileStreams = [[NSMutableDictionary alloc] init];
-    return fileStreams.allValues;
+    return fileStreams;
 }
 
 +(void) setFileStream:(ReactNativeBlobUtilFS *) instance withId:(NSString *) uuid {

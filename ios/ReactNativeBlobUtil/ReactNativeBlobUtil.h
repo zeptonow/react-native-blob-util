@@ -38,7 +38,7 @@
 @property (nonatomic) NSString * filePathPrefix;
 @property (retain) UIDocumentInteractionController * documentController;
 
-+ (RCTBridge *)getRCTBridge;
++ (RCTEventDispatcher *)getRCTEventDispatcher;
 
 @end
 

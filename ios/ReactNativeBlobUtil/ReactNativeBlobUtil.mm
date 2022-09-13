@@ -15,7 +15,6 @@
 #import "ReactNativeBlobUtilSpec.h"
 #endif
 
-
 __strong RCTEventDispatcher * eventDispatcherRef;
 dispatch_queue_t commonTaskQueue;
 dispatch_queue_t fsQueue;
@@ -67,11 +66,11 @@ RCT_EXPORT_MODULE();
     if(![[NSFileManager defaultManager] fileExistsAtPath: [ReactNativeBlobUtilFS getTempPath] isDirectory:&isDir]) {
         [[NSFileManager defaultManager] createDirectoryAtPath:[ReactNativeBlobUtilFS getTempPath] withIntermediateDirectories:YES attributes:nil error:NULL];
     }
-    eventDispatcherRef = nil;
     dispatch_async(dispatch_get_main_queue(), ^{
         eventDispatcherRef = [ReactNativeBlobUtil getRCTEventDispatcher];
         [ReactNativeBlobUtilNetwork emitExpiredTasks: eventDispatcherRef];
     });
+
     return self;
 }
 
@@ -412,7 +411,6 @@ RCT_EXPORT_METHOD(closeStream:(NSString *)streamId callback:(RCTResponseSenderBl
 RCT_EXPORT_METHOD(unlink:(NSString *)path callback:(RCTResponseSenderBlock) callback)
 {
     NSError * error = nil;
-    NSString * tmpPath = nil;
     [[NSFileManager defaultManager] removeItemAtPath:path error:&error];
     if(error == nil || [[NSFileManager defaultManager] fileExistsAtPath:path] == NO)
         callback(@[[NSNull null]]);
@@ -424,7 +422,6 @@ RCT_EXPORT_METHOD(unlink:(NSString *)path callback:(RCTResponseSenderBlock) call
 RCT_EXPORT_METHOD(removeSession:(NSArray *)paths callback:(RCTResponseSenderBlock) callback)
 {
     NSError * error = nil;
-    NSString * tmpPath = nil;
 
     for(NSString * path in paths) {
         [[NSFileManager defaultManager] removeItemAtPath:path error:&error];
@@ -487,7 +484,7 @@ RCT_EXPORT_METHOD(stat:(NSString *)target callback:(RCTResponseSenderBlock) call
                 callback(@[[NSString stringWithFormat:@"failed to stat path `%@` because it does not exist or it is not a folder", path]]);
                 return ;
             }
-            result = [ReactNativeBlobUtilFS stat:path error:&error];
+            result = [ReactNativeBlobUtilFS stat:path error:&error].mutableCopy;
 
             if(error == nil)
                 callback(@[[NSNull null], result]);
@@ -639,11 +636,13 @@ RCT_EXPORT_METHOD(readFile:(NSString *)path
             reject(code, err, nil);
             return;
         }
-        if(encoding == @"ascii") {
+        if([encoding isEqualToString:@"ascii"]) {
             resolve((NSMutableArray *)content);
         }
-        else {
-            resolve((NSString *)content);
+        if([encoding isEqualToString:@"base64"]) {
+            resolve([content base64EncodedStringWithOptions:0]);
+        } else {
+            resolve([[NSString alloc] initWithData:content encoding:NSUTF8StringEncoding]);
         }
     }];
 }
@@ -869,6 +868,11 @@ RCT_EXPORT_METHOD(emitExpiredEvent:(RCTResponseSenderBlock)callback)
 
 
 #if RCT_NEW_ARCH_ENABLED
+- (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
+    (const facebook::react::ObjCTurboModule::InitParams &)params
+{
+    return std::make_shared<facebook::react::NativeBlobUtilsSpecJSI>(params);
+}
 #endif
 
 @end
