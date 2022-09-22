@@ -79,7 +79,7 @@ public class ReactNativeBlobUtilMediaCollection {
 
     public static Uri createNewMediaFile(FileDescription file, MediaType mt, ReactApplicationContext ctx) {
         // Add a specific media item.
-        Context appCtx = ReactNativeBlobUtil.RCTContext.getApplicationContext();
+        Context appCtx = ReactNativeBlobUtilImpl.RCTContext.getApplicationContext();
         ContentResolver resolver = appCtx.getContentResolver();
 
         ContentValues fileDetails = new ContentValues();
@@ -124,10 +124,10 @@ public class ReactNativeBlobUtilMediaCollection {
         return null;
     }
 
-    public static boolean writeToMediaFile(Uri fileUri, String data, boolean transformFile, Promise promise) {
+    public static boolean writeToMediaFile(Uri fileUri, String data, boolean transformFile, Promise promise, ReactApplicationContext ctx) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             try {
-                Context appCtx = ReactNativeBlobUtil.RCTContext.getApplicationContext();
+                Context appCtx = ctx.getApplicationContext();
                 ContentResolver resolver = appCtx.getContentResolver();
 
                 // set pending doesn't work right now. We would have to requery for the item
@@ -220,7 +220,7 @@ public class ReactNativeBlobUtilMediaCollection {
     }
 
     public static void copyToInternal(Uri contenturi, String destpath, Promise promise) {
-        Context appCtx = ReactNativeBlobUtil.RCTContext.getApplicationContext();
+        Context appCtx = ReactNativeBlobUtilImpl.RCTContext.getApplicationContext();
         ContentResolver resolver = appCtx.getContentResolver();
 
         InputStream in = null;
@@ -277,7 +277,7 @@ public class ReactNativeBlobUtilMediaCollection {
     }
 
     public static void getBlob(Uri contentUri, String encoding, Promise promise) {
-        Context appCtx = ReactNativeBlobUtil.RCTContext.getApplicationContext();
+        Context appCtx = ReactNativeBlobUtilImpl.RCTContext.getApplicationContext();
         ContentResolver resolver = appCtx.getContentResolver();
         try {
             InputStream in = resolver.openInputStream(contentUri);

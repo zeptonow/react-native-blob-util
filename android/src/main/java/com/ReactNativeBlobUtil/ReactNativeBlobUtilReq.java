@@ -161,7 +161,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
 
         if (androidDownloadManagerTaskTable.containsKey(taskId)) {
             long downloadManagerIdForTaskId = androidDownloadManagerTaskTable.get(taskId).longValue();
-            Context appCtx = ReactNativeBlobUtil.RCTContext.getApplicationContext();
+            Context appCtx = ReactNativeBlobUtilImpl.RCTContext.getApplicationContext();
             DownloadManager dm = (DownloadManager) appCtx.getSystemService(Context.DOWNLOAD_SERVICE);
             dm.remove(downloadManagerIdForTaskId);
         }
@@ -180,7 +180,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                     long id = data.getLong("downloadManagerId");
                     if (id == downloadManagerId) {
 
-                        Context appCtx = ReactNativeBlobUtil.RCTContext.getApplicationContext();
+                        Context appCtx = ReactNativeBlobUtilImpl.RCTContext.getApplicationContext();
 
                         DownloadManager downloadManager = (DownloadManager) appCtx.getSystemService(Context.DOWNLOAD_SERVICE);
 
@@ -206,7 +206,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                                 args.putString("written", String.valueOf(written));
                                 args.putString("total", String.valueOf(total));
                                 args.putString("chunk", "");
-                                ReactNativeBlobUtil.RCTContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                                ReactNativeBlobUtilImpl.RCTContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                                         .emit(ReactNativeBlobUtilConst.EVENT_PROGRESS, args);
 
                             }
@@ -267,7 +267,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
                 }
-                Context appCtx = ReactNativeBlobUtil.RCTContext.getApplicationContext();
+                Context appCtx = ReactNativeBlobUtilImpl.RCTContext.getApplicationContext();
                 DownloadManager dm = (DownloadManager) appCtx.getSystemService(Context.DOWNLOAD_SERVICE);
                 downloadManagerId = dm.enqueue(req);
                 androidDownloadManagerTaskTable.put(taskId, Long.valueOf(downloadManagerId));
@@ -329,7 +329,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                 boolean found = false;
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                    ConnectivityManager connectivityManager = (ConnectivityManager) ReactNativeBlobUtil.RCTContext.getSystemService(ReactNativeBlobUtil.RCTContext.CONNECTIVITY_SERVICE);
+                    ConnectivityManager connectivityManager = (ConnectivityManager) ReactNativeBlobUtilImpl.RCTContext.getSystemService(ReactNativeBlobUtilImpl.RCTContext.CONNECTIVITY_SERVICE);
                     Network[] networks = connectivityManager.getAllNetworks();
 
                     for (Network network : networks) {
@@ -480,14 +480,14 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                         switch (responseType) {
                             case KeepInMemory:
                                 extended = new ReactNativeBlobUtilDefaultResp(
-                                        ReactNativeBlobUtil.RCTContext,
+                                        ReactNativeBlobUtilImpl.RCTContext,
                                         taskId,
                                         originalResponse.body(),
                                         options.increment);
                                 break;
                             case FileStorage:
                                 extended = new ReactNativeBlobUtilFileResp(
-                                        ReactNativeBlobUtil.RCTContext,
+                                        ReactNativeBlobUtilImpl.RCTContext,
                                         taskId,
                                         originalResponse.body(),
                                         destPath,
@@ -495,7 +495,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                                 break;
                             default:
                                 extended = new ReactNativeBlobUtilDefaultResp(
-                                        ReactNativeBlobUtil.RCTContext,
+                                        ReactNativeBlobUtilImpl.RCTContext,
                                         taskId,
                                         originalResponse.body(),
                                         options.increment);
@@ -574,7 +574,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                             scannable = notifyConfig.getBoolean("mediaScannable");
                         if (notifyConfig.hasKey("notification"))
                             notification = notifyConfig.getBoolean("notification");
-                        DownloadManager dm = (DownloadManager) ReactNativeBlobUtil.RCTContext.getSystemService(ReactNativeBlobUtil.RCTContext.DOWNLOAD_SERVICE);
+                        DownloadManager dm = (DownloadManager) ReactNativeBlobUtilImpl.RCTContext.getSystemService(ReactNativeBlobUtilImpl.RCTContext.DOWNLOAD_SERVICE);
                         dm.addCompletedDownload(title, desc, scannable, mime, destPath, contentLength, notification);
                     }
 
@@ -836,7 +836,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
     }
 
     private void emitStateEvent(WritableMap args) {
-        ReactNativeBlobUtil.RCTContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+        ReactNativeBlobUtilImpl.RCTContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                 .emit(ReactNativeBlobUtilConst.EVENT_HTTP_STATE, args);
     }
 
@@ -844,7 +844,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
     public void onReceive(Context context, Intent intent) {
         String action = intent.getAction();
         if (DownloadManager.ACTION_DOWNLOAD_COMPLETE.equals(action)) {
-            Context appCtx = ReactNativeBlobUtil.RCTContext.getApplicationContext();
+            Context appCtx = ReactNativeBlobUtilImpl.RCTContext.getApplicationContext();
             long id = intent.getExtras().getLong(DownloadManager.EXTRA_DOWNLOAD_ID);
             if (id == this.downloadManagerId) {
                 releaseTaskResource(); // remove task ID from task map

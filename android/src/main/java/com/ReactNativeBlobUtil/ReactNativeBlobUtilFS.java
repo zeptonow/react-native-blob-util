@@ -258,15 +258,15 @@ class ReactNativeBlobUtilFS {
             if (resolved != null && resolved.startsWith(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET)) {
                 String assetName = path.replace(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET, "");
                 // This fails should an asset file be >2GB
-                length = (int) ReactNativeBlobUtil.RCTContext.getAssets().openFd(assetName).getLength();
+                length = (int) ReactNativeBlobUtilImpl.RCTContext.getAssets().openFd(assetName).getLength();
                 bytes = new byte[length];
-                InputStream in = ReactNativeBlobUtil.RCTContext.getAssets().open(assetName);
+                InputStream in = ReactNativeBlobUtilImpl.RCTContext.getAssets().open(assetName);
                 bytesRead = in.read(bytes, 0, length);
                 in.close();
             }
             // issue 287
             else if (resolved == null) {
-                InputStream in = ReactNativeBlobUtil.RCTContext.getContentResolver().openInputStream(Uri.parse(path));
+                InputStream in = ReactNativeBlobUtilImpl.RCTContext.getContentResolver().openInputStream(Uri.parse(path));
                 // TODO See https://developer.android.com/reference/java/io/InputStream.html#available()
                 // Quote: "Note that while some implementations of InputStream will return the total number of bytes
                 // in the stream, many will not. It is never correct to use the return value of this method to
@@ -441,7 +441,7 @@ class ReactNativeBlobUtilFS {
      * @return String
      */
     static String getTmpPath(String taskId) {
-        return ReactNativeBlobUtil.RCTContext.getFilesDir() + "/ReactNativeBlobUtilTmp_" + taskId;
+        return ReactNativeBlobUtilImpl.RCTContext.getFilesDir() + "/ReactNativeBlobUtilTmp_" + taskId;
     }
 
 
@@ -614,7 +614,7 @@ class ReactNativeBlobUtilFS {
         if (isAsset(path)) {
             try {
                 String filename = path.replace(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET, "");
-                com.ReactNativeBlobUtil.ReactNativeBlobUtil.RCTContext.getAssets().openFd(filename);
+                com.ReactNativeBlobUtil.ReactNativeBlobUtilImpl.RCTContext.getAssets().openFd(filename);
                 callback.invoke(true, false);
             } catch (IOException e) {
                 callback.invoke(false, false);
@@ -779,7 +779,7 @@ class ReactNativeBlobUtilFS {
             WritableMap stat = Arguments.createMap();
             if (isAsset(path)) {
                 String name = path.replace(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET, "");
-                AssetFileDescriptor fd = ReactNativeBlobUtil.RCTContext.getAssets().openFd(name);
+                AssetFileDescriptor fd = ReactNativeBlobUtilImpl.RCTContext.getAssets().openFd(name);
                 stat.putString("filename", name);
                 stat.putString("path", path);
                 stat.putString("type", "asset");
@@ -1020,7 +1020,7 @@ class ReactNativeBlobUtilFS {
      */
     private static InputStream inputStreamFromPath(String path) throws IOException {
         if (path.startsWith(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET)) {
-            return ReactNativeBlobUtil.RCTContext.getAssets().open(path.replace(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET, ""));
+            return ReactNativeBlobUtilImpl.RCTContext.getAssets().open(path.replace(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET, ""));
         }
         return new FileInputStream(new File(path));
     }
@@ -1034,7 +1034,7 @@ class ReactNativeBlobUtilFS {
     private static boolean isPathExists(String path) {
         if (path.startsWith(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET)) {
             try {
-                ReactNativeBlobUtil.RCTContext.getAssets().open(path.replace(com.ReactNativeBlobUtil.ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET, ""));
+                ReactNativeBlobUtilImpl.RCTContext.getAssets().open(path.replace(com.ReactNativeBlobUtil.ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET, ""));
             } catch (IOException e) {
                 return false;
             }
