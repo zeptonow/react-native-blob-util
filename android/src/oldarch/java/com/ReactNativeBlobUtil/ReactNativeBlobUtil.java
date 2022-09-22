@@ -30,7 +30,7 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
     @NonNull
     @Override
     public String getName() {
-        return "ReactNativeBlobUtil";
+        return ReactNativeBlobUtilImpl.NAME;
     }
 
     @Override

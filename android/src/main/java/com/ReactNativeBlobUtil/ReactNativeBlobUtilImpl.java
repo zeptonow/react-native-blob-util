@@ -39,6 +39,8 @@ import static com.ReactNativeBlobUtil.ReactNativeBlobUtilConst.GET_CONTENT_INTEN
 
 class ReactNativeBlobUtilImpl {
 
+    public static final String NAME = "ReactNativeBlobUtil";
+
     private final OkHttpClient mClient;
 
     static ReactApplicationContext RCTContext;
