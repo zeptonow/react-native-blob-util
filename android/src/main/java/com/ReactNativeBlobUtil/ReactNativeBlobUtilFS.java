@@ -358,6 +358,10 @@ class ReactNativeBlobUtilFS {
         }
         res.put("MainBundleDir", ctx.getApplicationInfo().dataDir);
 
+        // TODO Change me with the correct path
+        res.put("LibraryDir", "");
+        res.put("ApplicationSupportDir", "");
+
         return res;
     }
 

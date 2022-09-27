@@ -11,27 +11,21 @@ import ReactNativeBlobUtilReadStream from './class/ReactNativeBlobUtilReadStream
 import ReactNativeBlobUtilFile from './class/ReactNativeBlobUtilFile';
 import ReactNativeBlobUtil from './codegenSpecs/NativeBlobUtils';
 
+const constants = ReactNativeBlobUtil.getConstants();
+
 const dirs = {
-    DocumentDir: ReactNativeBlobUtil.DocumentDir,
-    CacheDir: ReactNativeBlobUtil.CacheDir,
-    PictureDir: ReactNativeBlobUtil.PictureDir,
-    MusicDir: ReactNativeBlobUtil.MusicDir,
-    MovieDir: ReactNativeBlobUtil.MovieDir,
-    DownloadDir: ReactNativeBlobUtil.DownloadDir,
-    DCIMDir: ReactNativeBlobUtil.DCIMDir,
-    SDCardDir: ReactNativeBlobUtil.SDCardDir, // Depracated
-    SDCardApplicationDir: ReactNativeBlobUtil.SDCardApplicationDir, // Deprecated
-    MainBundleDir: ReactNativeBlobUtil.MainBundleDir,
-    LibraryDir: ReactNativeBlobUtil.LibraryDir,
-    ApplicationSupportDir: ReactNativeBlobUtil.ApplicationSupportDir,
-
-    LegacyPictureDir: ReactNativeBlobUtil.LegacyPictureDir,
-    LegacyMusicDir: ReactNativeBlobUtil.LegacyMusicDir,
-    LegacyMovieDir: ReactNativeBlobUtil.LegacyMovieDir,
-    LegacyDownloadDir: ReactNativeBlobUtil.LegacyDownloadDir,
-    LegacyDCIMDir: ReactNativeBlobUtil.LegacyDCIMDir,
-    LegacySDCardDir: ReactNativeBlobUtil.LegacySDCardDir, // Depracated
-
+    DocumentDir: constants.DocumentDir,
+    CacheDir: constants.CacheDir,
+    PictureDir: constants.PictureDir,
+    MusicDir: constants.MusicDir,
+    MovieDir: constants.MovieDir,
+    DownloadDir: constants.DownloadDir,
+    DCIMDir: constants.DCIMDir,
+    SDCardDir: constants.SDCardDir, // Depracated
+    SDCardApplicationDir: constants.SDCardApplicationDir, // Deprecated
+    MainBundleDir: constants.MainBundleDir,
+    LibraryDir: constants.LibraryDir,
+    ApplicationSupportDir: constants.ApplicationSupportDir,
 };
 
 function addCode(code: string, error: Error): Error {

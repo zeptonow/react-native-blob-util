@@ -13,6 +13,11 @@ export interface Spec extends TurboModule {
         MusicDir: string,
         PictureDir: string,
         ApplicationSupportDir: string,
+        // Android Only Constants
+        RingtoneDir: string,
+        SDCardDir: string,
+        SDCardApplicationDir: string,
+        DCIMDir: string,
     |};
 
     +fetchBlobForm: (options: Object, taskId: string, method: string, url: string, headers: Object, form: Array<any>, callback: (value: Array<any>) => void) => void;
