@@ -3,8 +3,7 @@
 // found in the LICENSE file.
 
 import { NativeModules, Platform } from "react-native";
-
-const ReactNativeBlobUtil: ReactNativeBlobUtilNative = NativeModules.ReactNativeBlobUtil;
+import ReactNativeBlobUtil from "./codegenSpecs/NativeBlobUtils";
 
 /**
  * Displays an options menu using UIDocumentInteractionController.presentOptionsMenu

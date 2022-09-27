@@ -3,8 +3,7 @@
 // found in the LICENSE file.
 
 import { NativeModules, Platform } from 'react-native';
-
-const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil;
+import ReactNativeBlobUtil from './codegenSpecs/NativeBlobUtils';
 
 /**
  * Send an intent to open the file.

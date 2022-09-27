@@ -9,8 +9,7 @@ import ReactNativeBlobUtilSession from './class/ReactNativeBlobUtilSession';
 import ReactNativeBlobUtilWriteStream from './class/ReactNativeBlobUtilWriteStream';
 import ReactNativeBlobUtilReadStream from './class/ReactNativeBlobUtilReadStream';
 import ReactNativeBlobUtilFile from './class/ReactNativeBlobUtilFile';
-
-const ReactNativeBlobUtil: ReactNativeBlobUtilNative = NativeModules.ReactNativeBlobUtil;
+import ReactNativeBlobUtil from './codegenSpecs/NativeBlobUtils';
 
 const dirs = {
     DocumentDir: ReactNativeBlobUtil.DocumentDir,
