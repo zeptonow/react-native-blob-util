@@ -3,13 +3,12 @@
 // found in the LICENSE file.
 
 import {
-  NativeModules,
   DeviceEventEmitter,
   NativeAppEventEmitter,
 } from 'react-native';
 import UUID from '../utils/uuid';
 
-const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil;
+import ReactNativeBlobUtil from "../codegenSpecs/NativeBlobUtils";
 const emitter = DeviceEventEmitter;
 
 export default class ReactNativeBlobUtilReadStream {
