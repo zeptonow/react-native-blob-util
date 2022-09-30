@@ -74,6 +74,10 @@ RCT_EXPORT_MODULE();
     return self;
 }
 
+- (NSDictionary *)getConstants {
+  return self.constantsToExport;
+}
+
 - (NSDictionary *)constantsToExport
 {
     return @{
@@ -86,6 +90,11 @@ RCT_EXPORT_MODULE();
              @"MusicDir" : [ReactNativeBlobUtilFS getMusicDir],
              @"PictureDir" : [ReactNativeBlobUtilFS getPictureDir],
              @"ApplicationSupportDir" : [ReactNativeBlobUtilFS getApplicationSupportDir],
+             // Android only. For the new architecture, we have a single spec for both platforms.
+             @"RingtoneDir": @"",
+             @"SDCardDir": @"",
+             @"SDCardApplicationDir": @"",
+             @"DCIMDir": @"",
              };
 }
 
@@ -853,7 +862,7 @@ RCT_EXPORT_METHOD(df:(RCTResponseSenderBlock)callback)
     [ReactNativeBlobUtilFS df:callback];
 }
 
-- (UIViewController *) documentInteractionControllerViewControllerForPreview: (UIDocumentInteractionController *) controller
+- (UIViewController *)documentInteractionControllerViewControllerForPreview: (UIDocumentInteractionController *) controller
 {
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
     return window.rootViewController;
@@ -866,7 +875,88 @@ RCT_EXPORT_METHOD(emitExpiredEvent:(RCTResponseSenderBlock)callback)
     [ReactNativeBlobUtilNetwork emitExpiredTasks:eventDispatcherRef];
 }
 
+# pragma mark - Android Only methods
+// These methods are required because in the New Arch we have a single spec for both platforms
+- (void)actionViewIntent:(NSString *) path
+                    mime:(NSString *) mime
+            chooserTitle:(NSString *) chooserTitle
+                 resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject
+{
+    reject(@"ENOT_SUPPORTED", @"This method is not supported on iOS", nil);
+}
 
+- (void)addCompleteDownload:(NSDictionary *)config
+                    resolve:(RCTPromiseResolveBlock)resolve
+                     reject:(RCTPromiseRejectBlock)reject
+{
+    reject(@"ENOT_SUPPORTED", @"This method is not supported on iOS", nil);
+}
+
+- (void)copyToInternal:(NSString *)contentUri
+              destpath:(NSString *) destpath
+               resolve:(RCTPromiseResolveBlock)resolve
+                reject:(RCTPromiseRejectBlock)reject
+{
+    reject(@"ENOT_SUPPORTED", @"This method is not supported on iOS", nil);
+}
+- (void)copyToMediaStore:(NSDictionary *)filedata
+                      mt:(NSString *) mt
+                    path:(NSString *)
+                 resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject
+{
+    reject(@"ENOT_SUPPORTED", @"This method is not supported on iOS", nil);
+}
+
+- (void)createMediaFile:(NSDictionary *)filedata
+                    mt:(NSString *) mt
+               resolve:(RCTPromiseResolveBlock)resolve
+                reject:(RCTPromiseRejectBlock)reject
+{
+    reject(@"ENOT_SUPPORTED", @"This method is not supported on iOS", nil);
+}
+
+- (void)getBlob:(NSString *)contentUri
+       encoding:(NSString *)encoding
+        resolve:(RCTPromiseResolveBlock)resolve
+         reject:(RCTPromiseRejectBlock)reject
+{
+    reject(@"ENOT_SUPPORTED", @"This method is not supported on iOS", nil);
+}
+
+- (void)getContentIntent:(NSString *)mime
+                 resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject
+{
+    reject(@"ENOT_SUPPORTED", @"This method is not supported on iOS", nil);
+}
+- (void)getSDCardDir:(RCTPromiseResolveBlock)resolve
+              reject:(RCTPromiseRejectBlock)reject
+{
+    reject(@"ENOT_SUPPORTED", @"This method is not supported on iOS", nil);
+}
+- (void)getSDCardApplicationDir:(RCTPromiseResolveBlock)resolve
+              reject:(RCTPromiseRejectBlock)reject
+{
+    reject(@"ENOT_SUPPORTED", @"This method is not supported on iOS", nil);
+}
+- (void)scanFile:(NSArray *)pairs
+        callback:(RCTResponseSenderBlock)callback
+{
+    callback(@[@"Scan file method not supported in iOS"]);
+}
+- (void)writeToMediaFile:(NSString *)fileUri
+                    path:(NSString *)path
+           transformFile:(BOOL)transformFile
+                 resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject
+{
+    reject(@"ENOT_SUPPORTED", @"This method is not supported on iOS", nil);
+}
+
+
+# pragma mark - New Architecture
 #if RCT_NEW_ARCH_ENABLED
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
     (const facebook::react::ObjCTurboModule::InitParams &)params
