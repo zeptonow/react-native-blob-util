@@ -27,6 +27,7 @@ codecov.yml
 # Example
 img/
 example/
+examples/
 app.json
 
 # Android

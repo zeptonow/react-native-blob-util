@@ -3,13 +3,11 @@
 // found in the LICENSE file.
 
 import {
- NativeModules,
  DeviceEventEmitter,
  NativeAppEventEmitter,
 } from 'react-native';
 
-const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil;
-
+import ReactNativeBlobUtil from "../codegenSpecs/NativeBlobUtils";
 export default class ReactNativeBlobUtilWriteStream {
 
   id : string;

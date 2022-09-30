@@ -173,7 +173,7 @@ class ReactNativeBlobUtilBody extends RequestBody {
             if (ReactNativeBlobUtilUtils.isAsset(orgPath)) {
                 try {
                     String assetName = orgPath.replace(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET, "");
-                    return ReactNativeBlobUtil.RCTContext.getAssets().open(assetName);
+                    return ReactNativeBlobUtilImpl.RCTContext.getAssets().open(assetName);
                 } catch (Exception e) {
                     throw new Exception("error when getting request stream from asset : " + e.getLocalizedMessage());
                 }
@@ -190,7 +190,7 @@ class ReactNativeBlobUtilBody extends RequestBody {
         } else if (rawBody.startsWith(ReactNativeBlobUtilConst.CONTENT_PREFIX)) {
             String contentURI = rawBody.substring(ReactNativeBlobUtilConst.CONTENT_PREFIX.length());
             try {
-                return ReactNativeBlobUtil.RCTContext.getContentResolver().openInputStream(Uri.parse(contentURI));
+                return ReactNativeBlobUtilImpl.RCTContext.getContentResolver().openInputStream(Uri.parse(contentURI));
             } catch (Exception e) {
                 throw new Exception("error when getting request stream for content URI: " + contentURI, e);
             }
@@ -215,12 +215,12 @@ class ReactNativeBlobUtilBody extends RequestBody {
     private File createMultipartBodyCache() throws IOException {
         String boundary = "ReactNativeBlobUtil-" + mTaskId;
 
-        File outputDir = ReactNativeBlobUtil.RCTContext.getCacheDir(); // context being the Activity pointer
+        File outputDir = ReactNativeBlobUtilImpl.RCTContext.getCacheDir(); // context being the Activity pointer
         File outputFile = File.createTempFile("rnfb-form-tmp", "", outputDir);
         FileOutputStream os = new FileOutputStream(outputFile);
 
         ArrayList<FormField> fields = countFormDataLength();
-        ReactApplicationContext ctx = ReactNativeBlobUtil.RCTContext;
+        ReactApplicationContext ctx = ReactNativeBlobUtilImpl.RCTContext;
 
         for (FormField field : fields) {
             String data = field.data;
@@ -344,7 +344,7 @@ class ReactNativeBlobUtilBody extends RequestBody {
     private ArrayList<FormField> countFormDataLength() throws IOException {
         long total = 0;
         ArrayList<FormField> list = new ArrayList<>();
-        ReactApplicationContext ctx = ReactNativeBlobUtil.RCTContext;
+        ReactApplicationContext ctx = ReactNativeBlobUtilImpl.RCTContext;
         for (int i = 0; i < form.size(); i++) {
             FormField field = new FormField(form.getMap(i));
             list.add(field);
@@ -442,7 +442,7 @@ class ReactNativeBlobUtilBody extends RequestBody {
             args.putString("total", String.valueOf(contentLength));
 
             // emit event to js context
-            ReactNativeBlobUtil.RCTContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+            ReactNativeBlobUtilImpl.RCTContext.getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
                     .emit(ReactNativeBlobUtilConst.EVENT_UPLOAD_PROGRESS, args);
         }
     }
