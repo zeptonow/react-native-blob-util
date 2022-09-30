@@ -1,4 +1,3 @@
-import {NativeModules} from 'react-native';
 import type {ReactNativeBlobUtilNative, filedescriptor} from "types";
 import ReactNativeBlobUtil from "./codegenSpecs/NativeBlobUtils";
 
