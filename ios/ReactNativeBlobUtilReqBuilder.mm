@@ -53,7 +53,7 @@
         [[self class] buildFormBody:form boundary:boundary onComplete:^(NSData *formData, BOOL hasError) {
             if(hasError)
             {
-                onComplete(nil, nil);
+                onComplete(nil, 0);
             }
             else
             {
@@ -117,11 +117,11 @@
                     orgPath = [[NSURL URLWithString:orgPath] path];
                     if([orgPath hasPrefix:AL_PREFIX])
                     {
-                        
+
                         [ReactNativeBlobUtilFS readFile:orgPath encoding:nil transformFile:false onComplete:^(id content, NSString* code, NSString * err) {
                             if(err != nil)
                             {
-                                onComplete(nil, nil);
+                                onComplete(nil, 0);
                             }
                             else
                             {
@@ -131,7 +131,7 @@
                                 onComplete(request, [((NSData *)content) length]);
                             }
                         }];
-                        
+
                         return;
                     }
                     size = [[[NSFileManager defaultManager] attributesOfItemAtPath:orgPath error:nil] fileSize];

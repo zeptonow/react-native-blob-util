@@ -18,13 +18,13 @@
 #import "RCTBridgeModule.h"
 #endif
 
-@import AssetsLibrary;
+#import <AssetsLibrary/AssetsLibrary.h>
 
 @interface ReactNativeBlobUtilFS : NSObject <NSStreamDelegate>  {
     NSOutputStream * outStream;
     NSInputStream * inStream;
     RCTResponseSenderBlock callback;
-    RCTBridge * bridge;
+    RCTEventDispatcher * eventDispatcher;
     Boolean isOpen;
     NSString * encoding;
     int bufferSize;
@@ -37,7 +37,7 @@
 @property (nonatomic) NSOutputStream * _Nullable outStream;
 @property (nonatomic) NSInputStream * _Nullable inStream;
 @property (strong, nonatomic) RCTResponseSenderBlock callback;
-@property (nonatomic) RCTBridge * bridge;
+@property (nonatomic) RCTEventDispatcher * eventDispatcher;
 @property (nonatomic) NSString * encoding;
 @property (nonatomic) NSString * taskId;
 @property (nonatomic) NSString * path;
@@ -85,13 +85,13 @@
      rejecter:(RCTPromiseRejectBlock)reject;
 //+ (void) writeFileFromFile:(NSString *)src toFile:(NSString *)dest append:(BOOL)append;
 + (void) writeAssetToPath:(ALAssetRepresentation * )rep dest:(NSString *)dest;
-+ (void) readStream:(NSString *)uri encoding:(NSString * )encoding bufferSize:(int)bufferSize tick:(int)tick streamId:(NSString *)streamId bridgeRef:(RCTBridge *)bridgeRef;
++ (void) readStream:(NSString *)uri encoding:(NSString * )encoding bufferSize:(int)bufferSize tick:(int)tick streamId:(NSString *)streamId eventDispatcherRef:(RCTEventDispatcher *)eventDispatcherRef;
 + (void) df:(RCTResponseSenderBlock)callback;
 
 // constructor
 - (id) init;
 - (id)initWithCallback:(RCTResponseSenderBlock)callback;
-- (id)initWithBridgeRef:(RCTBridge *)bridgeRef;
+- (id)initWithEventDispatcherRef:(RCTEventDispatcher *)eventDispatcherRef;
 
 // file stream
 - (void) openWithDestination;

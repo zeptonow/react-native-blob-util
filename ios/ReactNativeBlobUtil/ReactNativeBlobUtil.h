@@ -28,6 +28,10 @@
 
 #import <UIKit/UIKit.h>
 
+#if RCT_NEW_ARCH_ENABLED
+#import <React-Codegen/ReactNativeBlobUtilSpec/ReactNativeBlobUtilSpec.h>
+#endif
+
 
 @interface ReactNativeBlobUtil : NSObject <RCTBridgeModule, UIDocumentInteractionControllerDelegate> {
 
@@ -38,8 +42,13 @@
 @property (nonatomic) NSString * filePathPrefix;
 @property (retain) UIDocumentInteractionController * documentController;
 
-+ (RCTBridge *)getRCTBridge;
++ (RCTEventDispatcher *)getRCTEventDispatcher;
 
 @end
+
+#if RCT_NEW_ARCH_ENABLED
+@interface ReactNativeBlobUtil () <NativeBlobUtilsSpec>
+@end
+#endif
 
 #endif /* ReactNativeBlobUtil_h */
