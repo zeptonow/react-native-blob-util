@@ -481,6 +481,13 @@ export interface Dirs {
     DCIMDir: string;
     SDCardDir: string;
     MainBundleDir: string;
+
+    LegacyPictureDir: string;
+    LegacyMusicDir: string;
+    LegacyMovieDir: string;
+    LegacyDownloadDir: string;
+    LegacyDCIMDir: string;
+    LegacySDCardDir: string; // Depracated
 }
 
 export interface ReactNativeBlobUtilWriteStream {

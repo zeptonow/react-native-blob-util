@@ -92,7 +92,7 @@ public class ReactNativeBlobUtil extends ReactContextBaseJavaModule {
         Map<String, Object> res = new HashMap<>();
         res.putAll(ReactNativeBlobUtilFS.getSystemfolders(this.getReactApplicationContext()));
         res.putAll(ReactNativeBlobUtilFS.getLegacySystemfolders(this.getReactApplicationContext()));
-
+        System.out.println(res);
         return res;
     }
 
