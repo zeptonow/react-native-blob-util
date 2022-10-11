@@ -95,8 +95,8 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
 
     private boolean shouldTransformFile() {
         return this.options.transformFile &&
-            // Can only process if it's written to a file
-            (this.options.fileCache || this.options.path != null);
+                // Can only process if it's written to a file
+                (this.options.fileCache || this.options.path != null);
     }
 
     public static HashMap<String, Call> taskTable = new HashMap<>();
@@ -114,6 +114,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
     ReadableArray rawRequestBodyArray;
     ReadableMap headers;
     Callback callback;
+    Boolean callbackfired = false;
     long contentLength;
     long downloadManagerId;
     ReactNativeBlobUtilBody requestBody;
@@ -138,7 +139,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
 
         // If transformFile is specified, we first want to get the response back in memory so we can
         // encrypt it wholesale and at that point, write it into the file storage.
-        if((this.options.fileCache || this.options.path != null) && !this.shouldTransformFile())
+        if ((this.options.fileCache || this.options.path != null) && !this.shouldTransformFile())
             responseType = ResponseType.FileStorage;
         else
             responseType = ResponseType.KeepInMemory;
@@ -165,6 +166,11 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
             DownloadManager dm = (DownloadManager) appCtx.getSystemService(Context.DOWNLOAD_SERVICE);
             dm.remove(downloadManagerIdForTaskId);
         }
+    }
+
+    private void invoke_callback(Object... args) {
+        if (this.callbackfired) return;
+        this.callback.invoke(args);
     }
 
     private final int QUERY = 1314;
@@ -301,7 +307,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
             File file = new File(ReactNativeBlobUtilFS.getTmpPath(cacheKey) + ext);
 
             if (file.exists()) {
-                callback.invoke(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, file.getAbsolutePath());
+                invoke_callback(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, file.getAbsolutePath());
                 return;
             }
         }
@@ -355,7 +361,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                     }
 
                     if (!found) {
-                        callback.invoke("No available WiFi connections.", null, null);
+                        invoke_callback("No available WiFi connections.", null, null);
                         releaseTaskResource();
                         return;
                     }
@@ -551,9 +557,9 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                     // check if this error caused by socket timeout
                     if (e.getClass().equals(SocketTimeoutException.class)) {
                         respInfo.putBoolean("timeout", true);
-                        callback.invoke("The request timed out.", null, null);
+                        invoke_callback("The request timed out.", null, null);
                     } else
-                        callback.invoke(e.getLocalizedMessage(), null, null);
+                        invoke_callback(e.getLocalizedMessage(), null, null);
                     releaseTaskResource();
                 }
 
@@ -586,7 +592,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
         } catch (Exception error) {
             error.printStackTrace();
             releaseTaskResource();
-            callback.invoke("ReactNativeBlobUtil request error: " + error.getMessage() + error.getCause());
+            invoke_callback("ReactNativeBlobUtil request error: " + error.getMessage() + error.getCause());
         }
     }
 
@@ -631,7 +637,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                         ins.close();
                         os.flush();
                         os.close();
-                        callback.invoke(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, dest);
+                        invoke_callback(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, dest);
                     }
                     // response data directly pass to JS context as string.
                     else {
@@ -649,15 +655,15 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                             }
                             try (FileOutputStream fos = new FileOutputStream(file)) {
                                 fos.write(ReactNativeBlobUtilFileTransformer.sharedFileTransformer.onWriteFile(b));
-                            } catch(Exception e) {
-                                callback.invoke("Error from file transformer:" + e.getLocalizedMessage(), null);
+                            } catch (Exception e) {
+                                invoke_callback("Error from file transformer:" + e.getLocalizedMessage(), null);
                                 return;
                             }
-                            callback.invoke(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, this.destPath);
+                            invoke_callback(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, this.destPath);
                             return;
                         }
                         if (responseFormat == ResponseFormat.BASE64) {
-                            callback.invoke(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_BASE64, android.util.Base64.encodeToString(b, Base64.NO_WRAP));
+                            invoke_callback(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_BASE64, android.util.Base64.encodeToString(b, Base64.NO_WRAP));
                             return;
                         }
                         try {
@@ -667,21 +673,21 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                             decoder.decode(ByteBuffer.wrap(b));
                             // If the data contains invalid characters the following lines will be skipped.
                             String utf8 = new String(b, charSet);
-                            callback.invoke(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_UTF8, utf8);
+                            invoke_callback(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_UTF8, utf8);
                         }
                         // This usually means the data contains invalid unicode characters but still valid data,
                         // it's binary data, so send it as a normal string
                         catch (CharacterCodingException ignored) {
                             if (responseFormat == ResponseFormat.UTF8) {
                                 String utf8 = new String(b);
-                                callback.invoke(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_UTF8, utf8);
+                                invoke_callback(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_UTF8, utf8);
                             } else {
-                                callback.invoke(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_BASE64, android.util.Base64.encodeToString(b, Base64.NO_WRAP));
+                                invoke_callback(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_BASE64, android.util.Base64.encodeToString(b, Base64.NO_WRAP));
                             }
                         }
                     }
                 } catch (IOException e) {
-                    callback.invoke("ReactNativeBlobUtil failed to encode response data to BASE64 string.", null);
+                    invoke_callback("ReactNativeBlobUtil failed to encode response data to BASE64 string.", null);
                 }
                 break;
             case FileStorage:
@@ -713,26 +719,26 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                         } catch (IOException exception) {
                             exception.printStackTrace();
                         }
-                        callback.invoke("Unexpected FileStorage response file: " + responseBodyString, null);
+                        invoke_callback("Unexpected FileStorage response file: " + responseBodyString, null);
                     } else {
-                        callback.invoke("Unexpected FileStorage response with no file.", null);
+                        invoke_callback("Unexpected FileStorage response with no file.", null);
                     }
                     return;
                 }
 
                 if (ReactNativeBlobUtilFileResp != null && !ReactNativeBlobUtilFileResp.isDownloadComplete()) {
-                    callback.invoke("Download interrupted.", null);
+                    invoke_callback("Download interrupted.", null);
                 } else {
                     this.destPath = this.destPath.replace("?append=true", "");
-                    callback.invoke(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, this.destPath);
+                    invoke_callback(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, this.destPath);
                 }
 
                 break;
             default:
                 try {
-                    callback.invoke(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_UTF8, new String(resp.body().bytes(), "UTF-8"));
+                    invoke_callback(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_UTF8, new String(resp.body().bytes(), "UTF-8"));
                 } catch (IOException e) {
-                    callback.invoke("ReactNativeBlobUtil failed to encode response data to UTF8 string.", null);
+                    invoke_callback("ReactNativeBlobUtil failed to encode response data to UTF8 string.", null);
                 }
                 break;
         }
@@ -856,7 +862,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                 Cursor c = dm.query(query);
                 // #236 unhandled null check for DownloadManager.query() return value
                 if (c == null) {
-                    this.callback.invoke("Download manager failed to download from  " + this.url + ". Query was unsuccessful ", null, null);
+                    this.invoke_callback("Download manager failed to download from  " + this.url + ". Query was unsuccessful ", null, null);
                     return;
                 }
 
@@ -867,7 +873,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                         // #297 handle failed request
                         int statusCode = c.getInt(c.getColumnIndex(DownloadManager.COLUMN_STATUS));
                         if (statusCode == DownloadManager.STATUS_FAILED) {
-                            this.callback.invoke("Download manager failed to download from  " + this.url + ". Status Code = " + statusCode, null, null);
+                            this.invoke_callback("Download manager failed to download from  " + this.url + ". Status Code = " + statusCode, null, null);
                             return;
                         }
                         String contentUri = c.getString(c.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI));
@@ -896,17 +902,17 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                         if (!exists)
                             throw new Exception("Download manager download failed, the file does not downloaded to destination.");
                         else
-                            this.callback.invoke(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, customDest);
+                            this.invoke_callback(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, customDest);
 
                     } catch (Exception ex) {
                         ex.printStackTrace();
-                        this.callback.invoke(ex.getLocalizedMessage(), null);
+                        this.invoke_callback(ex.getLocalizedMessage(), null);
                     }
                 } else {
                     if (filePath == null)
-                        this.callback.invoke("Download manager could not resolve downloaded file path.", ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, null);
+                        this.invoke_callback("Download manager could not resolve downloaded file path.", ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, null);
                     else
-                        this.callback.invoke(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, filePath);
+                        this.invoke_callback(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, filePath);
                 }
 
             }
