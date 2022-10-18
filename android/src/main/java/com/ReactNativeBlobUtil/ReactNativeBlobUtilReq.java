@@ -171,6 +171,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
     private void invoke_callback(Object... args) {
         if (this.callbackfired) return;
         this.callback.invoke(args);
+        this.callbackfired = true;
     }
 
     private final int QUERY = 1314;
