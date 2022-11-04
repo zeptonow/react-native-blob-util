@@ -297,7 +297,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
 
         // find cached result if `key` property exists
         String cacheKey = this.taskId;
-        String ext = this.options.appendExt.isEmpty() ? "" : "." + this.options.appendExt;
+        String ext = (this.options.appendExt == null || this.options.appendExt.isEmpty()) ? "" : "." + this.options.appendExt;
 
         if (this.options.key != null) {
             cacheKey = ReactNativeBlobUtilUtils.getMD5(this.options.key);
@@ -402,7 +402,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
 
                 if (rawRequestBodyArray != null) {
                     requestType = RequestType.Form;
-                } else if (cType.isEmpty()) {
+                } else if (cType == null || cType.isEmpty()) {
                     if (!cType.equalsIgnoreCase("")) {
                         builder.header("Content-Type", "application/octet-stream");
                     }
