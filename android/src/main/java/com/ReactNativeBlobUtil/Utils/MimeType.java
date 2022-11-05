@@ -27,7 +27,7 @@ public class MimeType {
     public static String getFullFileName(String name, String mimeType) {
         // Prior to API 29, MimeType.BINARY_FILE has no file extension
         String ext = MimeType.getExtensionFromMimeType(mimeType);
-        if (ext.isEmpty() || name.endsWith("." + "ext")) return name;
+        if ((ext == null || ext.isEmpty()) || name.endsWith("." + "ext")) return name;
         else {
             String fn = name + "." + ext;
             if (fn.endsWith(".")) return StringUtils.stripEnd(fn, ".");
