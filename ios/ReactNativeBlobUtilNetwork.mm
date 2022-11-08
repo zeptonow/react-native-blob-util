@@ -10,7 +10,6 @@
 #import <Foundation/Foundation.h>
 #import "ReactNativeBlobUtilNetwork.h"
 
-#import "ReactNativeBlobUtil.h"
 #import "ReactNativeBlobUtilConst.h"
 #import "ReactNativeBlobUtilProgress.h"
 
@@ -49,14 +48,14 @@ static void initialize_tables() {
     self = [super init];
     if (self) {
         self.requestsTable = [NSMapTable mapTableWithKeyOptions:NSMapTableStrongMemory valueOptions:NSMapTableWeakMemory];
-        
+
         self.taskQueue = [[NSOperationQueue alloc] init];
         self.taskQueue.qualityOfService = NSQualityOfServiceUtility;
         self.taskQueue.maxConcurrentOperationCount = 10;
         self.rebindProgressDict = [NSMutableDictionary dictionary];
         self.rebindUploadProgressDict = [NSMutableDictionary dictionary];
     }
-    
+
     return self;
 }
 
@@ -67,13 +66,13 @@ static void initialize_tables() {
     dispatch_once(&onceToken, ^{
         _sharedInstance = [[self alloc] init];
     });
-    
+
     return _sharedInstance;
 }
 
 - (void) sendRequest:(__weak NSDictionary  * _Nullable )options
        contentLength:(long) contentLength
-              bridge:(RCTBridge * _Nullable)bridgeRef
+              eventDispatcher:(RCTEventDispatcher * _Nullable)eventDispatcherRef
               taskId:(NSString * _Nullable)taskId
          withRequest:(__weak NSURLRequest * _Nullable)req
             callback:(_Nullable RCTResponseSenderBlock) callback
@@ -81,12 +80,12 @@ static void initialize_tables() {
     ReactNativeBlobUtilRequest *request = [[ReactNativeBlobUtilRequest alloc] init];
     [request sendRequest:options
            contentLength:contentLength
-                  bridge:bridgeRef
+                  eventDispatcher:eventDispatcherRef
                   taskId:taskId
              withRequest:req
       taskOperationQueue:self.taskQueue
                 callback:callback];
-    
+
     @synchronized([ReactNativeBlobUtilNetwork class]) {
         [self.requestsTable setObject:request forKey:taskId];
         [self checkProgressConfigForTask:taskId];
@@ -100,7 +99,7 @@ static void initialize_tables() {
         [self enableProgressReport:taskId config:downloadConfig];
         [self.rebindProgressDict removeObjectForKey:taskId];
     }
-    
+
     //reconfig uploadProgress
     ReactNativeBlobUtilProgress *uploadConfig = self.rebindUploadProgressDict[taskId];
     if (uploadConfig != nil) {
@@ -138,11 +137,11 @@ static void initialize_tables() {
 - (void) cancelRequest:(NSString *)taskId
 {
     NSURLSessionDataTask * task;
-    
+
     @synchronized ([ReactNativeBlobUtilNetwork class]) {
         task = [self.requestsTable objectForKey:taskId].task;
     }
-    
+
     if (task && task.state == NSURLSessionTaskStateRunning) {
         [task cancel];
     }
@@ -155,25 +154,24 @@ static void initialize_tables() {
     for (NSString * key in headers) {
         [mheaders setValue:[headers valueForKey:key] forKey:[key lowercaseString]];
     }
-    
+
     return mheaders;
 }
 
 // #115 Invoke fetch.expire event on those expired requests so that the expired event can be handled
-+ (void) emitExpiredTasks
++ (void) emitExpiredTasks:(RCTEventDispatcher *)eventDispatcher
 {
     @synchronized ([ReactNativeBlobUtilNetwork class]){
         NSEnumerator * emu =  [expirationTable keyEnumerator];
         NSString * key;
-        
+
         while ((key = [emu nextObject]))
         {
-            RCTBridge * bridge = [ReactNativeBlobUtil getRCTBridge];
             id args = @{ @"taskId": key };
-            [bridge.eventDispatcher sendDeviceEventWithName:EVENT_EXPIRE body:args];
-            
+            [eventDispatcher sendDeviceEventWithName:EVENT_EXPIRE body:args];
+
         }
-        
+
         // clear expired task entries
         [expirationTable removeAllObjects];
         expirationTable = [[NSMapTable alloc] init];

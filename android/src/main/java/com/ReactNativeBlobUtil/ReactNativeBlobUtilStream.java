@@ -37,12 +37,12 @@ public class ReactNativeBlobUtilStream {
 
     /**
      * Create a file stream for read
-     *
-     * @param path       File stream target path
+     *  @param path       File stream target path
      * @param encoding   File stream decoder, should be one of `base64`, `utf8`, `ascii`
      * @param bufferSize Buffer size of read stream, default to 4096 (4095 when encode is `base64`)
+     * @param RCTContext
      */
-    void readStream(String path, String encoding, int bufferSize, int tick, final String streamId) {
+    void readStream(String path, String encoding, int bufferSize, int tick, final String streamId, ReactApplicationContext RCTContext) {
         String resolved = ReactNativeBlobUtilUtils.normalizePath(path);
         if (resolved != null)
             path = resolved;
@@ -55,11 +55,11 @@ public class ReactNativeBlobUtilStream {
             InputStream fs;
 
             if (resolved != null && path.startsWith(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET)) {
-                fs = ReactNativeBlobUtil.RCTContext.getAssets().open(path.replace(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET, ""));
+                fs = ReactNativeBlobUtilImpl.RCTContext.getAssets().open(path.replace(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET, ""));
             }
             // fix issue 287
             else if (resolved == null) {
-                fs = ReactNativeBlobUtil.RCTContext.getContentResolver().openInputStream(Uri.parse(path));
+                fs = ReactNativeBlobUtilImpl.RCTContext.getContentResolver().openInputStream(Uri.parse(path));
             } else {
                 fs = new FileInputStream(new File(path));
             }
@@ -279,7 +279,7 @@ public class ReactNativeBlobUtilStream {
      */
     public static InputStream inputStreamFromPath(String path) throws IOException {
         if (path.startsWith(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET)) {
-            return ReactNativeBlobUtil.RCTContext.getAssets().open(path.replace(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET, ""));
+            return ReactNativeBlobUtilImpl.RCTContext.getAssets().open(path.replace(ReactNativeBlobUtilConst.FILE_PREFIX_BUNDLE_ASSET, ""));
         }
         return new FileInputStream(new File(path));
     }
