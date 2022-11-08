@@ -124,6 +124,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
     boolean timeout = false;
     ArrayList<String> redirects = new ArrayList<>();
     OkHttpClient client;
+    boolean callbackfired;
 
     public ReactNativeBlobUtilReq(ReadableMap options, String taskId, String method, String url, ReadableMap headers, String body, ReadableArray arrayBody, OkHttpClient client, final Callback callback) {
         this.method = method.toUpperCase(Locale.ROOT);
@@ -135,6 +136,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
         this.rawRequestBody = body;
         this.rawRequestBodyArray = arrayBody;
         this.client = client;
+        this.callbackfired = false;
 
         // If transformFile is specified, we first want to get the response back in memory so we can
         // encrypt it wholesale and at that point, write it into the file storage.
