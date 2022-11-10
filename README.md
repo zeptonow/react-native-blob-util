@@ -16,7 +16,7 @@ react-native-blob-util version 0.10.16 and up is only compatible with react nati
 
 ## Features
 
-- Access and write data to Android MedaiaStore (e.g. Downloads folder on devices > Android 9)
+- Access and write data to Android Media Store (e.g. Downloads folder on devices > Android 9)
 - Transfer data directly from/to storage without BASE64 bridging
 - File API supports regular files, Asset files, and CameraRoll files
 - Native-to-native file manipulation API, reduce JS bridging performance loss
@@ -971,7 +971,7 @@ After `0.8.0` we've made some [Web API polyfills](https://github.com/RonRadtke/r
 
 ## Setting A File Transformer
 
-Setting a file transformer will allow you to specify how data should be transformed whenever the library is writing into storage or reading from storage. A use case for this is if you want the files handled by this library to be encrypted. 
+Setting a file transformer will allow you to specify how data should be transformed whenever the library is writing into storage or reading from storage. A use case for this is if you want the files handled by this library to be encrypted.
 
 If you want to use a file transformer, you must implement an interface defined in:
 
@@ -988,7 +988,7 @@ public class MainApplication extends Application implements ReactApplication {
     @Override
     public void onCreate() {
        ...
-       ReactNativeBlobUtilFileTransformer.sharedFileTransformer = new MyCustomEncryptor(); 
+       ReactNativeBlobUtilFileTransformer.sharedFileTransformer = new MyCustomEncryptor();
        ...
     }
 ```
@@ -1005,8 +1005,8 @@ iOS:
 }
 ```
 
-Here are the places where the transformer would apply 
-- Reading a file from the file system  
+Here are the places where the transformer would apply
+- Reading a file from the file system
 - Writing a file into the file system
 - Http response is downloaded to storage directly
 
