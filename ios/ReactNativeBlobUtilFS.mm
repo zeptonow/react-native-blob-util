@@ -11,7 +11,7 @@
 #import "ReactNativeBlobUtilFS.h"
 #import "ReactNativeBlobUtilConst.h"
 #import "ReactNativeBlobUtilFileTransformer.h"
-@import AssetsLibrary;
+#import <AssetsLibrary/AssetsLibrary.h>
 
 #import <CommonCrypto/CommonDigest.h>
 
@@ -58,14 +58,14 @@ NSMutableDictionary *fileStreams = nil;
     return self;
 }
 
-- (id)initWithBridgeRef:(RCTBridge *)bridgeRef {
+- (id)initWithEventDispatcherRef:(RCTEventDispatcher *)eventDispatcherRef {
     self = [super init];
-    self.bridge = bridgeRef;
+    self.eventDispatcher = eventDispatcherRef;
     return self;
 }
 
 // static member getter
-+ (NSArray *) getFileStreams {
++ (NSDictionary *) getFileStreams {
 
     if(fileStreams == nil)
         fileStreams = [[NSMutableDictionary alloc] init];
@@ -160,11 +160,11 @@ NSMutableDictionary *fileStreams = nil;
          bufferSize:(int)bufferSize
                tick:(int)tick
            streamId:(NSString *)streamId
-          bridgeRef:(RCTBridge *)bridgeRef
+          eventDispatcherRef:(RCTEventDispatcher *)eventDispatcherRef
 {
     [[self class] getPathFromUri:uri completionHandler:^(NSString *path, ALAssetRepresentation *asset) {
 
-        __block RCTEventDispatcher * event = bridgeRef.eventDispatcher;
+        __block RCTEventDispatcher * event = eventDispatcherRef;
         __block int read = 0;
         __block int backoff = tick *1000;
         __block int chunkSize = bufferSize;
@@ -508,7 +508,8 @@ NSMutableDictionary *fileStreams = nil;
         __block Byte * buffer;
         if(asset != nil)
         {
-            buffer = malloc(asset.size);
+            int size = asset.size;
+            buffer = (Byte *)malloc(size);
             [asset getBytes:buffer fromOffset:0 length:asset.size error:&err];
             if(err != nil)
             {
@@ -516,7 +517,7 @@ NSMutableDictionary *fileStreams = nil;
                 free(buffer);
                 return;
             }
-            fileContent = [NSData dataWithBytes:buffer length:asset.size];
+            fileContent = [NSData dataWithBytes:buffer length:size];
             free(buffer);
         }
         else
@@ -555,21 +556,25 @@ NSMutableDictionary *fileStreams = nil;
             if([[encoding lowercaseString] isEqualToString:@"utf8"])
             {
                 NSString * utf8 = [[NSString alloc] initWithData:fileContent encoding:NSUTF8StringEncoding];
-                if(utf8 == nil)
-                    onComplete([[NSString alloc] initWithData:fileContent encoding:NSISOLatin1StringEncoding], nil, nil);
-                else
-                    onComplete(utf8, nil, nil);
+                if(utf8 == nil) {
+                    NSString * latin1 = [[NSString alloc] initWithData:fileContent encoding:NSISOLatin1StringEncoding];
+                    NSData * latin1Data = [latin1 dataUsingEncoding:NSISOLatin1StringEncoding];
+                    onComplete(latin1Data, nil, nil);
+                } else {
+                    onComplete(fileContent, nil, nil);
+                }
             }
             else if ([[encoding lowercaseString] isEqualToString:@"base64"]) {
-                onComplete([fileContent base64EncodedStringWithOptions:0], nil, nil);
+                NSString * base64String = [fileContent base64EncodedStringWithOptions:0];
+                onComplete([[NSData alloc] initWithBase64EncodedString:base64String options:0], nil, nil);
             }
             else if ([[encoding lowercaseString] isEqualToString:@"ascii"]) {
                 NSMutableArray * resultArray = [NSMutableArray array];
-                char * bytes = [fileContent bytes];
+                char * bytes = (char *)[fileContent bytes];
                 for(int i=0;i<[fileContent length];i++) {
                     [resultArray addObject:[NSNumber numberWithChar:bytes[i]]];
                 }
-                onComplete(resultArray, nil, nil);
+                onComplete((NSData *)resultArray, nil, nil);
             }
         }
         else
@@ -690,11 +695,11 @@ NSMutableDictionary *fileStreams = nil;
     if([fm fileExistsAtPath:path isDirectory:&isDir] == NO) {
         return nil;
     }
-    NSDictionary * info = [fm attributesOfItemAtPath:path error:&error];
-    NSString * size = [NSString stringWithFormat:@"%d", [info fileSize]];
+    NSDictionary * info = [fm attributesOfItemAtPath:path error:error];
+    NSString * size = [NSString stringWithFormat:@"%llu", [info fileSize]];
     NSString * filename = [path lastPathComponent];
     NSDate * lastModified;
-    [[NSURL fileURLWithPath:path] getResourceValue:&lastModified forKey:NSURLContentModificationDateKey error:&error];
+    [[NSURL fileURLWithPath:path] getResourceValue:&lastModified forKey:NSURLContentModificationDateKey error:error];
     return @{
              @"size" : size,
              @"filename" : filename,
@@ -759,7 +764,7 @@ NSMutableDictionary *fileStreams = nil;
     NSUInteger left = [decodedData length];
     NSUInteger nwr = 0;
     do {
-        nwr = [self.outStream write:[decodedData bytes] maxLength:left];
+        nwr = [self.outStream write:(const uint8_t *)[decodedData bytes] maxLength:left];
         if (-1 == nwr) break;
         left -= nwr;
     } while (left > 0);
@@ -773,7 +778,7 @@ NSMutableDictionary *fileStreams = nil;
     NSUInteger left = [chunk length];
     NSUInteger nwr = 0;
     do {
-        nwr = [self.outStream write:[chunk bytes] maxLength:left];
+        nwr = [self.outStream write:(const uint8_t *)[chunk bytes] maxLength:left];
         if (-1 == nwr) break;
         left -= nwr;
     } while (left > 0);
@@ -826,7 +831,7 @@ NSMutableDictionary *fileStreams = nil;
             long max = MIN(size, [end longValue]);
 
             if(![fm fileExistsAtPath:dest]) {
-                if(![fm createFileAtPath:dest contents:@"" attributes:nil]) {
+                if(![fm createFileAtPath:dest contents:[NSData new] attributes:nil]) {
                     return reject(@"ENOENT", [NSString stringWithFormat:@"File '%@' does not exist and could not be created", path], nil);
                 }
             }
@@ -842,7 +847,7 @@ NSMutableDictionary *fileStreams = nil;
                 }
                 else
                 {
-                    NSLog(@"read chunk %lu", 10240);
+                    NSLog(@"read chunk %d", 10240);
                     chunkSize = 10240;
                     chunk = [handle readDataOfLength:10240];
                 }
@@ -850,7 +855,7 @@ NSMutableDictionary *fileStreams = nil;
                     break;
                 long remain = expected - read;
 
-                [os write:[chunk bytes] maxLength:chunkSize];
+                [os write:(const uint8_t *)[chunk bytes] maxLength:chunkSize];
                 read += [chunk length];
             }
             [handle closeFile];
@@ -868,19 +873,20 @@ NSMutableDictionary *fileStreams = nil;
             long max = MIN(size, [end longValue]);
 
             while(read < expected) {
-                uint8_t * chunk[10240];
+                uint8_t chunk[10240];
+                uint8_t * pointerToChunk = &chunk[0];
                 long chunkSize = 0;
                 if([start longValue] + read + 10240 > max)
                 {
                     NSLog(@"read chunk %lu", max - read - [start longValue]);
                     chunkSize = max - read - [start longValue];
-                    chunkRead = [asset getBytes:chunk fromOffset:[start longValue] + read length:chunkSize error:nil];
+                    chunkRead = [asset getBytes:pointerToChunk fromOffset:[start longValue] + read length:chunkSize error:nil];
                 }
                 else
                 {
                     NSLog(@"read chunk %lu", 10240);
                     chunkSize = 10240;
-                    chunkRead = [asset getBytes:chunk fromOffset:[start longValue] + read length:chunkSize error:nil];
+                    chunkRead = [asset getBytes:pointerToChunk fromOffset:[start longValue] + read length:chunkSize error:nil];
                 }
                 if( chunkRead <= 0)
                     break;

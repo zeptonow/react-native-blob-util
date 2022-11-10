@@ -32,25 +32,25 @@
 
 -(BOOL)shouldReport:(NSNumber *)nextProgress
 {
-    BOOL * result = YES;
+    BOOL result = YES;
     float countF = [self.count floatValue];
     if(countF > 0 && [nextProgress floatValue] > 0)
     {
         result = (int)(floorf([nextProgress floatValue]*countF)) >= tick;
     }
-    
+
     NSTimeInterval timeStamp = [[NSDate date] timeIntervalSince1970];
     // NSTimeInterval is defined as double
     NSNumber *timeStampObj = [NSNumber numberWithDouble: timeStamp];
     float delta = [timeStampObj doubleValue] - lastTick;
-    BOOL * shouldReport = delta > [self.interval doubleValue] && self.enable && result;
+    BOOL shouldReport = delta > [self.interval doubleValue] && self.enable && result;
     if(shouldReport)
     {
         tick++;
         lastTick = [timeStampObj doubleValue];
     }
     return shouldReport;
-    
+
 }
 
 

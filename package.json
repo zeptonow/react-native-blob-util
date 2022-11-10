@@ -46,5 +46,10 @@
     "peerDependencies": {
         "react": "*",
         "react-native": "*"
+    },
+    "codegenConfig": {
+        "name": "ReactNativeBlobUtilSpec",
+        "type": "modules",
+        "jsSrcsDir": "codegenSpecs"
     }
 }

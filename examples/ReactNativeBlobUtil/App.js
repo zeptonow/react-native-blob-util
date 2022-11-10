@@ -7,7 +7,8 @@
  */
 
 import React, {useState} from 'react';
-import {SafeAreaView, StyleSheet, ScrollView, View, Text, StatusBar, TextInput, Button, Alert, Picker} from 'react-native';
+import {Alert, Button, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, View} from 'react-native';
+import {Picker} from '@react-native-picker/picker';
 
 import {Colors} from 'react-native/Libraries/NewAppScreen';
 
@@ -316,6 +317,28 @@ const App: () => React$Node = () => {
             });
     };
 
+    // Android mediastorage store
+    const androidmediastore = () => {
+        ReactNativeBlobUtil.config({
+            // add this option that makes response data to be stored as a file,
+            // this is much more performant.
+            fileCache: true,
+        })
+            .fetch('GET', 'https://upload.wikimedia.org/wikipedia/commons/c/c4/Change-5.png')
+            .then((res) => {
+                // the temp file path
+                ReactNativeBlobUtil.MediaCollection.copyToMediaStore(
+                    {
+                        name: 'test.png',
+                        parentFolder: '',
+                        mimeType: 'image/png',
+                    },
+                    'Download',
+                    res.path(),
+                ).then((dest) => ReactNativeBlobUtil.android.actionViewIntent(dest, 'image/png'));
+            });
+    };
+
     // uploadFileFromStorage
     const uploadFromStorageCall = () => {
         ReactNativeBlobUtil.fetch(
@@ -425,9 +448,19 @@ const App: () => React$Node = () => {
                     // element with property `filename` will be transformed into `file` in form data
                     {name: 'avatar', filename: 'avatar.png', data: 'Kentucky Fried Seth'},
                     // custom content type
-                    {name: 'avatar-png', filename: 'avatar-png.png', type: 'image/png', data: 'whaddup my pickles'},
+                    {
+                        name: 'avatar-png',
+                        filename: 'avatar-png.png',
+                        type: 'image/png',
+                        data: 'whaddup my pickles',
+                    },
                     // part file from storage
-                    {name: 'avatar-foo', filename: 'avatar-foo.png', type: 'image/foo', data: ReactNativeBlobUtil.wrap(ReactNativeBlobUtil.fs.dirs.DocumentDir + '\\ImageToUpload.jpg')},
+                    {
+                        name: 'avatar-foo',
+                        filename: 'avatar-foo.png',
+                        type: 'image/foo',
+                        data: ReactNativeBlobUtil.wrap(ReactNativeBlobUtil.fs.dirs.DocumentDir + '\\ImageToUpload.jpg'),
+                    },
                     // elements without property `filename` will be sent as plain text
                     {name: 'name', data: 'user'},
                     {
@@ -644,6 +677,7 @@ const App: () => React$Node = () => {
                             <Text style={styles.sectionTitle}>{'FetchBlobTest'}</Text>
                             <View style={styles.sectionDescription} />
                             <Button title="Attempt Fetch" color="#9a73ef" onPress={fetchCall} />
+                            <Button title="Attempt Android Media Storage" color="#9a73ef" onPress={androidmediastore} />
                             <Button title="Upload File from Storage" color="#9a73ef" onPress={uploadFromStorageCall} />
                             <Button title="Upload Text From Storage" color="#9a73ef" onPress={uploadTextFromCall} />
                             <Button title="Multipart Call" color="#9a73ef" onPress={MultipartFileAndData} />

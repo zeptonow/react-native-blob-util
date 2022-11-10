@@ -2,7 +2,8 @@
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 
-import {AppState, DeviceEventEmitter, NativeModules, Platform,} from 'react-native';
+import {AppState, DeviceEventEmitter, Platform,} from 'react-native';
+import ReactNativeBlobUtil from './codegenSpecs/NativeBlobUtils';
 
 //import StatefulPromise from './class/StatefulPromise.js'
 import fs from './fs';
@@ -33,7 +34,6 @@ const {
 
 const Blob = polyfill.Blob;
 const emitter = DeviceEventEmitter;
-const ReactNativeBlobUtil = NativeModules.ReactNativeBlobUtil;
 const wrap = URIUtil.wrap;
 
 // when app resumes, check if there's any expired network task and trigger
