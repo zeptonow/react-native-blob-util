@@ -26,6 +26,13 @@ const dirs = {
     MainBundleDir: constants.MainBundleDir,
     LibraryDir: constants.LibraryDir,
     ApplicationSupportDir: constants.ApplicationSupportDir,
+
+    LegacyPictureDir: constants.LegacyPictureDir,
+    LegacyMusicDir: constants.LegacyMusicDir,
+    LegacyMovieDir: constants.LegacyMovieDir,
+    LegacyDownloadDir: constants.LegacyDownloadDir,
+    LegacyDCIMDir: constants.LegacyDCIMDir,
+    LegacySDCardDir: constants.LegacySDCardDir, // Depracated
 };
 
 function addCode(code: string, error: Error): Error {
