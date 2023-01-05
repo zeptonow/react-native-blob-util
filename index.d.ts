@@ -555,6 +555,12 @@ export interface IOSApi {
      * @param  {string} scheme URI scheme that needs to support, optional
      */
     presentPreview(path: string, scheme?: string): void;
+
+    /**
+     * Marks the file to be excluded from icloud/itunes backup. Works recursively if path is to a directory
+     * @param {string} path  Path to a file or directory to mark to be excluded.
+     */
+    excludeFromBackupKey(path: string): Promise<void>;
 }
 
 export interface AndroidDownloadOption {
