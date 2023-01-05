@@ -12,7 +12,7 @@ The project will be continued in this repository. React-Native-Blob-Util is full
 
 # Version Compatibility Warning
 
-react-native-blob-util version **0.17.0** and up is only compatible with react native **0.64** and up.
+react-native-blob-util version **0.17.0** and up is only compatible with react native **0.65** and up.
 
 react-native-blob-util version **0.10.16** and up is only compatible with react native **0.60** and up.
 
