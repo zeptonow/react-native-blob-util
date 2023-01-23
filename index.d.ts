@@ -6,7 +6,8 @@
 export const ReactNativeBlobUtil: ReactNativeBlobUtilStatic;
 export type ReactNativeBlobUtil = ReactNativeBlobUtilStatic;
 export default ReactNativeBlobUtil;
-import {filedescriptor} from './types';
+import CanceledFetchError from './class/ReactNativeBlobUtilCancelError'
+import { filedescriptor } from './types';
 
 interface ReactNativeBlobUtilStatic {
     fetch(method: Methods, url: string, headers?: { [key: string]: string }, body?: any
@@ -29,6 +30,7 @@ interface ReactNativeBlobUtilStatic {
     polyfill: Polyfill;
     // this require external module https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/oboe
     JSONStream: any;
+    CanceledFetchError: CanceledFetchError
 }
 
 export interface Polyfill {
