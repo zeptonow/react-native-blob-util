@@ -6,8 +6,8 @@
 export const ReactNativeBlobUtil: ReactNativeBlobUtilStatic;
 export type ReactNativeBlobUtil = ReactNativeBlobUtilStatic;
 export default ReactNativeBlobUtil;
-import CanceledFetchError from './class/ReactNativeBlobUtilCancelError'
 import { filedescriptor } from './types';
+import CanceledFetchError from './class/ReactNativeBlobUtilCanceledFetchError'
 
 interface ReactNativeBlobUtilStatic {
     fetch(method: Methods, url: string, headers?: { [key: string]: string }, body?: any
