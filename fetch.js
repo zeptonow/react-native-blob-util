@@ -1,9 +1,10 @@
-import {ReactNativeBlobUtilConfig} from "./types";
+import { ReactNativeBlobUtilConfig } from "./types";
 import URIUtil from "./utils/uri";
 import fs from "./fs";
 import getUUID from "./utils/uuid";
-import {DeviceEventEmitter} from "react-native";
-import {FetchBlobResponse} from "./class/ReactNativeBlobUtilBlobResponse";
+import { DeviceEventEmitter } from "react-native";
+import { FetchBlobResponse } from "./class/ReactNativeBlobUtilBlobResponse";
+import { CanceledFetchError } from ".class/ReactNativeBlobUtilCanceledFetchError";
 import ReactNativeBlobUtil from "./codegenSpecs/NativeBlobUtils";
 
 const emitter = DeviceEventEmitter;
@@ -55,7 +56,7 @@ emitter.addListener("ReactNativeBlobUtilMessage", (e) => {
  * @return {function} This method returns a `fetch` method instance.
  */
 export function config(options: ReactNativeBlobUtilConfig) {
-    return {fetch: fetch.bind(options)};
+    return { fetch: fetch.bind(options) };
 }
 
 /**
@@ -105,7 +106,7 @@ function fetchFile(options = {}, method, url, headers = {}, body): Promise {
                     stream.open();
                     info = {
                         state: "2",
-                        headers: {'source': 'system-fs'},
+                        headers: { 'source': 'system-fs' },
                         status: 200,
                         respType: 'text',
                         rnfbEncode: headers.encoding || 'utf8'
@@ -328,7 +329,7 @@ export function fetch(...args: any): Promise {
         subscriptionUpload.remove();
         stateEvent.remove();
         ReactNativeBlobUtil.cancelRequest(taskId, fn);
-        promiseReject(new Error("canceled"));
+        promiseReject(new CanceledFetchError("canceled"));
     };
     promise.taskId = taskId;
 
