@@ -155,8 +155,8 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
     }
 
     public static void cancelTask(String taskId) {
-        if (taskTable.containsKey(taskId)) {
-            Call call = taskTable.get(taskId);
+        Call call = taskTable.get(taskId);
+        if (call != null) {
             call.cancel();
             taskTable.remove(taskId);
         }
