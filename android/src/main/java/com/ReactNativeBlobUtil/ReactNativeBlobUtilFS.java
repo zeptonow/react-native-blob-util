@@ -355,7 +355,11 @@ class ReactNativeBlobUtilFS {
             } else {
                 res.put("SDCardApplicationDir", "");
             }
+        } else {
+            res.put("SDCardDir", "");
+            res.put("SDCardApplicationDir", "");
         }
+
         res.put("MainBundleDir", ctx.getApplicationInfo().dataDir);
 
         // TODO Change me with the correct path
@@ -376,7 +380,20 @@ class ReactNativeBlobUtilFS {
     static Map<String, Object> getLegacySystemfolders(ReactApplicationContext ctx) {
         Map<String, Object> res = new HashMap<>();
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) return ReactNativeBlobUtilFS.getSystemfolders(ctx);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            res = ReactNativeBlobUtilFS.getSystemfolders(ctx);
+
+            // Include legacy folders anyway, since on the new arch compatibility between the spec and the turbomodule is enforced
+            res.put("LegacyDCIMDir", "");
+            res.put("LegacyPictureDir", "");
+            res.put("LegacyMusicDir", "");
+            res.put("LegacyDownloadDir", "");
+            res.put("LegacyMovieDir", "");
+            res.put("LegacyRingtoneDir", "");
+            res.put("LegacySDCardDir", "");
+            
+            return res;
+        }
 
         res.put("LegacyDCIMDir", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).getAbsolutePath());
         res.put("LegacyPictureDir", Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).getAbsolutePath());
@@ -388,6 +405,8 @@ class ReactNativeBlobUtilFS {
         String state = Environment.getExternalStorageState();
         if (state.equals(Environment.MEDIA_MOUNTED)) {
             res.put("LegacySDCardDir", Environment.getExternalStorageDirectory().getAbsolutePath());
+        } else {
+            res.put("LegacySDCardDir", "");
         }
 
         return res;
