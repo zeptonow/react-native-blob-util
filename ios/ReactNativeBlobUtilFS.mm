@@ -411,9 +411,9 @@ NSMutableDictionary *fileStreams = nil;
             [fileHandle closeFile];
         }
         else {
-            if (![content writeToFile:path atomically:YES]) {
+            if (![content writeToFile:path options:NSDataWritingAtomic error:&err]) {
                 fm = nil;
-                return reject(@"EUNSPECIFIED", [NSString stringWithFormat:@"File '%@' could not be written.", path], nil);
+                return reject(@"EUNSPECIFIED", [NSString stringWithFormat:@"File '%@' could not be written; error: %@", path, [err description]], err);
             }
         }
         fm = nil;
