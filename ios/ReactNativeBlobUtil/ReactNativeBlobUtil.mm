@@ -12,7 +12,7 @@
 #import "ReactNativeBlobUtilProgress.h"
 
 #if RCT_NEW_ARCH_ENABLED
-#import "ReactNativeBlobUtilSpec.h"
+#import <ReactNativeBlobUtilSpec/ReactNativeBlobUtilSpec.h>
 #endif
 
 __strong RCTEventDispatcher * eventDispatcherRef;
@@ -685,7 +685,7 @@ RCT_EXPORT_METHOD(hash:(NSString *)path
 }
 
 #pragma mark - fs.readStream
-RCT_EXPORT_METHOD(readStream:(NSString *)path withEncoding:(NSString *)encoding bufferSize:(int)bufferSize tick:(int)tick streamId:(NSString *)streamId)
+RCT_EXPORT_METHOD(readStream:(NSString *)path encoding:(NSString *)encoding bufferSize:(int)bufferSize tick:(int)tick streamId:(NSString *)streamId)
 {
     if(bufferSize == 0) {
         if([[encoding lowercaseString] isEqualToString:@"base64"])
@@ -910,7 +910,7 @@ RCT_EXPORT_METHOD(emitExpiredEvent:(RCTResponseSenderBlock)callback)
 }
 - (void)copyToMediaStore:(NSDictionary *)filedata
                       mt:(NSString *) mt
-                    path:(NSString *)
+                    path:(NSString *) path
                  resolve:(RCTPromiseResolveBlock)resolve
                   reject:(RCTPromiseRejectBlock)reject
 {
@@ -962,7 +962,6 @@ RCT_EXPORT_METHOD(emitExpiredEvent:(RCTResponseSenderBlock)callback)
 {
     reject(@"ENOT_SUPPORTED", @"This method is not supported on iOS", nil);
 }
-
 
 # pragma mark - New Architecture
 #if RCT_NEW_ARCH_ENABLED
