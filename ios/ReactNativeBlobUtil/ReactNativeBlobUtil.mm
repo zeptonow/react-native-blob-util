@@ -95,6 +95,14 @@ RCT_EXPORT_MODULE();
              @"SDCardDir": @"",
              @"SDCardApplicationDir": @"",
              @"DCIMDir": @"",
+             // Android only legacy constants 
+             @"LegacyDCIMDir": @"",
+             @"LegacyPictureDir": @"",
+             @"LegacyMusicDir": @"",
+             @"LegacyDownloadDir": @"",
+             @"LegacyMovieDir": @"",
+             @"LegacyRingtoneDir": @"",
+             @"LegacySDCardDir": @"",
              };
 }
 
