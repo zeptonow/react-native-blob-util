@@ -4,6 +4,7 @@ import fs from "./fs";
 import getUUID from "./utils/uuid";
 import {DeviceEventEmitter} from "react-native";
 import {FetchBlobResponse} from "./class/ReactNativeBlobUtilBlobResponse";
+import CanceledFetchError from "./class/ReactNativeBlobUtilCanceledFetchError";
 import ReactNativeBlobUtil from "./codegenSpecs/NativeBlobUtils";
 
 const emitter = DeviceEventEmitter;
@@ -328,7 +329,7 @@ export function fetch(...args: any): Promise {
         subscriptionUpload.remove();
         stateEvent.remove();
         ReactNativeBlobUtil.cancelRequest(taskId, fn);
-        promiseReject(new Error("canceled"));
+        promiseReject(new CanceledFetchError("canceled"));
     };
     promise.taskId = taskId;
 
