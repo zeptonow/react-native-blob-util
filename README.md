@@ -92,14 +92,21 @@ After `0.10.3` you can install this package directly from Github
 npm install --save github:RonRadtke/react-native-blob-util#<branch_name>
 ```
 
+**iOS**
+
+When using the package from npm, run `pod install` from the `ios` directory:
+
+```sh
+cd ios; pod install; cd ..
+```
+
 **Okhttp**
 
 For using the library okhttp3 is required. It's in general included in react-native. The library uses the okhttp version shipped with react-native or used by your app. For very old devices android devices okhttp 3.12 can be used.
 
 **Manually Link Native Modules**
 
-If you're using RN 0.60 or higher, manuall linking should not be required anymore.
-
+If you're using RN 0.60 or higher, manual linking should not be required anymore.
 
 If automatically linking doesn't work for you, see instructions on [manually linking](https://github.com/RonRadtke/react-native-blob-util/wiki/Manually-Link-Package#index).
 
