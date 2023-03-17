@@ -658,14 +658,14 @@ Android 10 introduced scoped storage and thus new APIs to store files to Documen
 
 #### CopyToMediaStore
 
-Copies an existing file from the internal Storage to the Media Store. <br> An exmaple for downloading a file and storing it to the `downloads` collection
+Copies an existing file from the internal Storage to the Media Store. <br> An example for downloading a file and storing it to the `downloads` collection
 
 ```js
 ReactNativeBlobUtil
         .config({
             fileCache: true
         })
-        .fetch('GET', 'https://example.de/image.png', {'Accept': 'application/octet-stream'}, JSON.stringify(dat))
+        .fetch('GET', 'https://example.de/image.png')
         .then(async (res) => {
             let result = await ReactNativeBlobUtil.MediaCollection.copyToMediaStore({
                         name: filename, // name of the file
