@@ -27,7 +27,7 @@ react-native-blob-util version **0.10.16** and up is only compatible with react 
 - JSON stream supported base on [Oboe.js](https://github.com/jimhigson/oboe.js/) @jimhigson
 
 ## React Native New Architecture
-With Reacht Native 0.68.0 the switch to enable the new aritechture was introduced.
+With React Native 0.68.0 the switch to enable the new aritechture was introduced.
 Starting with version 0.17.0 this library introduces support for the new architecture as well. Of course the old architecture will still be supproted.
 Further information about it and how to use it you can find here: https://reactnative.dev/docs/next/the-new-architecture/landing-page
 
