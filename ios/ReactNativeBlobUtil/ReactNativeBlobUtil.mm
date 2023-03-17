@@ -31,6 +31,7 @@ dispatch_queue_t fsQueue;
 
 @synthesize filePathPrefix;
 @synthesize documentController;
+@synthesize bridge;
 
 - (dispatch_queue_t) methodQueue {
     if(commonTaskQueue == nil)
@@ -67,7 +68,7 @@ RCT_EXPORT_MODULE();
         [[NSFileManager defaultManager] createDirectoryAtPath:[ReactNativeBlobUtilFS getTempPath] withIntermediateDirectories:YES attributes:nil error:NULL];
     }
     dispatch_async(dispatch_get_main_queue(), ^{
-        eventDispatcherRef = [ReactNativeBlobUtil getRCTEventDispatcher];
+        eventDispatcherRef = bridge.eventDispatcher;
         [ReactNativeBlobUtilNetwork emitExpiredTasks: eventDispatcherRef];
     });
 
