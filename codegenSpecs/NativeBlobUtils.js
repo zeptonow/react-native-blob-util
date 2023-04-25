@@ -66,9 +66,9 @@ export interface Spec extends TurboModule {
     // Android Only APIs
     +actionViewIntent: (path: string, mime: string, chooserTitle: string) => Promise<void>;
     +addCompleteDownload: (config: Object) => Promise<void>;
-    +copyToInternal: (contentUri: string, destpath: string) => Promise<string>; 
+    +copyToInternal: (contentUri: string, destpath: string) => Promise<string>;
     +copyToMediaStore: (filedata: Object, mt: string, path: string) => Promise<string>;
-    +createMediaFile: (filedata: Object, mt: string) => Promise<string>;    
+    +createMediaFile: (filedata: Object, mt: string) => Promise<string>;
     +getBlob: (contentUri: string, encoding: string) => Promise<Array<any>>;
     +getContentIntent: (mime: string) => Promise<string>;
     +getSDCardDir: () => Promise<string>;
@@ -76,10 +76,7 @@ export interface Spec extends TurboModule {
     +scanFile: (pairs: Array<any>, callback: (value: Array<any>) => void) => void;
     +writeToMediaFile: (fileUri: string, path: string, transformFile: boolean) => Promise<string>;
   }
-  
-  export default (TurboModuleRegistry.get<Spec>(
-    'ReactNativeBlobUtil'
-    ): ?Spec);
-    
-    
-    
+
+  export default (TurboModuleRegistry.get<Spec>('ReactNativeBlobUtil'): ?Spec);
+
+

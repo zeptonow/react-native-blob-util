@@ -2,7 +2,7 @@
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 
-import {AppState, DeviceEventEmitter, Platform,} from 'react-native';
+import {AppState, Platform,} from 'react-native';
 import ReactNativeBlobUtil from './codegenSpecs/NativeBlobUtils';
 
 //import StatefulPromise from './class/StatefulPromise.js'
@@ -13,9 +13,9 @@ import polyfill from './polyfill';
 import android from './android';
 import ios from './ios';
 import JSONStream from './json-stream';
-import {config, fetch} from './fetch';
-import URIUtil from "./utils/uri";
-import CanceledFetchError from "./class/ReactNativeBlobUtilCanceledFetchError";
+import {config, fetch} from 'fetch';
+import URIUtil from './utils/uri';
+import CanceledFetchError from './class/ReactNativeBlobUtilCanceledFetchError';
 
 const {
     ReactNativeBlobUtilSession,
@@ -34,7 +34,6 @@ const {
 } = fs;
 
 const Blob = polyfill.Blob;
-const emitter = DeviceEventEmitter;
 const wrap = URIUtil.wrap;
 
 // when app resumes, check if there's any expired network task and trigger
