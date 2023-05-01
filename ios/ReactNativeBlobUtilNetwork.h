@@ -30,12 +30,10 @@
 
 + (ReactNativeBlobUtilNetwork* _Nullable)sharedInstance;
 + (NSMutableDictionary  * _Nullable ) normalizeHeaders:(NSDictionary * _Nullable)headers;
-+ (void) emitExpiredTasks:(RCTEventDispatcher *) eventDispatcher;
 
 - (nullable id) init;
 - (void) sendRequest:(NSDictionary  * _Nullable )options
        contentLength:(long)contentLength
-              eventDispatcher:(RCTEventDispatcher * _Nullable)eventDispatcherRef
               taskId:(NSString * _Nullable)taskId
          withRequest:(NSURLRequest * _Nullable)req
             callback:(_Nullable RCTResponseSenderBlock) callback;

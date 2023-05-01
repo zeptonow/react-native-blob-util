@@ -58,12 +58,6 @@ NSMutableDictionary *fileStreams = nil;
     return self;
 }
 
-- (id)initWithEventDispatcherRef:(RCTEventDispatcher *)eventDispatcherRef {
-    self = [super init];
-    self.eventDispatcher = eventDispatcherRef;
-    return self;
-}
-
 // static member getter
 + (NSDictionary *) getFileStreams {
 
@@ -160,11 +154,9 @@ NSMutableDictionary *fileStreams = nil;
          bufferSize:(int)bufferSize
                tick:(int)tick
            streamId:(NSString *)streamId
-          eventDispatcherRef:(RCTEventDispatcher *)eventDispatcherRef
 {
     [[self class] getPathFromUri:uri completionHandler:^(NSString *path, ALAssetRepresentation *asset) {
 
-        __block RCTEventDispatcher * event = eventDispatcherRef;
         __block int read = 0;
         __block int backoff = tick *1000;
         __block int chunkSize = bufferSize;
@@ -179,7 +171,7 @@ NSMutableDictionary *fileStreams = nil;
                 {
                     NSString * message = [NSString stringWithFormat:@"File does not exist at path %@", path];
                     NSDictionary * payload = @{ @"event": FS_EVENT_ERROR, @"code": @"ENOENT", @"detail": message };
-                    [event sendDeviceEventWithName:streamId body:payload];
+                    [ReactNativeBlobUtil emitEvent:streamId body:payload];
                     free(buffer);
                     return ;
                 }
@@ -187,7 +179,7 @@ NSMutableDictionary *fileStreams = nil;
                 [stream open];
                 while((read = [stream read:buffer maxLength:bufferSize]) > 0)
                 {
-                    [[self class] emitDataChunks:[NSData dataWithBytes:buffer length:read] encoding:encoding streamId:streamId event:event];
+                    [[self class] emitDataChunks:[NSData dataWithBytes:buffer length:read] encoding:encoding streamId:streamId];
                     if(tick > 0)
                     {
                         usleep(backoff);
@@ -212,7 +204,7 @@ NSMutableDictionary *fileStreams = nil;
             else
             {
                 NSDictionary * payload = @{ @"event": FS_EVENT_ERROR, @"code": @"EINVAL", @"detail": @"Unable to resolve URI" };
-                [event sendDeviceEventWithName:streamId body:payload];
+                [ReactNativeBlobUtil emitEvent:streamId body:payload];
             }
             // release buffer
             if(buffer != nil)
@@ -222,12 +214,12 @@ NSMutableDictionary *fileStreams = nil;
         @catch (NSError * err)
         {
             NSDictionary * payload = @{ @"event": FS_EVENT_ERROR, @"code": @"EUNSPECIFIED", @"detail": [err description] };
-            [event sendDeviceEventWithName:streamId body:payload];
+            [ReactNativeBlobUtil emitEvent:streamId body:payload];
         }
         @finally
         {
             NSDictionary * payload = @{ @"event": FS_EVENT_END, @"detail": @"" };
-            [event sendDeviceEventWithName:streamId body:payload];
+            [ReactNativeBlobUtil emitEvent:streamId body:payload];
         }
 
     }];
@@ -236,7 +228,7 @@ NSMutableDictionary *fileStreams = nil;
 }
 
 // send read stream chunks via native event emitter
-+ (void) emitDataChunks:(NSData *)data encoding:(NSString *) encoding streamId:(NSString *)streamId event:(RCTEventDispatcher *)event
++ (void) emitDataChunks:(NSData *)data encoding:(NSString *) encoding streamId:(NSString *)streamId
 {
     @try
     {
@@ -247,12 +239,12 @@ NSMutableDictionary *fileStreams = nil;
                                        @"event": FS_EVENT_DATA,
                                        @"detail" : [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]
                                        };
-            [event sendDeviceEventWithName:streamId body:payload];
+            [ReactNativeBlobUtil emitEvent:streamId body:payload];
         }
         else if ([[encoding lowercaseString] isEqualToString:@"base64"])
         {
             NSDictionary * payload = @{ @"event": FS_EVENT_DATA,  @"detail" : [data base64EncodedStringWithOptions:0] };
-            [event sendDeviceEventWithName:streamId body:payload];
+            [ReactNativeBlobUtil emitEvent:streamId body:payload];
         }
         else if([[encoding lowercaseString] isEqualToString:@"ascii"])
         {
@@ -270,21 +262,19 @@ NSMutableDictionary *fileStreams = nil;
             }
 
             NSDictionary * payload = @{ @"event": FS_EVENT_DATA,  @"detail" : asciiArray };
-            [event sendDeviceEventWithName:streamId body:payload];
+            [ReactNativeBlobUtil emitEvent:streamId body:payload];
         }
 
     }
     @catch (NSException * ex)
     {
         NSString * message = [NSString stringWithFormat:@"Failed to convert data to '%@' encoded string, this might due to the source data is not able to convert using this encoding. source = %@", encoding, [ex description]];
-        [event
-         sendDeviceEventWithName:streamId
+        [ReactNativeBlobUtil emitEvent:streamId
          body:@{
                 @"event" : MSG_EVENT_ERROR,
                 @"detail" : message
                 }];
-        [event
-         sendDeviceEventWithName:MSG_EVENT
+        [ReactNativeBlobUtil emitEvent:MSG_EVENT
          body:@{
                 @"event" : MSG_EVENT_WARN,
                 @"detail" : message

@@ -18,22 +18,25 @@
 #import <React/RCTBridge.h>
 #import <React/RCTEventDispatcher.h>
 #import <React/RCTBridgeModule.h>
+#import <React/RCTEventEmitter.h>
 #else
 #import "RCTBridgeModule.h"
 #import "RCTLog.h"
 #import "RCTRootView.h"
 #import "RCTBridge.h"
 #import "RCTEventDispatcher.h"
+#import "RCTEventEmitter.h"
 #endif
 
 #import <UIKit/UIKit.h>
+
 
 #if RCT_NEW_ARCH_ENABLED
 #import <React-Codegen/ReactNativeBlobUtilSpec/ReactNativeBlobUtilSpec.h>
 #endif
 
 
-@interface ReactNativeBlobUtil : NSObject <RCTBridgeModule, UIDocumentInteractionControllerDelegate> {
+@interface ReactNativeBlobUtil : RCTEventEmitter <RCTBridgeModule, UIDocumentInteractionControllerDelegate> {
 
     NSString * filePathPrefix;
 
@@ -43,6 +46,7 @@
 @property (retain) UIDocumentInteractionController * documentController;
 
 + (RCTEventDispatcher *)getRCTEventDispatcher;
++(void) emitEvent;
 
 @end
 

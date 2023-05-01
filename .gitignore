@@ -28,6 +28,10 @@ DerivedData
 *.xcuserstate
 project.xcworkspace
 
+# VSCode
+#
+.vscode
+
 # Android/IJ
 #
 .idea
