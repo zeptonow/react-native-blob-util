@@ -80,6 +80,7 @@ static void initialize_tables() {
     ReactNativeBlobUtilRequest *request = [[ReactNativeBlobUtilRequest alloc] init];
     [request sendRequest:options
            contentLength:contentLength
+                  eventDispatcher:eventDispatcherRef
                   taskId:taskId
              withRequest:req
       taskOperationQueue:self.taskQueue
@@ -155,6 +156,26 @@ static void initialize_tables() {
     }
 
     return mheaders;
+}
+
+// #115 Invoke fetch.expire event on those expired requests so that the expired event can be handled
++ (void) emitExpiredTasks:(RCTEventDispatcher *)eventDispatcher
+{
+    @synchronized ([ReactNativeBlobUtilNetwork class]){
+        NSEnumerator * emu =  [expirationTable keyEnumerator];
+        NSString * key;
+
+        while ((key = [emu nextObject]))
+        {
+            id args = @{ @"taskId": key };
+            [eventDispatcher sendDeviceEventWithName:EVENT_EXPIRE body:args];
+
+        }
+
+        // clear expired task entries
+        [expirationTable removeAllObjects];
+        expirationTable = [[NSMapTable alloc] init];
+    }
 }
 
 @end

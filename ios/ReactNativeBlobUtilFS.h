@@ -91,6 +91,7 @@
 // constructor
 - (id) init;
 - (id)initWithCallback:(RCTResponseSenderBlock)callback;
+- (id)initWithEventDispatcherRef:(RCTEventDispatcher *)eventDispatcherRef;
 
 // file stream
 - (void) openWithDestination;

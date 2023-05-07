@@ -2,7 +2,7 @@ import {ReactNativeBlobUtilConfig} from 'types';
 import URIUtil from './utils/uri';
 import fs from './fs';
 import getUUID from './utils/uuid';
-import {DeviceEventEmitter, NativeEventEmitter} from 'react-native';
+import {DeviceEventEmitter, NativeEventEmitter, NativeModules} from 'react-native';
 import {FetchBlobResponse} from './class/ReactNativeBlobUtilBlobResponse';
 import CanceledFetchError from './class/ReactNativeBlobUtilCanceledFetchError';
 import ReactNativeBlobUtil from './codegenSpecs/NativeBlobUtils';

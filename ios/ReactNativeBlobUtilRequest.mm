@@ -8,7 +8,6 @@
 
 #import "ReactNativeBlobUtilRequest.h"
 
-#import "ReactNativeBlobUtil.h"
 #import "ReactNativeBlobUtilFS.h"
 #import "ReactNativeBlobUtilConst.h"
 #import "ReactNativeBlobUtilFileTransformer.h"
@@ -16,6 +15,11 @@
 
 #import <CommonCrypto/CommonDigest.h>
 
+#if __has_include(<React/RCTAssert.h>)
+#import <React/RCTEventDispatcherProtocol.h>
+#else
+#import "RCTEventDispatcherProtocol.h"
+#endif
 
 
 typedef NS_ENUM(NSUInteger, ResponseFormat) {
@@ -49,6 +53,7 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
 @synthesize receivedBytes;
 @synthesize respData;
 @synthesize callback;
+@synthesize eventDispatcher;
 @synthesize options;
 @synthesize error;
 
@@ -68,6 +73,7 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
 // send HTTP request
 - (void) sendRequest:(__weak NSDictionary  * _Nullable )options
        contentLength:(long) contentLength
+              eventDispatcher:(RCTEventDispatcher * _Nullable)eventDispatcherRef
               taskId:(NSString * _Nullable)taskId
          withRequest:(__weak NSURLRequest * _Nullable)req
   taskOperationQueue:(NSOperationQueue * _Nonnull)operationQueue
@@ -76,6 +82,7 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
     self.taskId = taskId;
     self.respData = [[NSMutableData alloc] initWithLength:0];
     self.callback = callback;
+    self.eventDispatcher = eventDispatcherRef;
     self.expectedBytes = 0;
     self.receivedBytes = 0;
     self.options = options;
@@ -206,7 +213,8 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
 
         if (self.isServerPush) {
             if (partBuffer) {
-                [ReactNativeBlobUtil emitEvent:EVENT_SERVER_PUSH
+                [self.eventDispatcher
+                 sendDeviceEventWithName:EVENT_SERVER_PUSH
                  body:@{
                         @"taskId": taskId,
                         @"chunk": [partBuffer base64EncodedStringWithOptions:0],
@@ -261,7 +269,8 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
                 [cookieStore setCookies:cookies forURL:response.URL mainDocumentURL:nil];
             }
         }
-        [ReactNativeBlobUtil emitEvent: EVENT_STATE_CHANGE
+        [self.eventDispatcher
+         sendDeviceEventWithName: EVENT_STATE_CHANGE
          body:@{
                 @"taskId": taskId,
                 @"state": @"2",
@@ -350,7 +359,8 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
     NSNumber * now =[NSNumber numberWithFloat:((float)receivedBytes/(float)expectedBytes)];
 
     if ([self.progressConfig shouldReport:now]) {
-        [ReactNativeBlobUtil emitEvent:EVENT_PROGRESS
+        [self.eventDispatcher
+         sendDeviceEventWithName:EVENT_PROGRESS
          body:@{
                 @"taskId": taskId,
                 @"written": [NSString stringWithFormat:@"%lld", (long long) receivedBytes],
@@ -463,7 +473,8 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
     NSNumber * now = [NSNumber numberWithFloat:((float)totalBytesWritten/(float)totalBytesExpectedToWrite)];
 
     if ([self.uploadProgressConfig shouldReport:now]) {
-        [ReactNativeBlobUtil emitEvent:EVENT_PROGRESS_UPLOAD
+        [self.eventDispatcher
+         sendDeviceEventWithName:EVENT_PROGRESS_UPLOAD
          body:@{
                 @"taskId": taskId,
                 @"written": [NSString stringWithFormat:@"%ld", (long) totalBytesWritten],

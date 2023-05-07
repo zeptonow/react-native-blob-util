@@ -38,6 +38,7 @@
 
 - (void) sendRequest:(NSDictionary  * _Nullable )options
        contentLength:(long)contentLength
+              eventDispatcher:(RCTEventDispatcher * _Nullable)eventDispatcherRef
               taskId:(NSString * _Nullable)taskId
          withRequest:(NSURLRequest * _Nullable)req
   taskOperationQueue:(NSOperationQueue * _Nonnull)operationQueue
