@@ -36,16 +36,6 @@ const {
 const Blob = polyfill.Blob;
 const wrap = URIUtil.wrap;
 
-// when app resumes, check if there's any expired network task and trigger
-// their .expire event
-if (Platform.OS === 'ios') {
-    AppState.addEventListener('change', (e) => {
-        if (e === 'active')
-            ReactNativeBlobUtil.emitExpiredEvent(() => {
-            });
-    });
-}
-
 // Show warning if native module not detected
 if (!ReactNativeBlobUtil || !ReactNativeBlobUtil.fetchBlobForm || !ReactNativeBlobUtil.fetchBlob) {
     console.warn(
