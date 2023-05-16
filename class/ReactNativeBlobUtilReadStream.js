@@ -2,14 +2,11 @@
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 
-import {
-  DeviceEventEmitter,
-  NativeAppEventEmitter,
-} from 'react-native';
+import {NativeEventEmitter} from 'react-native';
 import UUID from '../utils/uuid';
 
 import ReactNativeBlobUtil from "../codegenSpecs/NativeBlobUtils";
-const emitter = DeviceEventEmitter;
+const emitter =  new NativeEventEmitter(ReactNativeBlobUtil);
 
 export default class ReactNativeBlobUtilReadStream {
 
@@ -33,7 +30,9 @@ export default class ReactNativeBlobUtilReadStream {
     this.streamId = 'RNFBRS'+ UUID();
 
     // register for file stream event
-    let subscription = emitter.addListener(this.streamId, (e) => {
+    let subscription = emitter.addListener('ReactNativeBlobUtilFilesystem', (e) => {
+      e = JSON.parse(e);
+      if(e.streamId !== this.streamId) return; // wrong stream
       let {event, code, detail} = e;
       if(this._onData && event === 'data') {
         this._onData(detail);

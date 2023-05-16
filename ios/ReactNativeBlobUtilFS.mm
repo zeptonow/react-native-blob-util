@@ -169,8 +169,8 @@ NSMutableDictionary *fileStreams = nil;
                 if([[NSFileManager defaultManager] fileExistsAtPath:path] == NO)
                 {
                     NSString * message = [NSString stringWithFormat:@"File does not exist at path %@", path];
-                    NSDictionary * payload = @{ @"event": FS_EVENT_ERROR, @"code": @"ENOENT", @"detail": message };
-                    [baseModule emitEventDict:streamId body:payload];
+                    NSDictionary * payload = @{ @"streamId":streamId, @"event": FS_EVENT_ERROR, @"code": @"ENOENT", @"detail": message };
+                    [baseModule emitEventDict:EVENT_FILESYSTEM body:payload];
                     free(buffer);
                     return ;
                 }
@@ -202,8 +202,8 @@ NSMutableDictionary *fileStreams = nil;
             }
             else
             {
-                NSDictionary * payload = @{ @"event": FS_EVENT_ERROR, @"code": @"EINVAL", @"detail": @"Unable to resolve URI" };
-                [baseModule emitEventDict:streamId body:payload];
+                NSDictionary * payload = @{ @"streamId":streamId, @"event": FS_EVENT_ERROR, @"code": @"EINVAL", @"detail": @"Unable to resolve URI" };
+                [baseModule emitEventDict:EVENT_FILESYSTEM body:payload];
             }
             // release buffer
             if(buffer != nil)
@@ -212,13 +212,13 @@ NSMutableDictionary *fileStreams = nil;
         }
         @catch (NSError * err)
         {
-            NSDictionary * payload = @{ @"event": FS_EVENT_ERROR, @"code": @"EUNSPECIFIED", @"detail": [err description] };
-            [baseModule emitEventDict:streamId body:payload];
+            NSDictionary * payload = @{ @"streamId":streamId, @"event": FS_EVENT_ERROR, @"code": @"EUNSPECIFIED", @"detail": [err description] };
+            [baseModule emitEventDict:EVENT_FILESYSTEM body:payload];
         }
         @finally
         {
-            NSDictionary * payload = @{ @"event": FS_EVENT_END, @"detail": @"" };
-            [baseModule emitEventDict:streamId body:payload];
+            NSDictionary * payload = @{ @"streamId":streamId, @"event": FS_EVENT_END, @"detail": @"" };
+            [baseModule emitEventDict:EVENT_FILESYSTEM body:payload];
         }
 
     }];
@@ -235,15 +235,16 @@ NSMutableDictionary *fileStreams = nil;
         if([[encoding lowercaseString] isEqualToString:@"utf8"])
         {
             NSDictionary * payload = @{
+                @"streamId":streamId,
                                        @"event": FS_EVENT_DATA,
                                        @"detail" : [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding]
                                        };
-            [baseModule emitEventDict:streamId body:payload];
+            [baseModule emitEventDict:EVENT_FILESYSTEM body:payload];
         }
         else if ([[encoding lowercaseString] isEqualToString:@"base64"])
         {
-            NSDictionary * payload = @{ @"event": FS_EVENT_DATA,  @"detail" : [data base64EncodedStringWithOptions:0] };
-            [baseModule emitEventDict:streamId body:payload];
+            NSDictionary * payload = @{ @"streamId":streamId, @"event": FS_EVENT_DATA,  @"detail" : [data base64EncodedStringWithOptions:0] };
+            [baseModule emitEventDict:EVENT_FILESYSTEM body:payload];
         }
         else if([[encoding lowercaseString] isEqualToString:@"ascii"])
         {
@@ -260,8 +261,8 @@ NSMutableDictionary *fileStreams = nil;
                 }
             }
 
-            NSDictionary * payload = @{ @"event": FS_EVENT_DATA,  @"detail" : asciiArray };
-            [baseModule emitEventDict:streamId body:payload];
+            NSDictionary * payload = @{ @"streamId":streamId, @"event": FS_EVENT_DATA,  @"detail" : asciiArray };
+            [baseModule emitEventDict:EVENT_FILESYSTEM body:payload];
         }
 
     }
@@ -269,14 +270,16 @@ NSMutableDictionary *fileStreams = nil;
     {
         NSString * message = [NSString stringWithFormat:@"Failed to convert data to '%@' encoded string, this might due to the source data is not able to convert using this encoding. source = %@", encoding, [ex description]];
         [baseModule
-         emitEventDict:streamId
+         emitEventDict:EVENT_FILESYSTEM
          body:@{
+            @"streamId":streamId,
                 @"event" : MSG_EVENT_ERROR,
                 @"detail" : message
                 }];
         [baseModule
          emitEventDict:MSG_EVENT
          body:@{
+            @"streamId":streamId,
                 @"event" : MSG_EVENT_WARN,
                 @"detail" : message
                 }];
