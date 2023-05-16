@@ -2,7 +2,7 @@ import {ReactNativeBlobUtilConfig} from 'types';
 import URIUtil from './utils/uri';
 import fs from './fs';
 import getUUID from './utils/uuid';
-import {DeviceEventEmitter, NativeEventEmitter, NativeModules} from 'react-native';
+import {DeviceEventEmitter, NativeEventEmitter} from 'react-native';
 import {FetchBlobResponse} from './class/ReactNativeBlobUtilBlobResponse';
 import CanceledFetchError from './class/ReactNativeBlobUtilCanceledFetchError';
 import ReactNativeBlobUtil from './codegenSpecs/NativeBlobUtils';
@@ -12,6 +12,7 @@ const eventEmitter = new NativeEventEmitter(ReactNativeBlobUtil);
 // register message channel event handler.
 eventEmitter.addListener('ReactNativeBlobUtilMessage', (e) => {
 
+    console.log('add listener')
     if (e.event === 'warn') {
         console.warn(e.detail);
     }
@@ -201,6 +202,7 @@ export function fetch(...args: any): Promise {
         });
 
         stateEvent = eventEmitter.addListener('ReactNativeBlobUtilState', (e) => {
+            console.log('state', e, typeof e, taskId, e.taskId)
             if (e.taskId === taskId)
                 respInfo = e;
             promise.onStateChange && promise.onStateChange(e);

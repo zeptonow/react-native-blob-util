@@ -2,7 +2,6 @@
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 
-import {AppState, Platform,} from 'react-native';
 import ReactNativeBlobUtil from './codegenSpecs/NativeBlobUtils';
 
 //import StatefulPromise from './class/StatefulPromise.js'

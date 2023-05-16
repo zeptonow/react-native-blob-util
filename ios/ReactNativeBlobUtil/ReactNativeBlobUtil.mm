@@ -33,6 +33,10 @@ dispatch_queue_t fsQueue;
 @synthesize bridge;
 bool hasListeners;
 
+- (NSArray<NSString*> *)supportedEvents {
+     return @[@"ReactNativeBlobUtilState", @"ReactNativeBlobUtilServerPush", @"ReactNativeBlobUtilProgress", @"ReactNativeBlobUtilProgress-upload", @"ReactNativeBlobUtilExpire", @"ReactNativeBlobUtilMessage", @"log", @"warn", @"error", @"data", @"end", @"reportProgress", @"reportUploadProgress"];
+ }
+
 // Will be called when this module's first listener is added.
 -(void)startObserving {
     hasListeners = YES;
@@ -53,6 +57,8 @@ bool hasListeners;
 }
 - (void)emitEventDict:(NSString *)name body:(NSDictionary *) body
 {
+    //TODO: All the FS events use the stream id as name. These events will be omitted since the streamID is not part of <supportedEvents>
+    NSLog(@"emit dict start");
     NSError *error;
     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:body
                                                        options:NSJSONWritingPrettyPrinted
