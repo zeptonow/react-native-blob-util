@@ -12,7 +12,7 @@ import polyfill from './polyfill';
 import android from './android';
 import ios from './ios';
 import JSONStream from './json-stream';
-import {config, fetch} from 'fetch';
+import {config, fetch} from './fetch';
 import URIUtil from './utils/uri';
 import CanceledFetchError from './class/ReactNativeBlobUtilCanceledFetchError';
 
