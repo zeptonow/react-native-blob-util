@@ -864,7 +864,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                 Cursor c = dm.query(query);
                 // #236 unhandled null check for DownloadManager.query() return value
                 if (c == null) {
-                    this.callback.invoke("Download manager failed to download from  " + this.url + ". Query was unsuccessful ", null, null);
+                    this.invoke_callback("Download manager failed to download from  " + this.url + ". Query was unsuccessful ", null, null);
                     return;
                 }
 
@@ -875,7 +875,7 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                         // #297 handle failed request
                         int statusCode = c.getInt(c.getColumnIndex(DownloadManager.COLUMN_STATUS));
                         if (statusCode == DownloadManager.STATUS_FAILED) {
-                            this.callback.invoke("Download manager failed to download from  " + this.url + ". Status Code = " + statusCode, null, null);
+                            this.invoke_callback("Download manager failed to download from  " + this.url + ". Status Code = " + statusCode, null, null);
                             return;
                         }
                         String contentUri = c.getString(c.getColumnIndex(DownloadManager.COLUMN_LOCAL_URI));
@@ -904,17 +904,17 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                         if (!exists)
                             throw new Exception("Download manager download failed, the file does not downloaded to destination.");
                         else
-                            this.callback.invoke(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, customDest);
+                            this.invoke_callback(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, customDest);
 
                     } catch (Exception ex) {
                         ex.printStackTrace();
-                        this.callback.invoke(ex.getLocalizedMessage(), null);
+                        this.invoke_callback(ex.getLocalizedMessage(), null);
                     }
                 } else {
                     if (filePath == null)
-                        this.callback.invoke("Download manager could not resolve downloaded file path.", ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, null);
+                        this.invoke_callback("Download manager could not resolve downloaded file path.", ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, null);
                     else
-                        this.callback.invoke(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, filePath);
+                        this.invoke_callback(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, filePath);
                 }
 
             }
