@@ -11,6 +11,7 @@ const eventEmitter = new NativeEventEmitter(ReactNativeBlobUtil);
 
 // register message channel event handler.
 eventEmitter.addListener('ReactNativeBlobUtilMessage', (e) => {
+    e = JSON.parse(e);
 
     console.log('add listener')
     if (e.event === 'warn') {
@@ -190,18 +191,21 @@ export function fetch(...args: any): Promise {
 
         // on progress event listener
         subscription = eventEmitter.addListener('ReactNativeBlobUtilProgress', (e) => {
+            e = JSON.parse(e);
             if (e.taskId === taskId && promise.onProgress) {
                 promise.onProgress(e.written, e.total, e.chunk);
             }
         });
 
         subscriptionUpload = eventEmitter.addListener('ReactNativeBlobUtilProgress-upload', (e) => {
+            e = JSON.parse(e);
             if (e.taskId === taskId && promise.onUploadProgress) {
                 promise.onUploadProgress(e.written, e.total);
             }
         });
 
         stateEvent = eventEmitter.addListener('ReactNativeBlobUtilState', (e) => {
+            e = JSON.parse(e);
             console.log('state', e, typeof e, taskId, e.taskId)
             if (e.taskId === taskId)
                 respInfo = e;
@@ -209,12 +213,14 @@ export function fetch(...args: any): Promise {
         });
 
         subscription = eventEmitter.addListener('ReactNativeBlobUtilExpire', (e) => {
+            e = JSON.parse(e);
             if (e.taskId === taskId && promise.onExpire) {
                 promise.onExpire(e);
             }
         });
 
         partEvent = eventEmitter.addListener('ReactNativeBlobUtilServerPush', (e) => {
+            e = JSON.parse(e);
             if (e.taskId === taskId && promise.onPartData) {
                 promise.onPartData(e.chunk);
             }
