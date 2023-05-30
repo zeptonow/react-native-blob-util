@@ -22,6 +22,7 @@ extern NSString *const EVENT_PROGRESS;
 extern NSString *const EVENT_SERVER_PUSH;
 extern NSString *const EVENT_PROGRESS_UPLOAD;
 extern NSString *const EVENT_STATE_CHANGE;
+extern NSString *const EVENT_FILESYSTEM;
 
 extern NSString *const FILE_PREFIX;
 extern NSString *const ASSET_PREFIX;

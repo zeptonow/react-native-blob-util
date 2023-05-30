@@ -26,6 +26,17 @@ public class ReactNativeBlobUtil extends NativeBlobUtilsSpec {
         delegate = new ReactNativeBlobUtilImpl(reactContext);
     }
 
+    // Required for rn built in EventEmitter Calls.
+    @ReactMethod
+    public void addListener(String eventName) {
+
+    }
+
+    @ReactMethod
+    public void removeListeners(Integer count) {
+
+    }
+
     @Override
     protected Map<String, Object> getTypedExportedConstants() {
         Map<String, Object> res = new HashMap<>();

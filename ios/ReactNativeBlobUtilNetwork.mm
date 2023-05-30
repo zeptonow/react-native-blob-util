@@ -16,12 +16,10 @@
 #if __has_include(<React/RCTAssert.h>)
 #import <React/RCTRootView.h>
 #import <React/RCTLog.h>
-#import <React/RCTEventDispatcher.h>
 #import <React/RCTBridge.h>
 #else
 #import "RCTRootView.h"
 #import "RCTLog.h"
-#import "RCTEventDispatcher.h"
 #import "RCTBridge.h"
 #endif
 
@@ -72,7 +70,7 @@ static void initialize_tables() {
 
 - (void) sendRequest:(__weak NSDictionary  * _Nullable )options
        contentLength:(long) contentLength
-              eventDispatcher:(RCTEventDispatcher * _Nullable)eventDispatcherRef
+              baseModule:(ReactNativeBlobUtil * _Nullable)baseModule
               taskId:(NSString * _Nullable)taskId
          withRequest:(__weak NSURLRequest * _Nullable)req
             callback:(_Nullable RCTResponseSenderBlock) callback
@@ -80,7 +78,7 @@ static void initialize_tables() {
     ReactNativeBlobUtilRequest *request = [[ReactNativeBlobUtilRequest alloc] init];
     [request sendRequest:options
            contentLength:contentLength
-                  eventDispatcher:eventDispatcherRef
+              baseModule:baseModule
                   taskId:taskId
              withRequest:req
       taskOperationQueue:self.taskQueue
@@ -156,26 +154,6 @@ static void initialize_tables() {
     }
 
     return mheaders;
-}
-
-// #115 Invoke fetch.expire event on those expired requests so that the expired event can be handled
-+ (void) emitExpiredTasks:(RCTEventDispatcher *)eventDispatcher
-{
-    @synchronized ([ReactNativeBlobUtilNetwork class]){
-        NSEnumerator * emu =  [expirationTable keyEnumerator];
-        NSString * key;
-
-        while ((key = [emu nextObject]))
-        {
-            id args = @{ @"taskId": key };
-            [eventDispatcher sendDeviceEventWithName:EVENT_EXPIRE body:args];
-
-        }
-
-        // clear expired task entries
-        [expirationTable removeAllObjects];
-        expirationTable = [[NSMapTable alloc] init];
-    }
 }
 
 @end

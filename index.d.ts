@@ -783,6 +783,10 @@ export interface AddAndroidDownloads {
      */
     mediaScannable?: boolean;
     /**
+     * Only for Android >= Q; Enforces the file being stored to the MediaCollection Downloads. This might overwrite any value given in "path"
+     */
+    storeInDownloads?: boolean;
+    /**
      * A boolean value decide whether show a notification when download complete.
      */
     notification?: boolean;

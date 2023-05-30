@@ -27,6 +27,7 @@ NSString *const EVENT_SERVER_PUSH = @"ReactNativeBlobUtilServerPush";
 NSString *const EVENT_PROGRESS = @"ReactNativeBlobUtilProgress";
 NSString *const EVENT_PROGRESS_UPLOAD = @"ReactNativeBlobUtilProgress-upload";
 NSString *const EVENT_EXPIRE = @"ReactNativeBlobUtilExpire";
+NSString *const EVENT_FILESYSTEM = @"ReactNativeBlobUtilFilesystem";
 
 NSString *const MSG_EVENT = @"ReactNativeBlobUtilMessage";
 NSString *const MSG_EVENT_LOG = @"log";
