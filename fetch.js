@@ -2,7 +2,7 @@ import {ReactNativeBlobUtilConfig} from 'types';
 import URIUtil from './utils/uri';
 import fs from './fs';
 import getUUID from './utils/uuid';
-import {DeviceEventEmitter, NativeEventEmitter} from 'react-native';
+import {NativeEventEmitter} from 'react-native';
 import {FetchBlobResponse} from './class/ReactNativeBlobUtilBlobResponse';
 import CanceledFetchError from './class/ReactNativeBlobUtilCanceledFetchError';
 import ReactNativeBlobUtil from './codegenSpecs/NativeBlobUtils';
@@ -11,7 +11,7 @@ const eventEmitter = new NativeEventEmitter(ReactNativeBlobUtil);
 
 // register message channel event handler.
 eventEmitter.addListener('ReactNativeBlobUtilMessage', (e) => {
-    e = JSON.parse(e);
+    if (typeof e === 'string') e = JSON.parse(e);
 
     console.log('add listener')
     if (e.event === 'warn') {
@@ -191,36 +191,35 @@ export function fetch(...args: any): Promise {
 
         // on progress event listener
         subscription = eventEmitter.addListener('ReactNativeBlobUtilProgress', (e) => {
-            e = JSON.parse(e);
+            if (typeof e === 'string') e = JSON.parse(e);
             if (e.taskId === taskId && promise.onProgress) {
                 promise.onProgress(e.written, e.total, e.chunk);
             }
         });
 
         subscriptionUpload = eventEmitter.addListener('ReactNativeBlobUtilProgress-upload', (e) => {
-            e = JSON.parse(e);
+            if (typeof e === 'string') e = JSON.parse(e);
             if (e.taskId === taskId && promise.onUploadProgress) {
                 promise.onUploadProgress(e.written, e.total);
             }
         });
 
         stateEvent = eventEmitter.addListener('ReactNativeBlobUtilState', (e) => {
-            e = JSON.parse(e);
-            console.log('state', e, typeof e, taskId, e.taskId)
+            if (typeof e === 'string') e = JSON.parse(e);
             if (e.taskId === taskId)
                 respInfo = e;
             promise.onStateChange && promise.onStateChange(e);
         });
 
         subscription = eventEmitter.addListener('ReactNativeBlobUtilExpire', (e) => {
-            e = JSON.parse(e);
+            if (typeof e === 'string') e = JSON.parse(e);
             if (e.taskId === taskId && promise.onExpire) {
                 promise.onExpire(e);
             }
         });
 
         partEvent = eventEmitter.addListener('ReactNativeBlobUtilServerPush', (e) => {
-            e = JSON.parse(e);
+            if (typeof e === 'string') e = JSON.parse(e);
             if (e.taskId === taskId && promise.onPartData) {
                 promise.onPartData(e.chunk);
             }
