@@ -13,6 +13,7 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Base64;
@@ -48,6 +49,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import java.util.UUID;
 
 import java.util.List;
 import java.util.Locale;
@@ -252,19 +255,29 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                 if (options.addAndroidDownloads.hasKey("path")) {
                     req.setDestinationUri(Uri.parse("file://" + options.addAndroidDownloads.getString("path")));
                 }
-                // #391 Add MIME type to the request
                 if (options.addAndroidDownloads.hasKey("mime")) {
                     req.setMimeType(options.addAndroidDownloads.getString("mime"));
                 }
                 if (options.addAndroidDownloads.hasKey("mediaScannable") && options.addAndroidDownloads.getBoolean("mediaScannable")) {
                     req.allowScanningByMediaScanner();
                 }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && options.addAndroidDownloads.hasKey("storeInDownloads") && options.addAndroidDownloads.getBoolean("storeInDownloads")) {
+                    String t = options.addAndroidDownloads.getString("title");
+                    if(t == null || t.isEmpty())
+                        t = UUID.randomUUID().toString();
+                    if(this.options.appendExt != null && !this.options.appendExt.isEmpty())
+                        t += "." + this.options.appendExt;
+
+                    req.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, t);
+                }
+
                 // set headers
                 ReadableMapKeySetIterator it = headers.keySetIterator();
                 while (it.hasNextKey()) {
                     String key = it.nextKey();
                     req.addRequestHeader(key, headers.getString(key));
                 }
+
                 // Attempt to add cookie, if it exists
                 URL urlObj;
                 try {
@@ -862,7 +875,6 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                 DownloadManager dm = (DownloadManager) appCtx.getSystemService(Context.DOWNLOAD_SERVICE);
                 dm.query(query);
                 Cursor c = dm.query(query);
-                // #236 unhandled null check for DownloadManager.query() return value
                 if (c == null) {
                     this.invoke_callback("Download manager failed to download from  " + this.url + ". Query was unsuccessful ", null, null);
                     return;
@@ -872,7 +884,6 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                 try {
                     // the file exists in media content database
                     if (c.moveToFirst()) {
-                        // #297 handle failed request
                         int statusCode = c.getInt(c.getColumnIndex(DownloadManager.COLUMN_STATUS));
                         if (statusCode == DownloadManager.STATUS_FAILED) {
                             this.invoke_callback("Download manager failed to download from  " + this.url + ". Status Code = " + statusCode, null, null);
@@ -910,7 +921,15 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
                         ex.printStackTrace();
                         this.invoke_callback(ex.getLocalizedMessage(), null);
                     }
-                } else {
+                }
+                else if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && options.addAndroidDownloads.hasKey("storeInDownloads") && options.addAndroidDownloads.getBoolean("storeInDownloads")){
+                    Uri downloadeduri = dm.getUriForDownloadedFile(downloadManagerId);
+                    if(downloadeduri == null)
+                        this.callback.invoke("Download manager could not resolve downloaded file uri.", ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, null);
+                    else
+                        this.callback.invoke(null, ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, downloadeduri.toString());
+                }
+                else {
                     if (filePath == null)
                         this.invoke_callback("Download manager could not resolve downloaded file path.", ReactNativeBlobUtilConst.RNFB_RESPONSE_PATH, null);
                     else
@@ -946,6 +965,4 @@ public class ReactNativeBlobUtilReq extends BroadcastReceiver implements Runnabl
 
         return client;
     }
-
-
 }

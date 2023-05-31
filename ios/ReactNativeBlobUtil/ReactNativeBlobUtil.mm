@@ -15,7 +15,6 @@
 #import <ReactNativeBlobUtilSpec/ReactNativeBlobUtilSpec.h>
 #endif
 
-__strong RCTEventDispatcher * eventDispatcherRef;
 dispatch_queue_t commonTaskQueue;
 dispatch_queue_t fsQueue;
 
@@ -32,6 +31,45 @@ dispatch_queue_t fsQueue;
 @synthesize filePathPrefix;
 @synthesize documentController;
 @synthesize bridge;
+bool hasListeners;
+
+- (NSArray<NSString*> *)supportedEvents {
+     return @[@"ReactNativeBlobUtilState", @"ReactNativeBlobUtilServerPush", @"ReactNativeBlobUtilProgress", @"ReactNativeBlobUtilProgress-upload", @"ReactNativeBlobUtilExpire", @"ReactNativeBlobUtilMessage", @"ReactNativeBlobUtilFilesystem", @"log", @"warn", @"error", @"data", @"end", @"reportProgress", @"reportUploadProgress"];
+ }
+
+// Will be called when this module's first listener is added.
+-(void)startObserving {
+    hasListeners = YES;
+    // Set up any upstream listeners or background tasks as necessary
+}
+
+// Will be called when this module's last listener is removed, or on dealloc.
+-(void)stopObserving {
+    hasListeners = NO;
+    // Remove upstream listeners, stop unnecessary background tasks
+}
+
+- (void)emitEvent:(NSString *)name body:(NSString *) body
+{
+  if (hasListeners) {// Only send events if anyone is listening
+    [self sendEventWithName:name body:body];
+  }
+}
+- (void)emitEventDict:(NSString *)name body:(NSDictionary *) body
+{
+    //TODO: All the FS events use the stream id as name. These events will be omitted since the streamID is not part of <supportedEvents>
+    NSError *error;
+    NSData *jsonData = [NSJSONSerialization dataWithJSONObject:body
+                                                       options:NSJSONWritingPrettyPrinted
+                                                         error:&error];
+
+    if (error) {
+        NSLog(@"Got an error: %@", error);
+    } else {
+        NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+        [self emitEvent:name body:jsonString];
+    }
+}
 
 - (dispatch_queue_t) methodQueue {
     if(commonTaskQueue == nil)
@@ -39,15 +77,6 @@ dispatch_queue_t fsQueue;
     return commonTaskQueue;
 }
 
-+ (RCTEventDispatcher *)getRCTEventDispatcher
-{
-    RCTRootView * rootView = (RCTRootView*) [[UIApplication sharedApplication] keyWindow].rootViewController.view;
-#if RCT_NEW_ARCH_ENABLED
-    return (RCTEventDispatcher *)[rootView.moduleRegistry moduleForName:"EventDispatcher"];
-#else
-    return rootView.bridge.eventDispatcher;
-#endif
-}
 
 + (BOOL)requiresMainQueueSetup {
     return NO;
@@ -67,10 +96,6 @@ RCT_EXPORT_MODULE();
     if(![[NSFileManager defaultManager] fileExistsAtPath: [ReactNativeBlobUtilFS getTempPath] isDirectory:&isDir]) {
         [[NSFileManager defaultManager] createDirectoryAtPath:[ReactNativeBlobUtilFS getTempPath] withIntermediateDirectories:YES attributes:nil error:NULL];
     }
-    dispatch_async(dispatch_get_main_queue(), ^{
-        eventDispatcherRef = bridge.eventDispatcher;
-        [ReactNativeBlobUtilNetwork emitExpiredTasks: eventDispatcherRef];
-    });
 
     return self;
 }
@@ -96,7 +121,7 @@ RCT_EXPORT_MODULE();
              @"SDCardDir": @"",
              @"SDCardApplicationDir": @"",
              @"DCIMDir": @"",
-             // Android only legacy constants 
+             // Android only legacy constants
              @"LegacyDCIMDir": @"",
              @"LegacyPictureDir": @"",
              @"LegacyMusicDir": @"",
@@ -135,7 +160,7 @@ RCT_EXPORT_METHOD(fetchBlobForm:(NSDictionary *)options
         {
             [[ReactNativeBlobUtilNetwork sharedInstance] sendRequest:options
                                                contentLength:bodyLength
-                                                      eventDispatcher:eventDispatcherRef
+                                                      baseModule:self
                                                       taskId:taskId
                                                  withRequest:req
                                                     callback:callback];
@@ -172,7 +197,7 @@ RCT_EXPORT_METHOD(fetchBlob:(NSDictionary *)options
         {
             [[ReactNativeBlobUtilNetwork sharedInstance] sendRequest:options
                                                contentLength:bodyLength
-                                                      eventDispatcher:eventDispatcherRef
+                                                      baseModule:self
                                                       taskId:taskId
                                                  withRequest:req
                                                     callback:callback];
@@ -366,7 +391,7 @@ RCT_EXPORT_METHOD(writeStream:(NSString *)path
     appendData:(BOOL)append
     callback:(RCTResponseSenderBlock)callback)
 {
-    ReactNativeBlobUtilFS * fileStream = [[ReactNativeBlobUtilFS alloc] initWithEventDispatcherRef:eventDispatcherRef];
+    ReactNativeBlobUtilFS * fileStream = [[ReactNativeBlobUtilFS alloc] init];
     NSFileManager * fm = [NSFileManager defaultManager];
     NSString * folder = [path stringByDeletingLastPathComponent];
     NSError* err = nil;
@@ -696,7 +721,7 @@ RCT_EXPORT_METHOD(readStream:(NSString *)path encoding:(NSString *)encoding buff
     }
 
     dispatch_async(fsQueue, ^{
-        [ReactNativeBlobUtilFS readStream:path encoding:encoding bufferSize:bufferSize tick:tick streamId:streamId eventDispatcherRef:eventDispatcherRef];
+        [ReactNativeBlobUtilFS readStream:path encoding:encoding bufferSize:bufferSize tick:tick streamId:streamId baseModule:self];
     });
 }
 
@@ -875,13 +900,6 @@ RCT_EXPORT_METHOD(df:(RCTResponseSenderBlock)callback)
 {
     UIWindow *window = [UIApplication sharedApplication].keyWindow;
     return window.rootViewController;
-}
-
-# pragma mark - check expired network events
-
-RCT_EXPORT_METHOD(emitExpiredEvent:(RCTResponseSenderBlock)callback)
-{
-    [ReactNativeBlobUtilNetwork emitExpiredTasks:eventDispatcherRef];
 }
 
 # pragma mark - Android Only methods

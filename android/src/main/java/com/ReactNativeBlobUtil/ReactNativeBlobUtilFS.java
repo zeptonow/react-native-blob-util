@@ -19,6 +19,8 @@ import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
+import com.facebook.react.uimanager.UIManagerHelper;
+import com.facebook.react.uimanager.events.EventDispatcher;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -37,9 +39,6 @@ class ReactNativeBlobUtilFS {
 
     private ReactApplicationContext mCtx;
     private DeviceEventManagerModule.RCTDeviceEventEmitter emitter;
-    private String encoding = "base64";
-    private OutputStream writeStreamInstance = null;
-    private static HashMap<String, ReactNativeBlobUtilFS> fileStreams = new HashMap<>();
 
     ReactNativeBlobUtilFS(ReactApplicationContext ctx) {
         this.mCtx = ctx;

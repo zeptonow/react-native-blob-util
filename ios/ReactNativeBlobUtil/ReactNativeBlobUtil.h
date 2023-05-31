@@ -16,14 +16,14 @@
 #import <React/RCTLog.h>
 #import <React/RCTRootView.h>
 #import <React/RCTBridge.h>
-#import <React/RCTEventDispatcher.h>
 #import <React/RCTBridgeModule.h>
+#import <React/RCTEventEmitter.h>
 #else
 #import "RCTBridgeModule.h"
 #import "RCTLog.h"
 #import "RCTRootView.h"
 #import "RCTBridge.h"
-#import "RCTEventDispatcher.h"
+#import "RCTEventEmitter.h"
 #endif
 
 #import <UIKit/UIKit.h>
@@ -33,7 +33,7 @@
 #endif
 
 
-@interface ReactNativeBlobUtil : NSObject <RCTBridgeModule, UIDocumentInteractionControllerDelegate> {
+@interface ReactNativeBlobUtil : RCTEventEmitter <RCTBridgeModule, UIDocumentInteractionControllerDelegate> {
 
     NSString * filePathPrefix;
 
@@ -42,7 +42,8 @@
 @property (nonatomic) NSString * filePathPrefix;
 @property (retain) UIDocumentInteractionController * documentController;
 
-+ (RCTEventDispatcher *)getRCTEventDispatcher;
+-(void) emitEvent:(NSString *)name body:(NSString *) body;
+-(void) emitEventDict:(NSString *)name body:(NSDictionary *) body;
 
 @end
 
