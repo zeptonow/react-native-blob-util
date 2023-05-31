@@ -1,5 +1,7 @@
 package com.ReactNativeBlobUtil;
 
+import static com.ReactNativeBlobUtil.ReactNativeBlobUtilConst.EVENT_FILESYSTEM;
+
 import android.net.Uri;
 import android.os.SystemClock;
 import android.util.Base64;
@@ -249,7 +251,8 @@ public class ReactNativeBlobUtilStream {
         WritableMap eventData = Arguments.createMap();
         eventData.putString("event", event);
         eventData.putString("detail", data);
-        this.emitter.emit(streamName, eventData);
+        eventData.putString("streamId", streamName);
+        this.emitter.emit(EVENT_FILESYSTEM, eventData);
     }
 
     // "event" always is "data"...
@@ -257,7 +260,8 @@ public class ReactNativeBlobUtilStream {
         WritableMap eventData = Arguments.createMap();
         eventData.putString("event", event);
         eventData.putArray("detail", data);
-        this.emitter.emit(streamName, eventData);
+        eventData.putString("streamId", streamName);
+        this.emitter.emit(EVENT_FILESYSTEM, eventData);
     }
 
     // "event" always is "error"...
@@ -266,7 +270,8 @@ public class ReactNativeBlobUtilStream {
         eventData.putString("event", event);
         eventData.putString("code", code);
         eventData.putString("detail", message);
-        this.emitter.emit(streamName, eventData);
+        eventData.putString("streamId", streamName);
+        this.emitter.emit(EVENT_FILESYSTEM, eventData);
     }
 
     /**

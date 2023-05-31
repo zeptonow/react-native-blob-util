@@ -6,6 +6,7 @@ public class ReactNativeBlobUtilConst {
     public static final String EVENT_PROGRESS = "ReactNativeBlobUtilProgress";
     public static final String EVENT_HTTP_STATE = "ReactNativeBlobUtilState";
     public static final String EVENT_MESSAGE = "ReactNativeBlobUtilMessage";
+    public static final String EVENT_FILESYSTEM = "ReactNativeBlobUtilFilesystem";
     public static final String FILE_PREFIX = "ReactNativeBlobUtil-file://";
     public static final String CONTENT_PREFIX = "ReactNativeBlobUtil-content://";
     public static final String FILE_PREFIX_BUNDLE_ASSET = "bundle-assets://";
