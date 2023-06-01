@@ -1,4 +1,4 @@
-import {ReactNativeBlobUtilConfig} from 'types';
+import {ReactNativeBlobUtilConfig} from './types';
 import URIUtil from './utils/uri';
 import fs from './fs';
 import getUUID from './utils/uuid';
