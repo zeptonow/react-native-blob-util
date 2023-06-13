@@ -31,7 +31,7 @@ dispatch_queue_t fsQueue;
 @synthesize filePathPrefix;
 @synthesize documentController;
 @synthesize bridge;
-bool hasListeners;
+static bool hasListeners = NO;
 
 - (NSArray<NSString*> *)supportedEvents {
      return @[@"ReactNativeBlobUtilState", @"ReactNativeBlobUtilServerPush", @"ReactNativeBlobUtilProgress", @"ReactNativeBlobUtilProgress-upload", @"ReactNativeBlobUtilExpire", @"ReactNativeBlobUtilMessage", @"ReactNativeBlobUtilFilesystem", @"log", @"warn", @"error", @"data", @"end", @"reportProgress", @"reportUploadProgress"];
