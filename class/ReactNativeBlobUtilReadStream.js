@@ -5,7 +5,7 @@
 import {NativeEventEmitter} from 'react-native';
 import UUID from '../utils/uuid';
 
-import ReactNativeBlobUtil from "../codegenSpecs/NativeBlobUtils";
+import ReactNativeBlobUtil from '../codegenSpecs/NativeBlobUtils';
 
 const emitter = new NativeEventEmitter(ReactNativeBlobUtil);
 
@@ -36,7 +36,6 @@ export default class ReactNativeBlobUtilReadStream {
         // register for file stream event
         let subscription = emitter.addListener('ReactNativeBlobUtilFilesystem', (e) => {
             if (typeof e === 'string') e = JSON.parse(e);
-            console.log(e, this.streamId, e.streamId, e.streamId === this.streamId)
             if (e.streamId !== this.streamId) return; // wrong stream
             let {event, code, detail} = e;
             if (this._onData && event === 'data') {
