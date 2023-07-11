@@ -535,7 +535,7 @@ export interface IOSApi {
      * @param path This is a required field, the path to the document. The path should NOT contains any scheme prefix.
      * @param  {string} scheme URI scheme that needs to support, optional
      */
-    openDocument(path: string, scheme?: string): void;
+    openDocument(path: string, scheme?: string): Promise<void>;
 
     /**
      * Displays an options menu using [UIDocumentInteractionController](https://developer.apple.com/reference/uikit/uidocumentinteractioncontroller).[presentOptionsMenu](https://developer.apple.com/documentation/uikit/uidocumentinteractioncontroller/1616814-presentoptionsmenu)
