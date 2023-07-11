@@ -525,14 +525,14 @@ export interface IOSApi {
     /**
      * Open a file in {@link https://developer.apple.com/reference/uikit/uidocumentinteractioncontroller UIDocumentInteractionController},
      * this is the default document viewer of iOS, supports several kinds of files. On Android, there's an similar method {@link android.actionViewIntent}.
-     * @param path This is a required field, the path to the document. The path should NOT contains any scheme prefix.
+     * @param path This is a required field, the path to the document. The path should NOT contain any scheme prefix.
      * @param  {string} scheme URI scheme that needs to support, optional
      */
     previewDocument(path: string, scheme?: string): void;
 
     /**
      * Show options menu for interact with the file.
-     * @param path This is a required field, the path to the document. The path should NOT contains any scheme prefix.
+     * @param path This is a required field, the path to the document. The path should NOT contain any scheme prefix.
      * @param  {string} scheme URI scheme that needs to support, optional
      */
     openDocument(path: string, scheme?: string): Promise<void>;
