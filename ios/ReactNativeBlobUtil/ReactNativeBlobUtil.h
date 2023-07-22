@@ -29,7 +29,7 @@
 #import <UIKit/UIKit.h>
 
 #if RCT_NEW_ARCH_ENABLED
-#import <React-Codegen/ReactNativeBlobUtilSpec/ReactNativeBlobUtilSpec.h>
+#import <ReactNativeBlobUtilSpec/ReactNativeBlobUtilSpec.h>
 #endif
 
 
