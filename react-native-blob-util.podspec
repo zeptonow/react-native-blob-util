@@ -18,6 +18,8 @@ Pod::Spec.new do |s|
 
   if fabric_enabled
     install_modules_dependencies(s)
+  else
+    s.dependency 'React-Core'
   end
 
 end
