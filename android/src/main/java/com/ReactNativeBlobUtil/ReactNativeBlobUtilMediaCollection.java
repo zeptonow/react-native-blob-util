@@ -95,8 +95,12 @@ public class ReactNativeBlobUtilMediaCollection {
 
             Uri mediauri = getMediaUri(mt);
 
-            // Keeps a handle to the new file's URI in case we need to modify it later.
-            return resolver.insert(mediauri, fileDetails);
+            try {
+                // Keeps a handle to the new file's URI in case we need to modify it later.
+                return resolver.insert(mediauri, fileDetails);
+            } catch (Exception e) {
+                return null;
+            }
         } else {
             File f = new File(relativePath + file.getFullPath());
             if (true) {
