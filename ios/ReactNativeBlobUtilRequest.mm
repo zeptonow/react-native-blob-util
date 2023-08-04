@@ -349,17 +349,35 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
         return;
     }
 
-    NSNumber * now =[NSNumber numberWithFloat:((float)receivedBytes/(float)expectedBytes)];
+    // For non-chunked download, progress is received / expected
+    // For chunked download, progress can be either 0 (started) or 1 (ended)
+    NSNumber *now;
+    if (expectedBytes != NSURLResponseUnknownLength) {
+        now = [NSNumber numberWithFloat:((float)receivedBytes/(float)expectedBytes)];
+    } else {
+        now = @0;
+    }
 
     if ([self.progressConfig shouldReport:now]) {
-        [self.baseModule emitEventDict :EVENT_PROGRESS
-         body:@{
+        NSDictionary *body;
+        if (expectedBytes == NSURLResponseUnknownLength) {
+            // For chunked downloads
+            body = @{
+                @"taskId": taskId,
+                @"written": [NSString stringWithFormat:@"%d", 0],
+                @"total": [NSString stringWithFormat:@"%lld", (long long) expectedBytes],
+                @"chunk": chunkString,
+            };
+        } else {
+            // For non-chunked downloads
+            body = @{
                 @"taskId": taskId,
                 @"written": [NSString stringWithFormat:@"%lld", (long long) receivedBytes],
                 @"total": [NSString stringWithFormat:@"%lld", (long long) expectedBytes],
-                @"chunk": chunkString
-                }
-        ];
+                @"chunk": chunkString,
+            };
+        }
+        [self.baseModule emitEventDict:EVENT_PROGRESS body:body];
     }
 }
 
@@ -392,6 +410,14 @@ typedef NS_ENUM(NSUInteger, ResponseFormat) {
         } else {
             errMsg = [error localizedDescription];
         }
+    } else if ([self.progressConfig shouldReport:@1] && expectedBytes == NSURLResponseUnknownLength) {
+        // For chunked downloads
+        [self.baseModule emitEventDict:EVENT_PROGRESS body:@{
+            @"taskId": taskId,
+            @"written": [NSString stringWithFormat:@"%lld", (long long) receivedBytes],
+            @"total": [NSString stringWithFormat:@"%lld", (long long) receivedBytes],
+            @"chunk": @"",
+        }];
     }
 
     if (respFile) {
