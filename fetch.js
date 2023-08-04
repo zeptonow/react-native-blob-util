@@ -13,7 +13,6 @@ const eventEmitter = new NativeEventEmitter(ReactNativeBlobUtil);
 eventEmitter.addListener('ReactNativeBlobUtilMessage', (e) => {
     if (typeof e === 'string') e = JSON.parse(e);
 
-    console.log('add listener')
     if (e.event === 'warn') {
         console.warn(e.detail);
     }
