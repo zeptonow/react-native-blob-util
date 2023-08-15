@@ -210,9 +210,9 @@ NSMutableDictionary *fileStreams = nil;
                 free(buffer);
 
         }
-        @catch (NSError * err)
+        @catch (NSException * ex)
         {
-            NSDictionary * payload = @{ @"streamId":streamId, @"event": FS_EVENT_ERROR, @"code": @"EUNSPECIFIED", @"detail": [err description] };
+            NSDictionary * payload = @{ @"streamId":streamId, @"event": FS_EVENT_ERROR, @"code": @"EUNSPECIFIED", @"detail": [ex description] };
             [baseModule emitEventDict:EVENT_FILESYSTEM body:payload];
         }
         @finally
