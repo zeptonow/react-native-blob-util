@@ -68,25 +68,30 @@ static void initialize_tables() {
     return _sharedInstance;
 }
 
-- (void) sendRequest:(__weak NSDictionary  * _Nullable )options
-       contentLength:(long) contentLength
-              baseModule:(ReactNativeBlobUtil * _Nullable)baseModule
+- (void) sendRequest:(__weak NSDictionary * _Nullable)options
+       contentLength:(long)contentLength
+          baseModule:(ReactNativeBlobUtil * _Nullable)baseModule
               taskId:(NSString * _Nullable)taskId
          withRequest:(__weak NSURLRequest * _Nullable)req
-            callback:(_Nullable RCTResponseSenderBlock) callback
+            callback:(_Nullable RCTResponseSenderBlock)callback
 {
-    ReactNativeBlobUtilRequest *request = [[ReactNativeBlobUtilRequest alloc] init];
-    [request sendRequest:options
-           contentLength:contentLength
-              baseModule:baseModule
-                  taskId:taskId
-             withRequest:req
-      taskOperationQueue:self.taskQueue
-                callback:callback];
-
-    @synchronized([ReactNativeBlobUtilNetwork class]) {
-        [self.requestsTable setObject:request forKey:taskId];
-        [self checkProgressConfigForTask:taskId];
+    @try {
+        ReactNativeBlobUtilRequest *request = [[ReactNativeBlobUtilRequest alloc] init];
+        [request sendRequest:options
+               contentLength:contentLength
+                  baseModule:baseModule
+                      taskId:taskId
+                 withRequest:req
+          taskOperationQueue:self.taskQueue
+                    callback:callback];
+        
+        @synchronized([ReactNativeBlobUtilNetwork class]) {
+            [self.requestsTable setObject:request forKey:taskId];
+            [self checkProgressConfigForTask:taskId];
+        }
+    }
+    @catch (NSException *exception) {
+        NSLog(@"An exception occurred: %@", exception.reason);
     }
 }
 
